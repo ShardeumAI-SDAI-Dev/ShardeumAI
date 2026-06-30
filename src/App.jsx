@@ -227,28 +227,19 @@ function App() {
               key={index} 
               style={{ 
                 alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', 
-                background: msg.role === 'user' ? '#00d2ff' : '#161b26', 
-                color: msg.role === 'user' ? '#0e1118' : '#fff', 
-                padding: '12px 16px', 
-                borderRadius: '12px', 
-                maxWidth: '70%', 
-                boxSizing: 'border-box', 
-                whiteSpace: 'pre-wrap', 
-                textAlign: isRTL ? 'right' : 'left' 
-              }}
-            >
-              {msg.content}
-            <div style={{ textAlign, marginBottom: '20px' }}>
-            <label style={{ fontSize: '14px', color: '#8a99ad', display: 'block', marginBottom: '5px' }}>{t.password}</label>
-            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box', textAlign: 'left', direction: 'ltr' }} />
-          </div>
-
-          <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#00d2ff', color: '#0e1118', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
-            {loading ? t.processing : (isSignUp ? t.register : t.login)}
-          </button>
-        </form>
-
-        {message && <p style={{ fontSize: '13px', marginTop: '15px', color: message.includes('error') || message.includes('خطا') ? '#ef4444' : '#10b981' }}>{message}</p>}
+   {message && (
+          <p
+            style={{
+              fontSize: '13px',
+              marginTop: '15px',
+              color: message.includes('error')  message.includes('failed')  message.includes('خطا')
+                ? '#ef4444'
+                : '#10b981'
+            }}
+          >
+            {message}
+          </p>
+        )}
 
         <p style={{ marginTop: '20px', fontSize: '14px', color: '#8a99ad' }}>
           {isSignUp ? t.hasAccount : t.noAccount}
