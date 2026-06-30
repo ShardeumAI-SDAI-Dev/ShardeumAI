@@ -1,4 +1,3 @@
-[6/30/2026 6:54 PM] Farhad: import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 // کلیدهای اتصال به دیتابیس شما
