@@ -60,7 +60,7 @@ const translations = {
     login: 'Einloggen',
     register: 'Konto erstellen',
     noAccount: 'Noch kein Konto? ',
-    hasAccount: 'Bereits یک Konto? ',
+    hasAccount: 'Bereits ein Konto? ',
     switchRegister: 'Registrieren',
     switchLogin: 'Anmelden',
     processing: 'In Bearbeitung...',
@@ -190,11 +190,11 @@ function App() {
 
       const data = await response.json();
       
-      if (data && data.choices && data.choices[0] && data.choices[0].message) {
-        const aiReply = data.choices[0].message.content;
+      if (data && data.choices && data.choices && data.choices.message) {
+        const aiReply = data.choices.message.content;
         setChatHistory((prev) => [...prev, { role: 'assistant', content: aiReply }]);
       } else {
-        setChatHistory((prev) => [...prev, { role: 'assistant', content: 'خطا در دریافت ساختار داده.' }]);
+        setChatHistory((prev) => [...prev, { role: 'assistant', content: 'خطا در دریافت پاسخ.' }]);
       }
     } catch (err) {
       setChatHistory((prev) => [...prev, { role: 'assistant', content: 'Error connecting to AI. Please check API key.' }]);
@@ -215,7 +215,7 @@ function App() {
         </div>
 
         <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-         {chatHistory.length === 0 && (
+          {chatHistory.length === 0 && (
             <div style={{ color: '#8a99ad', margin: 'auto', textAlign: 'center' }}>
               <h2>{t.welcome}</h2>
               <p>SDAI Llama-3 Free Model Version</p>
@@ -256,6 +256,16 @@ function App() {
     );
   }
 
+  // شکستن خط طولانی خطاکار به خطوط بسیار کوتاه جهت جلوگیری از باگ کپی پیست
+  const mainBoxStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: '100vh',
+    background: '#0e1118',
+    fontFamily: 'Arial, sans-serif',
+    flexDirection: 'column'
+  };
+
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0e1118', fontFamily: 'Arial, sans-serif', flexDirection: 'column' }}>
-      <div style={{ marginBottom: '15px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}> 
+    <div style={mainBoxStyle}>
