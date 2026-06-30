@@ -269,3 +269,52 @@ function App() {
 
   return (
     <div style={mainBoxStyle}>
+<div style={{ marginBottom: '15px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <button onClick={() => setLang('en')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'en' ? '#00d2ff' : '#161b26', color: lang === 'en' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>EN</button>
+        <button onClick={() => setLang('fr')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'fr' ? '#00d2ff' : '#161b26', color: lang === 'fr' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>FR</button>
+        <button onClick={() => setLang('de')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'de' ? '#00d2ff' : '#161b26', color: lang === 'de' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>DE</button>
+        <button onClick={() => setLang('ar')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'ar' ? '#00d2ff' : '#161b26', color: lang === 'ar' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>العربية</button>
+        <button onClick={() => setLang('fa')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'fa' ? '#00d2ff' : '#161b26', color: lang === 'fa' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>فارسی</button>
+      </div>
+
+      <div style={{ background: '#161b26', padding: '40px', borderRadius: '15px', width: '350px', textAlign: 'center', color: '#fff', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', direction }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ background: '#00d2ff', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontSize: '20px', fontWeight: 'bold', color: '#0e1118' }}>SD</div>
+          <h2 style={{ margin: '0', fontSize: '24px' }}>{t.title}</h2>
+          <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#8a99ad' }}>{t.subtitle}</p>
+        </div>
+
+        <form onSubmit={handleAuth}>
+          <div style={{ textAlign, marginBottom: '15px' }}>
+            <label style={{ fontSize: '14px', color: '#8a99ad', display: 'block', marginBottom: '5px' }}>{t.email}</label>
+            <input type="email" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box', textAlign: 'left', direction: 'ltr' }} />
+          </div>
+
+          <div style={{ textAlign, marginBottom: '20px' }}>
+            <label style={{ fontSize: '14px', color: '#8a99ad', display: 'block', marginBottom: '5px' }}>{t.password}</label>
+            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box', textAlign: 'left', direction: 'ltr' }} />
+          </div>
+
+          <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#00d2ff', color: '#0e1118', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
+            {loading ? t.processing : (isSignUp ? t.register : t.login)}
+          </button>
+        </form>
+
+        {message && (
+          <p style={{ fontSize: '13px', marginTop: '15px', color: message.includes('error') || message.includes('خطا') ? '#ef4444' : '#10b981' }}>
+            {message}
+          </p>
+        )}
+
+        <p style={{ marginTop: '20px', fontSize: '14px', color: '#8a99ad' }}>
+         {isSignUp ? t.hasAccount : t.noAccount}
+          <span onClick={() => { setIsSignUp(!isSignUp); setMessage(''); }} style={{ color: '#00d2ff', cursor: 'pointer', textDecoration: 'underline' }}>
+            {isSignUp ? t.switchLogin : t.switchRegister}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default App; 
