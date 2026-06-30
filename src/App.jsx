@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// کلیدهای اتصال به دیتابیس شما
-const SUPABASE_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_mxVEWWeumrPEedmA4yD0cg_ZMPgwWYU"; // کلید anon سوپابیس را اینجا بگذارید
-
-// کلید اتصال به هوش مصنوعی شما
-const OPENROUTER_API_KEY = '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'; // کلید OpenRouter خود را اینجا بگذارید
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY; 
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -131,7 +128,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
 
-  // وضعیت‌های مربوط به بخش چت هوش مصنوعی
   const [chatInput, setChatInput] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -168,7 +164,6 @@ function App() {
     setLoading(false);
   };
 
-  // تابع ارسال پیام به OpenRouter (هوش مصنوعی متا Llama 3 رایگان)
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!chatInput.trim() || chatLoading) return;
@@ -186,7 +181,7 @@ function App() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-3-8b-instruct:free', // مدل قدرتمند و ۱۰۰٪ رایگان
+          model: 'meta-llama/llama-3-8b-instruct:free',
           messages: [...chatHistory, userMessage].map(msg => ({ role: msg.role, content: msg.content })),
         }),
       });
@@ -202,11 +197,9 @@ function App() {
     }
   };
 
-  // پنل کاربری و محیط چت زنده هوش مصنوعی
   if (user) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0e1118', color: '#fff', fontFamily: 'Arial, sans-serif', direction }}>
-        {/* هدر بالای صفحه چت */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', background: '#161b26', borderBottom: '1px solid #2d3748' }}>
           <div>
             <h3 style={{ margin: '0', color: '#00d2ff' }}>{t.title}</h3>
@@ -215,16 +208,15 @@ function App() {
           <button onClick={() => supabase.auth.signOut()} style={{ padding: '8px 16px', background: '#e02424', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{t.logout}</button>
         </div>
 
-        {/* جعبه نمایش پیام‌ها */}
         <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {chatHistory.length === 0 && (
-        <div style={{ textLight: 'center', color: '#8a99ad', margin: 'auto', textAlign: 'center' }}>
+            <div style={{ color: '#8a99ad', margin: 'auto', textAlign: 'center' }}>
               <h2>{t.welcome}</h2>
               <p>SDAI Llama-3 Free Model Version</p>
             </div>
           )}
           {chatHistory.map((msg, index) => (
-            <div key={index} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', background: msg.role === 'user' ? '#00d2ff' : '#161b26', color: msg.role === 'user' ? '#0e1118' : '#fff', padding: '12px 16px', borderRadius: '12px', maxWidth: '70%', boxSizing: 'border-box', whiteSpace: 'pre-wrap', textAlign: 'left' }}>
+        <div key={index} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start', background: msg.role === 'user' ? '#00d2ff' : '#161b26', color: msg.role === 'user' ? '#0e1118' : '#fff', padding: '12px 16px', borderRadius: '12px', maxWidth: '70%', boxSizing: 'border-box', whiteSpace: 'pre-wrap', textAlign: 'left' }}>
               {msg.content}
             </div>
           ))}
@@ -235,7 +227,6 @@ function App() {
           )}
         </div>
 
-        {/* فرم ارسال پیام زیر صفحه */}
         <form onSubmit={handleSendMessage} style={{ display: 'flex', padding: '20px', background: '#161b26', gap: '10px', borderTop: '1px solid #2d3748' }}>
           <input type="text" placeholder={t.chatPlaceholder} value={chatInput} onChange={(e) => setChatInput(e.target.value)} disabled={chatLoading} style={{ flex: 1, padding: '14px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box' }} />
           <button type="submit" disabled={chatLoading} style={{ padding: '0 25px', borderRadius: '8px', border: 'none', background: '#00d2ff', color: '#0e1118', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
@@ -246,15 +237,50 @@ function App() {
     );
   }
 
-  // فرم ورود و ساخت اکانت (وقتی کاربر وارد نشده)
   return (
-   // before (broken)
-<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0e1118',
-  <div style={{ marginBottom: '15px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0e1118', fontFamily: 'Arial, sans-serif', flexDirection: 'column' }}>
+      <div style={{ marginBottom: '15px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <button onClick={() => setLang('en')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'en' ? '#00d2ff' : '#161b26', color: lang === 'en' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>EN</button>
+        <button onClick={() => setLang('fr')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'fr' ? '#00d2ff' : '#161b26', color: lang === 'fr' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>FR</button>
+        <button onClick={() => setLang('de')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'de' ? '#00d2ff' : '#161b26', color: lang === 'de' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>DE</button>
+        <button onClick={() => setLang('ar')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'ar' ? '#00d2ff' : '#161b26', color: lang === 'ar' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>العربية</button>
+        <button onClick={() => setLang('fa')} style={{ padding: '6px 12px', borderRadius: '5px', border: 'none', background: lang === 'fa' ? '#00d2ff' : '#161b26', color: lang === 'fa' ? '#0e1118' : '#fff', cursor: 'pointer', fontWeight: 'bold' }}>فارسی</button>
+      </div>
 
-// after (fixed)
-<div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0e1118' }}>
-  <div style={{ marginBottom: '15px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
-    {/* ...child content... */}
-  </div>
-</div>
+      <div style={{ background: '#161b26', padding: '40px', borderRadius: '15px', width: '350px', textAlign: 'center', color: '#fff', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', direction }}>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ background: '#00d2ff', width: '50px', height: '50px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px', fontSize: '20px', fontWeight: 'bold', color: '#0e1118' }}>SD</div>
+          <h2 style={{ margin: '0', fontSize: '24px' }}>{t.title}</h2>
+          <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#8a99ad' }}>{t.subtitle}</p>
+        </div>
+
+        <form onSubmit={handleAuth}>
+          <div style={{ textAlign, marginBottom: '15px' }}>
+            <label style={{ fontSize: '14px', color: '#8a99ad', display: 'block', marginBottom: '5px' }}>{t.email}</label>
+            <input type="email" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box', textAlign: 'left' }} />
+          </div>
+
+          <div style={{ textAlign, marginBottom: '20px' }}>
+            <label style={{ fontSize: '14px', color: '#8a99ad', display: 'block', marginBottom: '5px' }}>{t.password}</label>
+            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box', textAlign: 'left' }} />
+          </div>
+
+          <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#00d2ff', color: '#0e1118', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
+            {loading ? t.processing : (isSignUp ? t.register : t.login)}
+          </button>
+        </form>
+
+        {message && <p style={{ fontSize: '13px', marginTop: '15px', color: message.includes('error') || message.includes('خطا') ? '#ef4444' : '#10b981' }}>{message}</p>}
+
+        <p style={{ marginTop: '20px', fontSize: '14px', color: '#8a99ad' }}>
+          {isSignUp ? t.hasAccount : t.noAccount}
+          <span onClick={() => { setIsSignUp(!isSignUp); setMessage(''); }} style={{ color: '#00d2ff', cursor: 'pointer', textDecoration: 'underline' }}>
+            {isSignUp ? t.switchLogin : t.switchRegister}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default App;
