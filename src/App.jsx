@@ -177,7 +177,7 @@ function App() {
       const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer ' + OPENROUTER_API_KEY,
+         'Authorization': 'Bearer ' + import.meta.env.VITE_OPENROUTER_API_KEY,
           'Content-Type': 'application/json',
           'HTTP-Referer': window.location.origin, 
           'X-Title': 'ShardeumAI'
