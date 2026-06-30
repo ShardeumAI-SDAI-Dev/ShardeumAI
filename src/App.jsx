@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
-// اتصال امن به متغیرهای محیطی ست شده در Netlify
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY; 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY; 
@@ -216,7 +215,7 @@ function App() {
         </div>
 
         <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {chatHistory.length === 0 && (
+        {chatHistory.length === 0 && (
             <div style={{ color: '#8a99ad', margin: 'auto', textAlign: 'center' }}>
               <h2>{t.welcome}</h2>
               <p>SDAI Llama-3 Free Model Version</p>
@@ -259,3 +258,4 @@ function App() {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0e1118', fontFamily: 'Arial, sans-serif', flexDirection: 'column' }}>
+      <div style={{ marginBottom: '15px', display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>  
