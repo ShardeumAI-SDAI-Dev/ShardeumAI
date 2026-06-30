@@ -238,24 +238,27 @@ function App() {
               }}
             >
               {msg.content}
-            </div>
-          ))}
-          {chatLoading && (
-            <div style={{ alignSelf: 'flex-start', background: '#161b26', padding: '12px 16px', borderRadius: '12px', color: '#8a99ad', fontStyle: 'italic' }}>
-              {t.thinking}
-            </div>
-          )}
-        </div>
+            <div style={{ textAlign, marginBottom: '20px' }}>
+            <label style={{ fontSize: '14px', color: '#8a99ad', display: 'block', marginBottom: '5px' }}>{t.password}</label>
+            <input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box', textAlign: 'left', direction: 'ltr' }} />
+          </div>
 
-        <form onSubmit={handleSendMessage} style={{ display: 'flex', padding: '20px', background: '#161b26', gap: '10px', borderTop: '1px solid #2d3748' }}>
-          <input type="text" placeholder={t.chatPlaceholder} value={chatInput} onChange={(e) => setChatInput(e.target.value)} disabled={chatLoading} style={{ flex: 1, padding: '14px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box' }} />
-          <button type="submit" disabled={chatLoading} style={{ padding: '0 25px', borderRadius: '8px', border: 'none', background: '#00d2ff', color: '#0e1118', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
-            {t.send}
+          <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#00d2ff', color: '#0e1118', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>
+            {loading ? t.processing : (isSignUp ? t.register : t.login)}
           </button>
         </form>
-      </div>
-    );
-  }
 
-  return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0e1118', fontFamily: 'Arial, sans-serif', flexDirection: 'column' }}>
+        {message && <p style={{ fontSize: '13px', marginTop: '15px', color: message.includes('error') || message.includes('خطا') ? '#ef4444' : '#10b981' }}>{message}</p>}
+
+        <p style={{ marginTop: '20px', fontSize: '14px', color: '#8a99ad' }}>
+          {isSignUp ? t.hasAccount : t.noAccount}
+          <span onClick={() => { setIsSignUp(!isSignUp); setMessage(''); }} style={{ color: '#00d2ff', cursor: 'pointer', textDecoration: 'underline' }}>
+            {isSignUp ? t.switchLogin : t.switchRegister}
+          </span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export default App;
