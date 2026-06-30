@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 // کلیدهای اتصال به دیتابیس شما
@@ -108,7 +109,7 @@ const translations = {
     successReg: 'ثبت‌نام با موفقیت انجام شد! ایمیل تایید خود را بررسی کنید.'
   }
 };
-[6/30/2026 6:54 PM] Farhad: function App() {
+function App() {
   const [lang, setLang] = useState('en');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -167,7 +168,7 @@ const translations = {
           <h2 style={{ margin: '0', fontSize: '24px' }}>{t.title}</h2>
           <p style={{ margin: '5px 0 0', fontSize: '12px', color: '#8a99ad' }}>{t.subtitle}</p>
         </div>
-[6/30/2026 6:54 PM] Farhad: <form onSubmit={handleAuth}>
+        <form onSubmit={handleAuth}>
           <div style={{ textAlign, marginBottom: '15px' }}>
             <label style={{ fontSize: '14px', color: '#8a99ad', display: 'block', marginBottom: '5px' }}>{t.email}</label>
             <input type="email" placeholder="email@example.com" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #2d3748', background: '#0e1118', color: '#fff', boxSizing: 'border-box', textAlign: 'left' }} />
