@@ -191,7 +191,7 @@ function App() {
       const data = await response.json();
       
       if (data && data.choices && data.choices && data.choices.message) {
-        const aiReply = data.choices.message.content;
+        const aiReply = data.choices[0].message.content;
         setChatHistory((prev) => [...prev, { role: 'assistant', content: aiReply }]);
       } else {
         setChatHistory((prev) => [...prev, { role: 'assistant', content: 'خطا در دریافت پاسخ.' }]);
