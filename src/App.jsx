@@ -130,11 +130,11 @@ function App() {
 
     if (isSignUp) {
       const { data, error } = await supabase.auth.signUp({ email, password });
-      if (error) setMessage(${t.errorReg} ${error.message});
+      if (error) setMessage(t.errorReg + ' ' + error.message);
       else setMessage(t.successReg);
     } else {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) setMessage(${t.errorLog} ${error.message});
+    if (error) setMessage(t.errorLog + ' ' + error.message);
       else setUser(data.user);
     }
     setLoading(false);
