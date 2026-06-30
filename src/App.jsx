@@ -78,12 +78,12 @@ const translations = {
   ar: {
     title: 'ShardeumAI',
     subtitle: 'SDAI - مساعد الشبكة الذكي والمحادثة',
-    email: 'البريد الإلكتروني',
-    password: 'كلمة المرور',
+    email: 'البريد الإلكترونی',
+    password: 'کلمة المرور',
     login: 'تسجيل الدخول',
     register: 'إنشاء حساب',
     noAccount: 'ليس لديك حساب؟ ',
-    hasAccount: 'لدیک حساب بالفعل؟ ',
+    hasAccount: 'لديك حساب بالفعل؟ ',
     switchRegister: 'سجل الآن',
     switchLogin: 'تسجيل الدخول',
     processing: 'جاري المعالجة...',
@@ -175,7 +175,6 @@ function App() {
     setChatLoading(true);
 
     try {
-      // اصلاح آدرس API هوش مصنوعی و افزودن هدرهای الزامی OpenRouter برای وب سرویس‌ها
       const response = await fetch('https://openrouter.ai', {
         method: 'POST',
         headers: {
@@ -196,7 +195,7 @@ function App() {
         const aiReply = data.choices[0].message.content;
         setChatHistory((prev) => [...prev, { role: 'assistant', content: aiReply }]);
       } else {
-        setChatHistory((prev) => [...prev, { role: 'assistant', content: 'خطا در ساختار داده‌های دریافتی از هوش مصنوعی.' }]);
+        setChatHistory((prev) => [...prev, { role: 'assistant', content: 'خطا در دریافت ساختار داده از هوش مصنوعی.' }]);
       }
     } catch (err) {
       setChatHistory((prev) => [...prev, { role: 'assistant', content: 'Error connecting to AI. Please check API key.' }]);
@@ -215,6 +214,7 @@ function App() {
           </div>
           <button onClick={() => supabase.auth.signOut()} style={{ padding: '8px 16px', background: '#e02424', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}>{t.logout}</button>
         </div>
+
         <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {chatHistory.length === 0 && (
             <div style={{ color: '#8a99ad', margin: 'auto', textAlign: 'center' }}>
@@ -258,3 +258,4 @@ function App() {
   }
 
   return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0e1118', fontFamily: 'Arial, sans-serif', flexDirection: 'column' }}>
