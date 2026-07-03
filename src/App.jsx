@@ -125,7 +125,8 @@ const LANGUAGE_OPTIONS = [
   { code: "ar", label: "Arabic", flag: "🇸🇦" }
 ];
 
-async function sendMessage(userMessage, selectedLanguage) {try {
+async function sendMessage(userMessage, selectedLanguage) {
+  try {
     const response = await fetch(EDGE_FUNCTION_URL, {
       method: "POST",
       headers: {
@@ -257,6 +258,7 @@ export default function App() {
               </button>
             ))}
           </div>
+
           <div style={styles.tabs}>
             <button
               type="button"
@@ -374,6 +376,7 @@ export default function App() {
             <option value="ar">AR</option>
             <option value="es">ES</option>
           </select>
+
           <button
             onClick={() => supabase.auth.signOut()}
             style={styles.logoutBtn}
@@ -661,3 +664,4 @@ const styles = {
     fontFamily: "inherit"
   }
 };
+
