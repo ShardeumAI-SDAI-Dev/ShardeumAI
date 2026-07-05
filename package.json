@@ -3,10 +3,12 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "main": "main.mjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "desktop": "electron ."
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -15,7 +17,23 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^4.7.0",
+    "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
     "vite": "^5.4.0"
+  },
+  "build": {
+    "appId": "com.shardeum.ai",
+    "productName": "ShardeumAI",
+    "files": [
+      "**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "public/logo.png"
+    }
   }
 }
