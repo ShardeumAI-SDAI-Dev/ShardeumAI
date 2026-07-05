@@ -244,14 +244,39 @@ function App() {
     if (found) setUiLang(found.code);
   }, []);
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => { if (data.session) setSession(data.session); });
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        setSession(data.session);
+        loadHistory(data.session.user.id);
+      }
+    });
   }, []);
+
+  async function loadHistory(userId) {
+    const { data, error } = await supabase
+      .from("chat_history")
+      .select("role, content")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true })
+      .limit(100);
+    if (!error && data && data.length > 0) setMessages(data);
+  }
+
+  async function saveMessage(userId, role, content) {
+    await supabase.from("chat_history").insert({ user_id: userId, role, content });
+  }
+
+  async function clearHistory() {
+    if (!session) return;
+    await supabase.from("chat_history").delete().eq("user_id", session.user.id);
+    setMessages([]);
+  }
 
   async function handleLogin(e) {
     e.preventDefault();
     setAuthLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email: e.target.email.value, password: e.target.password.value });
-    if (!error) setSession(data.session);
+    if (!error) { setSession(data.session); loadHistory(data.session.user.id); }
     else alert("Login failed: " + error.message);
     setAuthLoading(false);
   }
@@ -286,7 +311,10 @@ function App() {
         body: JSON.stringify({ messages: newMessages, language: modelLang }),
       });
       const data = await response.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.reply || "No response" }]);
+      const reply = data.reply || "No response";
+      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+      await saveMessage(session.user.id, "user", userMsg.content);
+      await saveMessage(session.user.id, "assistant", reply);
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: "Error connecting to AI." }]);
     }
@@ -372,6 +400,7 @@ function App() {
               ))}
             </div>
           </div>
+          <button onClick={clearHistory} style={{ ...styles.logoutBtn, borderColor: "#ef4444", color: "#ef4444", marginRight: 4 }}>🗑</button>
           <button onClick={handleLogout} style={styles.logoutBtn}>{t.logoutButton}</button>
         </div>
       </header>
