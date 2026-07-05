@@ -229,6 +229,9 @@ function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [mountAnim, setMountAnim] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [profile, setProfile] = useState({ display_name: "", bio: "" });
+  const [profileLoading, setProfileLoading] = useState(false);
   const chatRef = useRef(null);
 
   const t = translations[uiLang] || translations.en;
@@ -248,6 +251,7 @@ function App() {
       if (data.session) {
         setSession(data.session);
         loadHistory(data.session.user.id);
+        loadProfile(data.session.user.id);
       }
     });
   }, []);
@@ -272,11 +276,24 @@ function App() {
     setMessages([]);
   }
 
+  async function loadProfile(userId) {
+    const { data } = await supabase.from("user_profiles").select("display_name, bio").eq("id", userId).single();
+    if (data) setProfile({ display_name: data.display_name || "", bio: data.bio || "" });
+  }
+
+  async function saveProfile() {
+    if (!session) return;
+    setProfileLoading(true);
+    await supabase.from("user_profiles").upsert({ id: session.user.id, display_name: profile.display_name, bio: profile.bio, updated_at: new Date().toISOString() });
+    setProfileLoading(false);
+    setShowProfile(false);
+  }
+
   async function handleLogin(e) {
     e.preventDefault();
     setAuthLoading(true);
     const { data, error } = await supabase.auth.signInWithPassword({ email: e.target.email.value, password: e.target.password.value });
-    if (!error) { setSession(data.session); loadHistory(data.session.user.id); }
+    if (!error) { setSession(data.session); loadHistory(data.session.user.id); loadProfile(data.session.user.id); }
     else alert("Login failed: " + error.message);
     setAuthLoading(false);
   }
@@ -407,10 +424,10 @@ function App() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, padding: "8px 20px 0", background: "rgba(2,6,23,0.85)", borderBottom: "1px solid #1f2937" }}>
-        {["chat", "image"].map((tab) => (
+        {["chat", "image", "profile"].map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             style={{ padding: "8px 20px", borderRadius: "8px 8px 0 0", border: "none", background: activeTab === tab ? "#0f172a" : "transparent", color: activeTab === tab ? "#3b82f6" : "#9aa4b2", fontSize: 13, fontWeight: activeTab === tab ? 600 : 400, cursor: "pointer", borderBottom: activeTab === tab ? "2px solid #3b82f6" : "2px solid transparent" }}>
-            {tab === "chat" ? `💬 ${t.chatTab}` : `🎨 ${t.imageTab}`}
+            {tab === "chat" ? `💬 ${t.chatTab}` : tab === "image" ? `🎨 ${t.imageTab}` : `👤 Profile`}
           </button>
         ))}
       </div>
@@ -437,8 +454,43 @@ function App() {
               <button type="submit" disabled={!input.trim() || chatLoading} style={styles.sendBtn}>{t.send}</button>
             </form>
           </>
-        ) : (
+        ) : activeTab === "image" ? (
           <ImageGenerator t={t} isRTL={isRTL} />
+        ) : (
+          <div style={{ maxWidth: 480, margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: 20, padding: "20px 0", direction: isRTL ? "rtl" : "ltr" }}>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#e8edf2" }}>👤 Profile</h2>
+            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, #3b82f6, #22c55e)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                  {profile.display_name ? profile.display_name[0].toUpperCase() : session?.user?.email?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 16 }}>{profile.display_name || session?.user?.email?.split("@")[0]}</div>
+                  <div style={{ fontSize: 12, color: "#9aa4b2" }}>{session?.user?.email}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ fontSize: 12, color: "#9aa4b2" }}>Display Name</label>
+                <input value={profile.display_name} onChange={(e) => setProfile(p => ({ ...p, display_name: e.target.value }))}
+                  placeholder="Your name..." style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ fontSize: 12, color: "#9aa4b2" }}>Bio</label>
+                <textarea value={profile.bio} onChange={(e) => setProfile(p => ({ ...p, bio: e.target.value }))}
+                  placeholder="Tell us about yourself..." rows={3}
+                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none", resize: "vertical" }} />
+              </div>
+              <button onClick={saveProfile} disabled={profileLoading}
+                style={{ padding: "10px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #3b82f6, #22c55e)", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                {profileLoading ? "Saving..." : "Save Profile"}
+              </button>
+            </div>
+            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 16, padding: 20 }}>
+              <div style={{ fontSize: 13, color: "#9aa4b2", marginBottom: 12 }}>Account Info</div>
+              <div style={{ fontSize: 13, color: "#e8edf2" }}>📧 {session?.user?.email}</div>
+              <div style={{ fontSize: 12, color: "#9aa4b2", marginTop: 6 }}>Member since {new Date(session?.user?.created_at).toLocaleDateString()}</div>
+            </div>
+          </div>
         )}
       </main>
     </div>
