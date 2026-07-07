@@ -230,7 +230,7 @@ function App() {
   const [mountAnim, setMountAnim] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [profile, setProfile] = useState({ display_name: "", bio: "" });
+  const [profile, setProfile] = useState({ display_name: "", bio: "", avatar_color: "#3b82f6" });
   const [profileLoading, setProfileLoading] = useState(false);
   const chatRef = useRef(null);
 
@@ -277,14 +277,14 @@ function App() {
   }
 
   async function loadProfile(userId) {
-    const { data } = await supabase.from("user_profiles").select("display_name, bio").eq("id", userId).single();
-    if (data) setProfile({ display_name: data.display_name || "", bio: data.bio || "" });
+    const { data } = await supabase.from("user_profiles").select("display_name, bio, avatar_color").eq("id", userId).single();
+    if (data) setProfile({ display_name: data.display_name || "", bio: data.bio || "", avatar_color: data.avatar_color || "#3b82f6" });
   }
 
   async function saveProfile() {
     if (!session) return;
     setProfileLoading(true);
-    await supabase.from("user_profiles").upsert({ id: session.user.id, display_name: profile.display_name, bio: profile.bio, updated_at: new Date().toISOString() });
+    await supabase.from("user_profiles").upsert({ id: session.user.id, display_name: profile.display_name, bio: profile.bio, avatar_color: profile.avatar_color, updated_at: new Date().toISOString() });
     setProfileLoading(false);
     setShowProfile(false);
   }
@@ -391,7 +391,9 @@ function App() {
     <div style={{ ...styles.app, direction: isRTL ? "rtl" : "ltr" }}>
       <header style={styles.header}>
         <div style={styles.brandRow}>
-          <div style={styles.logoCircle}>S</div>
+          <div style={{ ...styles.logoCircle, background: profile.avatar_color, boxShadow: `0 0 12px ${profile.avatar_color}88` }}>
+            {session ? (profile.display_name || session.user.email || "S")[0].toUpperCase() : "S"}
+          </div>
           <div><h1 style={{ ...styles.title, fontSize: 18 }}>{t.title}</h1><p style={{ ...styles.subtitle, margin: 0 }}>{t.subtitle}</p></div>
         </div>
         <div style={styles.headerControls}>
@@ -478,8 +480,8 @@ function App() {
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#e8edf2" }}>👤 Profile</h2>
             <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ width: 60, height: 60, borderRadius: "50%", background: "linear-gradient(135deg, #3b82f6, #22c55e)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
-                  {profile.display_name ? profile.display_name[0].toUpperCase() : session?.user?.email?.[0]?.toUpperCase()}
+                <div style={{ width: 64, height: 64, borderRadius: "50%", background: profile.avatar_color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 700, color: "#fff", flexShrink: 0, boxShadow: `0 0 20px ${profile.avatar_color}88` }}>
+                  {(profile.display_name || session?.user?.email || "?")[0].toUpperCase()}
                 </div>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: 16 }}>{profile.display_name || session?.user?.email?.split("@")[0]}</div>
@@ -496,6 +498,15 @@ function App() {
                 <textarea value={profile.bio} onChange={(e) => setProfile(p => ({ ...p, bio: e.target.value }))}
                   placeholder="Tell us about yourself..." rows={3}
                   style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none", resize: "vertical" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ fontSize: 12, color: "#9aa4b2" }}>Avatar Color</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {["#3b82f6","#8b5cf6","#ec4899","#22c55e","#f59e0b","#ef4444","#06b6d4","#f97316"].map(color => (
+                    <div key={color} onClick={() => setProfile(p => ({ ...p, avatar_color: color }))}
+                      style={{ width: 32, height: 32, borderRadius: "50%", background: color, cursor: "pointer", border: profile.avatar_color === color ? "3px solid #fff" : "3px solid transparent", boxShadow: profile.avatar_color === color ? `0 0 12px ${color}` : "none", transition: "all 0.15s ease" }} />
+                  ))}
+                </div>
               </div>
               <button onClick={saveProfile} disabled={profileLoading}
                 style={{ padding: "10px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #3b82f6, #22c55e)", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
