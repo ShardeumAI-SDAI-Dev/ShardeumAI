@@ -423,7 +423,7 @@ function App() {
       </header>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, padding: "8px 20px 0", background: "rgba(2,6,23,0.85)", borderBottom: "1px solid #1f2937" }}>
+      <div style={{ display: "flex", gap: 2, padding: "6px 12px 0", background: "rgba(2,6,23,0.85)", borderBottom: "1px solid #1f2937", overflowX: "auto" }}>
         {["chat", "image", "profile"].map((tab) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
             style={{ padding: "8px 20px", borderRadius: "8px 8px 0 0", border: "none", background: activeTab === tab ? "#0f172a" : "transparent", color: activeTab === tab ? "#3b82f6" : "#9aa4b2", fontSize: 13, fontWeight: activeTab === tab ? 600 : 400, cursor: "pointer", borderBottom: activeTab === tab ? "2px solid #3b82f6" : "2px solid transparent" }}>
@@ -450,7 +450,24 @@ function App() {
               </div>
             </div>
             <form onSubmit={handleSend} style={styles.composer}>
-              <input value={input} onChange={(e) => setInput(e.target.value)} placeholder={t.chatPlaceholder} style={styles.composerInput} disabled={chatLoading} />
+              <textarea
+                value={input}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (input.trim() && !chatLoading) handleSend(e);
+                  }
+                }}
+                placeholder={t.chatPlaceholder}
+                style={{ ...styles.composerInput, resize: "none", overflow: "hidden", minHeight: 42, maxHeight: 120 }}
+                disabled={chatLoading}
+                rows={1}
+              />
               <button type="submit" disabled={!input.trim() || chatLoading} style={styles.sendBtn}>{t.send}</button>
             </form>
           </>
@@ -507,17 +524,17 @@ const styles = {
   form: { marginTop: 24, display: "flex", flexDirection: "column", gap: 12 },
   input: { padding: "10px 12px", borderRadius: 12, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none" },
   button: { marginTop: 8, padding: "10px 12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #3b82f6, #0ea5e9, #22c55e)", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" },
-  header: { padding: "16px 20px", borderBottom: "1px solid #1f2937", display: "flex", justifyContent: "space-between", alignItems: "center", backdropFilter: "blur(12px)", background: "rgba(2,6,23,0.85)", flexShrink: 0 },
+  header: { padding: "10px 12px", borderBottom: "1px solid #1f2937", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8, backdropFilter: "blur(12px)", background: "rgba(2,6,23,0.85)", flexShrink: 0 },
   brandRow: { display: "flex", alignItems: "center", gap: 8 },
-  headerControls: { display: "flex", alignItems: "center", gap: 16 },
+  headerControls: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
   selectGroup: { display: "flex", flexDirection: "column", gap: 6 },
   label: { fontSize: 11, color: "#9aa4b2" },
-  flagSelect: { display: "flex", flexWrap: "wrap", gap: 6, maxWidth: 260 },
-  flagBtn: { display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", borderRadius: 999, border: "1px solid #2b3442", background: "#020617", color: "#e8edf2", fontSize: 11, cursor: "pointer" },
+  flagSelect: { display: "flex", flexWrap: "wrap", gap: 4, maxWidth: 220 },
+  flagBtn: { display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 999, border: "1px solid #2b3442", background: "#020617", color: "#e8edf2", fontSize: 10, cursor: "pointer" },
   flagIcon: { fontSize: 14 },
   flagLabel: { fontSize: 11 },
   logoutBtn: { padding: "8px 10px", borderRadius: 999, border: "1px solid #374151", background: "#020617", color: "#e8edf2", fontSize: 12, cursor: "pointer" },
-  main: { flex: 1, display: "flex", flexDirection: "column", padding: "14px 20px 18px", gap: 12, overflow: "hidden" },
+  main: { flex: 1, display: "flex", flexDirection: "column", padding: "10px 12px 12px", gap: 10, overflow: "hidden" },
   chatWrapper: { flex: 1, borderRadius: 20, border: "1px solid #1f2937", background: "radial-gradient(circle at top left, #0f172a 0, #020617 55%, #000 100%)", padding: 12, boxShadow: "0 18px 60px rgba(0,0,0,0.7)", overflow: "hidden" },
   chat: { height: "100%", borderRadius: 16, background: "linear-gradient(145deg, rgba(15,23,42,0.96), rgba(17,24,39,0.98))", padding: 12, overflowY: "auto", fontSize: 13, display: "flex", flexDirection: "column", gap: 8 },
   userMessage: { alignSelf: "flex-end", background: "linear-gradient(135deg, #3b82f6, #0ea5e9)", color: "#fff", padding: "8px 10px", borderRadius: 14, maxWidth: "80%", boxShadow: "0 10px 30px rgba(59,130,246,0.5)" },
@@ -525,7 +542,7 @@ const styles = {
   loadingRow: { display: "flex", gap: 4, marginTop: 6, marginLeft: 4 },
   dot: { width: 6, height: 6, borderRadius: 999, background: "#9aa4b2", animation: "pulse 1s infinite ease-in-out" },
   composer: { display: "flex", gap: 10, alignItems: "center" },
-  composerInput: { flex: 1, padding: "10px 14px", borderRadius: 999, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none" },
+  composerInput: { flex: 1, padding: "10px 14px", borderRadius: 16, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none", fontFamily: "inherit", lineHeight: 1.5 },
   sendBtn: { padding: "10px 18px", borderRadius: 999, border: "none", background: "linear-gradient(135deg, #3b82f6, #0ea5e9)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" },
 };
 
