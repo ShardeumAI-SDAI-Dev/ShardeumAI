@@ -28,6 +28,14 @@ const MODEL_LANGUAGES = [
   { code: "ar", label: "العربية", flag: "🇸🇦" },
 ];
 
+const AI_MODES = [
+  { id: "general", label: "🌐 General", prompt: "You are ShardeumAI (SDAI), a helpful bilingual AI assistant (Persian/English). Reply in the same language the user writes in. Be friendly, accurate, and helpful." },
+  { id: "crypto", label: "₿ Crypto", prompt: "You are ShardeumAI (SDAI), a crypto and blockchain expert assistant. You specialize in Shardeum, Ethereum, Bitcoin, DeFi, NFTs, Web3, tokenomics, and market analysis. Reply in the same language the user writes in. Give accurate, detailed crypto information." },
+  { id: "shardeum", label: "⬡ Shardeum", prompt: "You are ShardeumAI (SDAI), a specialized Shardeum blockchain assistant. You have deep knowledge of Shardeum's architecture, SHM token, EVM compatibility, dynamic state sharding, validators, and ecosystem. Reply in the same language the user writes in." },
+  { id: "defi", label: "💰 DeFi", prompt: "You are ShardeumAI (SDAI), a DeFi (Decentralized Finance) expert. You specialize in liquidity pools, yield farming, DEXs, lending protocols, staking, and DeFi strategies. Reply in the same language the user writes in." },
+  { id: "web3", label: "🔗 Web3", prompt: "You are ShardeumAI (SDAI), a Web3 and smart contract expert. You specialize in Solidity, dApps, MetaMask, wallets, NFTs, DAOs, and decentralized technologies. Reply in the same language the user writes in." },
+];
+
 const translations = {
   fa: {
     title: "ShardeumAI", subtitle: "دستیار چندزبانه مبتنی بر Groq و Supabase",
@@ -230,6 +238,10 @@ function App() {
   const [mountAnim, setMountAnim] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [aiMode, setAiMode] = useState("general");
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [sharedChat, setSharedChat] = useState(null);
   const [profile, setProfile] = useState({ display_name: "", bio: "", avatar_color: "#3b82f6" });
   const [profileLoading, setProfileLoading] = useState(false);
   const chatRef = useRef(null);
@@ -245,6 +257,9 @@ function App() {
     const detectLang = navigator.language?.slice(0, 2);
     const found = UI_LANGUAGES.find((l) => l.code === detectLang);
     if (found) setUiLang(found.code);
+    const params = new URLSearchParams(window.location.search);
+    const shareId = params.get("share");
+    if (shareId) { loadSharedChat(shareId); setShowWelcome(false); }
   }, []);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -274,6 +289,30 @@ function App() {
     if (!session) return;
     await supabase.from("chat_history").delete().eq("user_id", session.user.id);
     setMessages([]);
+  }
+
+  async function shareChat() {
+    if (!session || messages.length === 0) return;
+    setShareLoading(true);
+    setShareUrl("");
+    try {
+      const { data, error } = await supabase
+        .from("shared_chats")
+        .insert({ user_id: session.user.id, messages: messages })
+        .select("id")
+        .single();
+      if (!error && data) {
+        const url = `${window.location.origin}${window.location.pathname}?share=${data.id}`;
+        setShareUrl(url);
+        navigator.clipboard?.writeText(url).catch(() => {});
+      }
+    } catch {}
+    setShareLoading(false);
+  }
+
+  async function loadSharedChat(shareId) {
+    const { data } = await supabase.from("shared_chats").select("messages").eq("id", shareId).single();
+    if (data) setSharedChat(data.messages);
   }
 
   async function loadProfile(userId) {
@@ -322,10 +361,11 @@ function App() {
     setInput("");
     setChatLoading(true);
     try {
+      const currentMode = AI_MODES.find(m => m.id === aiMode);
       const response = await fetch(EDGE_FUNCTION_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
-        body: JSON.stringify({ messages: newMessages, language: modelLang }),
+        body: JSON.stringify({ messages: newMessages, language: modelLang, system_prompt: currentMode?.prompt }),
       });
       const data = await response.json();
       const reply = data.reply || "No response";
@@ -339,6 +379,34 @@ function App() {
   }
 
   if (showWelcome) return <WelcomeScreen onStart={() => setShowWelcome(false)} uiLang={uiLang} setUiLang={setUiLang} />;
+
+  // Shared chat view
+  if (sharedChat) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#020617", color: "#e8edf2", fontFamily: "system-ui, sans-serif", padding: 20 }}>
+        <div style={{ maxWidth: 600, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "radial-gradient(circle at 30% 0%, #3b82f6, #22c55e)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 16 }}>S</div>
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 16 }}>ShardeumAI</div>
+              <div style={{ fontSize: 12, color: "#9aa4b2" }}>Shared conversation</div>
+            </div>
+            <button onClick={() => { setSharedChat(null); window.history.replaceState({}, "", window.location.pathname); }}
+              style={{ marginLeft: "auto", padding: "6px 14px", borderRadius: 999, border: "1px solid #1f2937", background: "#020617", color: "#9aa4b2", fontSize: 12, cursor: "pointer" }}>
+              Start Chat →
+            </button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {sharedChat.map((msg, i) => (
+              <div key={i} style={{ alignSelf: msg.role === "user" ? "flex-end" : "flex-start", background: msg.role === "user" ? "linear-gradient(135deg, #3b82f6, #0ea5e9)" : "#0b1120", color: "#fff", padding: "10px 14px", borderRadius: 14, maxWidth: "80%", fontSize: 13, border: msg.role === "assistant" ? "1px solid #1f2937" : "none" }}>
+                {msg.content}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!session && showSignup) {
     return (
@@ -437,6 +505,15 @@ function App() {
       <main style={styles.main}>
         {activeTab === "chat" ? (
           <>
+            {/* AI Mode selector */}
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {AI_MODES.map(mode => (
+                <button key={mode.id} onClick={() => setAiMode(mode.id)}
+                  style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${aiMode === mode.id ? "#3b82f6" : "#1f2937"}`, background: aiMode === mode.id ? "#1e3a5f" : "#020617", color: aiMode === mode.id ? "#60a5fa" : "#9aa4b2", fontSize: 11, cursor: "pointer", fontWeight: aiMode === mode.id ? 600 : 400 }}>
+                  {mode.label}
+                </button>
+              ))}
+            </div>
             <div style={styles.chatWrapper}>
               <div style={styles.chat} ref={chatRef}>
                 {messages.map((msg, idx) => (
@@ -450,6 +527,20 @@ function App() {
                   </div>
                 )}
               </div>
+            </div>
+            {/* Share */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              {messages.length > 0 && (
+                <button onClick={shareChat} disabled={shareLoading}
+                  style={{ padding: "6px 14px", borderRadius: 999, border: "1px solid #1f2937", background: "#020617", color: "#9aa4b2", fontSize: 11, cursor: "pointer" }}>
+                  {shareLoading ? "..." : "🔗 Share Chat"}
+                </button>
+              )}
+              {shareUrl && (
+                <div style={{ flex: 1, fontSize: 11, color: "#22c55e", background: "#052e16", padding: "6px 12px", borderRadius: 8, wordBreak: "break-all" }}>
+                  ✓ Copied! {shareUrl}
+                </div>
+              )}
             </div>
             <form onSubmit={handleSend} style={styles.composer}>
               <textarea
