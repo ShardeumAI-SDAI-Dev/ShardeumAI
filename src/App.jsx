@@ -239,6 +239,8 @@ function App() {
   const [showSignup, setShowSignup] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [aiMode, setAiMode] = useState("general");
+  const [webSearch, setWebSearch] = useState(false);
+  const [searchProvider, setSearchProvider] = useState("tavily");
   const [shareLoading, setShareLoading] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [sharedChat, setSharedChat] = useState(null);
@@ -375,7 +377,13 @@ function App() {
       const response = await fetch(EDGE_FUNCTION_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
-        body: JSON.stringify({ messages: newMessages, language: modelLang, system_prompt: currentMode?.prompt }),
+        body: JSON.stringify({
+          messages: newMessages,
+          language: modelLang,
+          system_prompt: currentMode?.prompt,
+          web_search: webSearch,
+          search_provider: searchProvider,
+        }),
       });
       const data = await response.json();
       const reply = data.reply || "No response";
@@ -561,6 +569,23 @@ function App() {
                   {mode.label}
                 </button>
               ))}
+            </div>
+            {/* Web Search Toggle */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              <button onClick={() => setWebSearch(!webSearch)}
+                style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, border: `1px solid ${webSearch ? "#22c55e" : "#1f2937"}`, background: webSearch ? "#052e16" : "#020617", color: webSearch ? "#22c55e" : "#9aa4b2", fontSize: 11, cursor: "pointer", fontWeight: webSearch ? 600 : 400 }}>
+                🔍 {webSearch ? "Web Search ON" : "Web Search OFF"}
+              </button>
+              {webSearch && (
+                <div style={{ display: "flex", gap: 6 }}>
+                  {["tavily", "exa", "firecrawl"].map(p => (
+                    <button key={p} onClick={() => setSearchProvider(p)}
+                      style={{ padding: "4px 10px", borderRadius: 999, border: `1px solid ${searchProvider === p ? "#22c55e" : "#1f2937"}`, background: searchProvider === p ? "#052e16" : "#020617", color: searchProvider === p ? "#22c55e" : "#9aa4b2", fontSize: 10, cursor: "pointer" }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div style={styles.chatWrapper}>
               <div style={styles.chat} ref={chatRef}>
