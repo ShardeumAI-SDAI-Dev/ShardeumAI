@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co";
+const ADMIN_EMAIL = "farhad1984crypto@gmail.com";
 const SUPABASE_KEY = "sb_publishable_mxVEWWeumrPEedmA4yD0cg_ZMPgwWYU";
 const EDGE_FUNCTION_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co/functions/v1/chat";
 
@@ -241,6 +242,9 @@ function App() {
   const [aiMode, setAiMode] = useState("general");
   const [webSearch, setWebSearch] = useState(false);
   const [searchProvider, setSearchProvider] = useState("tavily");
+  const [adminUsers, setAdminUsers] = useState([]);
+  const [adminSettings, setAdminSettings] = useState({});
+  const [adminLoading, setAdminLoading] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [sharedChat, setSharedChat] = useState(null);
@@ -291,6 +295,25 @@ function App() {
     if (!session) return;
     await supabase.from("chat_history").delete().eq("user_id", session.user.id);
     setMessages([]);
+  }
+
+  async function loadAdminData() {
+    if (session?.user?.email !== ADMIN_EMAIL) return;
+    setAdminLoading(true);
+    const { data: users } = await supabase.from("admin_user_stats").select("*").order("created_at", { ascending: false });
+    if (users) setAdminUsers(users);
+    const { data: settings } = await supabase.from("system_settings").select("*");
+    if (settings) {
+      const obj = {};
+      settings.forEach(s => { obj[s.key] = s.value; });
+      setAdminSettings(obj);
+    }
+    setAdminLoading(false);
+  }
+
+  async function updateSetting(key, value) {
+    await supabase.from("system_settings").upsert({ key, value, updated_at: new Date().toISOString() });
+    setAdminSettings(prev => ({ ...prev, [key]: value }));
   }
 
   async function shareChat() {
@@ -550,10 +573,10 @@ function App() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 2, padding: "6px 12px 0", background: "rgba(2,6,23,0.85)", borderBottom: "1px solid #1f2937", overflowX: "auto" }}>
-        {["chat", "image", "profile"].map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
-            style={{ padding: "8px 20px", borderRadius: "8px 8px 0 0", border: "none", background: activeTab === tab ? "#0f172a" : "transparent", color: activeTab === tab ? "#3b82f6" : "#9aa4b2", fontSize: 13, fontWeight: activeTab === tab ? 600 : 400, cursor: "pointer", borderBottom: activeTab === tab ? "2px solid #3b82f6" : "2px solid transparent" }}>
-            {tab === "chat" ? `💬 ${t.chatTab}` : tab === "image" ? `🎨 ${t.imageTab}` : `👤 Profile`}
+        {["chat", "image", "profile", ...(session?.user?.email === ADMIN_EMAIL ? ["admin"] : [])].map((tab) => (
+          <button key={tab} onClick={() => { setActiveTab(tab); if (tab === "admin") loadAdminData(); }}
+            style={{ padding: "8px 20px", borderRadius: "8px 8px 0 0", border: "none", background: activeTab === tab ? "#0f172a" : "transparent", color: activeTab === tab ? (tab === "admin" ? "#f59e0b" : "#3b82f6") : "#9aa4b2", fontSize: 13, fontWeight: activeTab === tab ? 600 : 400, cursor: "pointer", borderBottom: activeTab === tab ? `2px solid ${tab === "admin" ? "#f59e0b" : "#3b82f6"}` : "2px solid transparent" }}>
+            {tab === "chat" ? `💬 ${t.chatTab}` : tab === "image" ? `🎨 ${t.imageTab}` : tab === "profile" ? `👤 Profile` : `⚙️ Admin`}
           </button>
         ))}
       </div>
