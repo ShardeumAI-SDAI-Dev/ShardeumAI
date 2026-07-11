@@ -887,8 +887,8 @@ blockquote: ({children}) => <blockquote style={{ borderInlineStart: "3px solid #
                   </button>
                 ) : (
                   <button onClick={sendTestNotification}
-                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#052e16", color: "#22c55e", fontSize: 12, cursor: "pointer", border: "1px solid #22c55e" }}>
-                    🧪 Send Test Notification
+                 style={{ padding: "8px 16px", borderRadius: 8, background: "#052e16", color: "#22c55e", fontSize: 12, cursor: "pointer", border: "1px solid #22c55e" }}>
+🧪 Send Test Notification
                   </button>
                 )}
               </div>
