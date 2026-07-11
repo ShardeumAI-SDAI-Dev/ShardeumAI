@@ -247,6 +247,9 @@ function App() {
   const [adminLoading, setAdminLoading] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [conversations, setConversations] = useState([]);
+  const [activeConvoId, setActiveConvoId] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [sharedChat, setSharedChat] = useState(null);
@@ -317,17 +320,52 @@ function App() {
   }, []);
 
   async function loadHistory(userId) {
-    const { data, error } = await supabase
-      .from("chat_history")
-      .select("role, content")
+    // Load conversations list
+    const { data: convos } = await supabase
+      .from("conversations")
+      .select("id, title, created_at")
       .eq("user_id", userId)
-      .order("created_at", { ascending: true })
-      .limit(100);
-    if (!error && data && data.length > 0) setMessages(data);
+      .order("created_at", { ascending: false })
+      .limit(30);
+    if (convos) setConversations(convos);
+    // Load latest conversation messages
+    if (convos && convos.length > 0) {
+      setActiveConvoId(convos[0].id);
+      loadConversationMessages(convos[0].id);
+    }
   }
 
-  async function saveMessage(userId, role, content) {
-    await supabase.from("chat_history").insert({ user_id: userId, role, content });
+  async function loadConversationMessages(convoId) {
+    const { data } = await supabase
+      .from("chat_history")
+      .select("role, content")
+      .eq("conversation_id", convoId)
+      .order("created_at", { ascending: true });
+    setMessages(data || []);
+    setActiveConvoId(convoId);
+    setShowSidebar(false);
+  }
+
+  async function startNewConversation() {
+    setMessages([]);
+    setActiveConvoId(null);
+    setShowSidebar(false);
+    setShareUrl("");
+  }
+
+  async function deleteConversation(convoId) {
+    await supabase.from("conversations").delete().eq("id", convoId);
+    setConversations(prev => prev.filter(c => c.id !== convoId));
+    if (activeConvoId === convoId) {
+      setMessages([]);
+      setActiveConvoId(null);
+    }
+  }
+
+  async function saveMessage(userId, role, msgContent, convoId) {
+    await supabase.from("chat_history").insert({ 
+      user_id: userId, role, content: msgContent, conversation_id: convoId 
+    });
   }
 
   async function clearHistory() {
@@ -450,8 +488,25 @@ function App() {
       const data = await response.json();
       const reply = data.reply || "No response";
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-      await saveMessage(session.user.id, "user", userMsg.content);
-      await saveMessage(session.user.id, "assistant", reply);
+      
+      // Create new conversation if needed
+      let convoId = activeConvoId;
+      if (!convoId) {
+        const title = userMsg.content.slice(0, 50) || "New Chat";
+        const { data: newConvo } = await supabase
+          .from("conversations")
+          .insert({ user_id: session.user.id, title })
+          .select()
+          .single();
+        if (newConvo) {
+          convoId = newConvo.id;
+          setActiveConvoId(convoId);
+          setConversations(prev => [newConvo, ...prev]);
+        }
+      }
+      
+      await saveMessage(session.user.id, "user", userMsg.content, convoId);
+      await saveMessage(session.user.id, "assistant", reply, convoId);
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: "Error connecting to AI." }]);
     }
