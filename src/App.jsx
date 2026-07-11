@@ -735,9 +735,7 @@ function App() {
                             ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
                             li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
                             code: ({inline, className, children}) => {
-                              const codeStr = String(children).replace(/
-$/, "");
-                              if (inline) return (
+                             const codestr = String(children).replace(/^\s+|\s+$/g, "");
                                 <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
                                   {children}
                                 </code>
