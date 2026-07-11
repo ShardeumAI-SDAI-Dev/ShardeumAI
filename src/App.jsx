@@ -245,6 +245,8 @@ function App() {
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminSettings, setAdminSettings] = useState({});
   const [adminLoading, setAdminLoading] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [shareLoading, setShareLoading] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [sharedChat, setSharedChat] = useState(null);
@@ -259,6 +261,43 @@ function App() {
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, chatLoading]);
+  useEffect(() => {
+    // Online/offline detection
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    // Check push permission
+    if ("Notification" in window) {
+      setPushEnabled(Notification.permission === "granted");
+    }
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  async function requestPushPermission() {
+    if (!("Notification" in window)) return alert("Push notifications not supported.");
+    const permission = await Notification.requestPermission();
+    setPushEnabled(permission === "granted");
+    if (permission === "granted") {
+      new Notification("ShardeumAI", {
+        body: "Push notifications enabled! ✓",
+        icon: "/icons/icon-192.png",
+      });
+    }
+  }
+
+  function sendTestNotification() {
+    if (Notification.permission === "granted") {
+      new Notification("ShardeumAI Test", {
+        body: "This is a test notification from ShardeumAI! 🤖",
+        icon: "/icons/icon-192.png",
+      });
+    }
+  }
+
   useEffect(() => {
     const detectLang = navigator.language?.slice(0, 2);
     const found = UI_LANGUAGES.find((l) => l.code === detectLang);
@@ -573,10 +612,10 @@ function App() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 2, padding: "6px 12px 0", background: "rgba(2,6,23,0.85)", borderBottom: "1px solid #1f2937", overflowX: "auto" }}>
-        {["chat", "image", "profile", ...(session?.user?.email === ADMIN_EMAIL ? ["admin"] : [])].map((tab) => (
+        {["chat", "image", "profile", "api", ...(session?.user?.email === ADMIN_EMAIL ? ["admin"] : [])].map((tab) => (
           <button key={tab} onClick={() => { setActiveTab(tab); if (tab === "admin") loadAdminData(); }}
-            style={{ padding: "8px 20px", borderRadius: "8px 8px 0 0", border: "none", background: activeTab === tab ? "#0f172a" : "transparent", color: activeTab === tab ? (tab === "admin" ? "#f59e0b" : "#3b82f6") : "#9aa4b2", fontSize: 13, fontWeight: activeTab === tab ? 600 : 400, cursor: "pointer", borderBottom: activeTab === tab ? `2px solid ${tab === "admin" ? "#f59e0b" : "#3b82f6"}` : "2px solid transparent" }}>
-            {tab === "chat" ? `💬 ${t.chatTab}` : tab === "image" ? `🎨 ${t.imageTab}` : tab === "profile" ? `👤 Profile` : `⚙️ Admin`}
+            style={{ padding: "8px 16px", borderRadius: "8px 8px 0 0", border: "none", background: activeTab === tab ? "#0f172a" : "transparent", color: activeTab === tab ? (tab === "admin" ? "#f59e0b" : tab === "api" ? "#a855f7" : "#3b82f6") : "#9aa4b2", fontSize: 12, fontWeight: activeTab === tab ? 600 : 400, cursor: "pointer", borderBottom: activeTab === tab ? `2px solid ${tab === "admin" ? "#f59e0b" : tab === "api" ? "#a855f7" : "#3b82f6"}` : "2px solid transparent" }}>
+            {tab === "chat" ? `💬 ${t.chatTab}` : tab === "image" ? `🎨 ${t.imageTab}` : tab === "profile" ? `👤 Profile` : tab === "api" ? `🔌 API` : `⚙️ Admin`}
           </button>
         ))}
       </div>
@@ -710,6 +749,78 @@ function App() {
               <div style={{ fontSize: 12, color: "#9aa4b2", marginBottom: 10 }}>Account Info</div>
               <div style={{ fontSize: 13, color: "#e8edf2" }}>📧 {session?.user?.email}</div>
               <div style={{ fontSize: 12, color: "#9aa4b2", marginTop: 6 }}>🗓 Member since {new Date(session?.user?.created_at).toLocaleDateString()}</div>
+            </div>
+          </div>
+
+        ) : activeTab === "api" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", padding: "4px 0", maxWidth: 640, margin: "0 auto", width: "100%" }}>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#a855f7" }}>🔌 API Documentation</h2>
+
+            {/* Push Notifications */}
+            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a855f7", marginBottom: 12 }}>🔔 Push Notifications</div>
+              <div style={{ fontSize: 12, color: "#9aa4b2", marginBottom: 12 }}>Status: {pushEnabled ? <span style={{ color: "#22c55e" }}>✓ Enabled</span> : <span style={{ color: "#ef4444" }}>✗ Disabled</span>}</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {!pushEnabled ? (
+                  <button onClick={requestPushPermission}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#7c3aed", color: "#fff", fontSize: 12, cursor: "pointer" }}>
+                    🔔 Enable Notifications
+                  </button>
+                ) : (
+                  <button onClick={sendTestNotification}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#052e16", color: "#22c55e", fontSize: 12, cursor: "pointer", border: "1px solid #22c55e" }}>
+                    🧪 Send Test Notification
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Offline Status */}
+            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a855f7", marginBottom: 12 }}>📵 Offline Mode</div>
+              <div style={{ fontSize: 12, color: "#9aa4b2", lineHeight: 1.7 }}>
+                Status: {isOffline ? <span style={{ color: "#ef4444" }}>✗ Offline</span> : <span style={{ color: "#22c55e" }}>✓ Online</span>}<br/>
+                Cached pages will load without internet. API calls require connection.
+              </div>
+            </div>
+
+            {/* API Docs */}
+            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a855f7", marginBottom: 12 }}>📡 Chat API</div>
+              <div style={{ fontSize: 12, color: "#9aa4b2", marginBottom: 8 }}>Endpoint:</div>
+              <code style={{ display: "block", background: "#020617", padding: "10px 12px", borderRadius: 8, fontSize: 11, color: "#22c55e", wordBreak: "break-all", marginBottom: 12 }}>
+                POST https://zzolokpbjkrvkyaubcoq.supabase.co/functions/v1/chat
+              </code>
+              <div style={{ fontSize: 12, color: "#9aa4b2", marginBottom: 8 }}>Headers:</div>
+              <pre style={{ background: "#020617", padding: "10px 12px", borderRadius: 8, fontSize: 11, color: "#60a5fa", overflow: "auto", marginBottom: 12 }}>{`Content-Type: application/json
+Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
+              <div style={{ fontSize: 12, color: "#9aa4b2", marginBottom: 8 }}>Request Body:</div>
+              <pre style={{ background: "#020617", padding: "10px 12px", borderRadius: 8, fontSize: 11, color: "#60a5fa", overflow: "auto", marginBottom: 12 }}>{`{
+  "messages": [
+    {"role": "user", "content": "Hello"}
+  ],
+  "language": "auto",
+  "web_search": false,
+  "search_provider": "tavily"
+}`}</pre>
+              <div style={{ fontSize: 12, color: "#9aa4b2", marginBottom: 8 }}>Response:</div>
+              <pre style={{ background: "#020617", padding: "10px 12px", borderRadius: 8, fontSize: 11, color: "#22c55e", overflow: "auto" }}>{`{
+  "reply": "Hello! How can I help you?",
+  "web_searched": false
+}`}</pre>
+            </div>
+
+            {/* AI Modes */}
+            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a855f7", marginBottom: 12 }}>🤖 Available AI Modes</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {AI_MODES.map(mode => (
+                  <div key={mode.id} style={{ padding: "8px 12px", background: "#020617", borderRadius: 8, border: "1px solid #1f2937" }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: "#e8edf2" }}>{mode.label}</div>
+                    <code style={{ fontSize: 10, color: "#9aa4b2" }}>system_prompt: "{mode.prompt.slice(0, 60)}..."</code>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
