@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+// Load Vazirmatn font
+if (typeof document !== "undefined" && !document.getElementById("vazirmatn-font")) {
+  const link = document.createElement("link");
+  link.id = "vazirmatn-font";
+  link.rel = "stylesheet";
+  link.href = "https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css";
+  document.head.appendChild(link);
+}
 
 const SUPABASE_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co";
 const ADMIN_EMAIL = "farhad1984crypto@gmail.com";
@@ -707,8 +718,61 @@ function App() {
             <div style={styles.chatWrapper}>
               <div style={styles.chat} ref={chatRef}>
                 {messages.map((msg, idx) => (
-                  <div key={idx} style={msg.role === "user" ? styles.userMessage : styles.assistantMessage}>
-                    {msg.content}
+                  <div key={idx} style={{
+                    alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                    maxWidth: "85%",
+                    width: msg.role === "assistant" ? "100%" : "auto",
+                  }}>
+                    {msg.role === "user" ? (
+                      <div style={styles.userMessage}>{msg.content}</div>
+                    ) : (
+                      <div style={styles.assistantMessage} dir="auto">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
+                            ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
+                            ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
+                            li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
+                            code: ({inline, className, children}) => {
+                              const codeStr = String(children).replace(/
+$/, "");
+                              if (inline) return (
+                                <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
+                                  {children}
+                                </code>
+                              );
+                              return (
+                                <div style={{ position: "relative", margin: "10px 0", direction: "ltr" }}>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0f172a", padding: "6px 12px", borderRadius: "8px 8px 0 0", borderBottom: "1px solid #1f2937" }}>
+                                    <span style={{ fontSize: 11, color: "#9aa4b2" }}>{className?.replace("language-", "") || "code"}</span>
+                                    <button onClick={() => navigator.clipboard?.writeText(codeStr)}
+                                      style={{ background: "none", border: "1px solid #374151", borderRadius: 5, color: "#9aa4b2", cursor: "pointer", fontSize: 10, padding: "2px 8px" }}>
+                                      Copy
+                                    </button>
+                                  </div>
+                                  <pre style={{ margin: 0, padding: "12px", background: "#020617", borderRadius: "0 0 8px 8px", overflow: "auto", fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", lineHeight: 1.6, color: "#e2e8f0" }}>
+                                    <code>{codeStr}</code>
+                                  </pre>
+                                </div>
+                              );
+                            },
+                            a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>{children}</a>,
+                            blockquote: ({children}) => <blockquote style={{ borderInlineStart: "3px solid #3b82f6", margin: "8px 0", paddingInlineStart: 12, color: "#9aa4b2", fontStyle: "italic" }}>{children}</blockquote>,
+                            table: ({children}) => <div style={{ overflowX: "auto", margin: "10px 0" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>{children}</table></div>,
+                            th: ({children}) => <th style={{ border: "1px solid #374151", padding: "8px 12px", background: "#0f172a", textAlign: "right", color: "#e8edf2" }}>{children}</th>,
+                            td: ({children}) => <td style={{ border: "1px solid #1f2937", padding: "8px 12px", color: "#e8edf2" }}>{children}</td>,
+                            h1: ({children}) => <h1 style={{ fontSize: 20, fontWeight: 700, margin: "12px 0 8px", color: "#e8edf2" }}>{children}</h1>,
+                            h2: ({children}) => <h2 style={{ fontSize: 17, fontWeight: 700, margin: "10px 0 6px", color: "#e8edf2" }}>{children}</h2>,
+                            h3: ({children}) => <h3 style={{ fontSize: 15, fontWeight: 600, margin: "8px 0 4px", color: "#e8edf2" }}>{children}</h3>,
+                            strong: ({children}) => <strong style={{ fontWeight: 700, color: "#f1f5f9" }}>{children}</strong>,
+                            hr: () => <hr style={{ border: "none", borderTop: "1px solid #1f2937", margin: "12px 0" }} />,
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {chatLoading && (
@@ -977,9 +1041,9 @@ const styles = {
   logoutBtn: { padding: "8px 10px", borderRadius: 999, border: "1px solid #374151", background: "#020617", color: "#e8edf2", fontSize: 12, cursor: "pointer" },
   main: { flex: 1, display: "flex", flexDirection: "column", padding: "10px 12px 12px", gap: 10, overflow: "hidden" },
   chatWrapper: { flex: 1, borderRadius: 20, border: "1px solid #1f2937", background: "radial-gradient(circle at top left, #0f172a 0, #020617 55%, #000 100%)", padding: 12, boxShadow: "0 18px 60px rgba(0,0,0,0.7)", overflow: "hidden" },
-  chat: { height: "100%", borderRadius: 16, background: "linear-gradient(145deg, rgba(15,23,42,0.96), rgba(17,24,39,0.98))", padding: 12, overflowY: "auto", fontSize: 13, display: "flex", flexDirection: "column", gap: 8 },
-  userMessage: { alignSelf: "flex-end", background: "linear-gradient(135deg, #3b82f6, #0ea5e9)", color: "#fff", padding: "8px 10px", borderRadius: 14, maxWidth: "80%", boxShadow: "0 10px 30px rgba(59,130,246,0.5)" },
-  assistantMessage: { alignSelf: "flex-start", background: "#0b1120", color: "#e5e7eb", padding: "8px 10px", borderRadius: 14, maxWidth: "80%", border: "1px solid #1f2937" },
+  chat: { height: "100%", borderRadius: 16, background: "linear-gradient(145deg, rgba(15,23,42,0.96), rgba(17,24,39,0.98))", padding: "16px 12px", overflowY: "auto", fontSize: 14, display: "flex", flexDirection: "column", gap: 16, fontFamily: "Vazirmatn, Inter, system-ui, sans-serif", lineHeight: 1.8 },
+  userMessage: { background: "linear-gradient(135deg, #3b82f6, #0ea5e9)", color: "#fff", padding: "10px 14px", borderRadius: 14, boxShadow: "0 4px 20px rgba(59,130,246,0.4)", lineHeight: 1.7, fontSize: 14 },
+  assistantMessage: { background: "#0b1120", color: "#e2e8f0", padding: "12px 16px", borderRadius: 14, border: "1px solid #1f2937", lineHeight: 1.8, fontSize: 14, width: "100%" },
   loadingRow: { display: "flex", gap: 4, marginTop: 6, marginLeft: 4 },
   dot: { width: 6, height: 6, borderRadius: 999, background: "#9aa4b2", animation: "pulse 1s infinite ease-in-out" },
   composer: { display: "flex", gap: 10, alignItems: "center" },
