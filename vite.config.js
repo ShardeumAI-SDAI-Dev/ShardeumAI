@@ -1,5 +1,5 @@
 import { defineConfig } from "vite";
-import ReactMarkdown from 'react-markdown';
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
