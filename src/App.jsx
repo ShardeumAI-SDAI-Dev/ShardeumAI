@@ -732,27 +732,34 @@ function App() {
                           components={{
                             p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
                             ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
-                            ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
-                            li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
-                            code: ({inline, className, children}) => {
-                             const codestr = String(children).replace(/^\s+|\s+$/g, "");
-                                <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
-                                  {children}
-                                </code>
-                              );
-                              return (
-                                <div style={{ position: "relative", margin: "10px 0", direction: "ltr" }}>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0f172a", padding: "6px 12px", borderRadius: "8px 8px 0 0", borderBottom: "1px solid #1f2937" }}>
-                                    <span style={{ fontSize: 11, color: "#9aa4b2" }}>{className?.replace("language-", "") || "code"}</span>
-                                    <button onClick={() => navigator.clipboard?.writeText(codeStr)}
-                                      style={{ background: "none", border: "1px solid #374151", borderRadius: 5, color: "#9aa4b2", cursor: "pointer", fontSize: 10, padding: "2px 8px" }}>
-                                      Copy
-                                    </button>
-                                  </div>
-                                  <pre style={{ margin: 0, padding: "12px", background: "#020617", borderRadius: "0 0 8px 8px", overflow: "auto", fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", lineHeight: 1.6, color: "#e2e8f0" }}>
-                                    <code>{codeStr}</code>
-                                  </pre>
-                                </div>
+               ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
+li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
+code: ({inline, className, children}) => {
+  const codeStr = String(children).replace(/^\s+|\s+$/g, "");
+  
+  if (inline) {
+    return (
+      <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
+        {children}
+      </code>
+    );
+  }
+
+  return (
+    <div style={{ position: "relative", margin: "10px 0", direction: "ltr" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0f172a", padding: "6px 12px", borderRadius: "8px 8px 0 0", borderBottom: "1px solid #1f2937" }}>
+        <span style={{ fontSize: 11, color: "#9aa4b2" }}>{className?.replace("language-", "") || "code"}</span>
+        <button onClick={() => navigator.clipboard?.writeText(codeStr)}
+          style={{ background: "none", border: "1px solid #374151", borderRadius: 5, color: "#9aa4b2", cursor: "pointer", fontSize: 10, padding: "2px 8px" }}>
+          Copy
+        </button>
+      </div>
+      <pre style={{ margin: 0, padding: "12px", background: "#020617", borderRadius: "0 0 8px 8px", overflow: "auto", fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", lineHeight: 1.6, color: "#e2e8f0" }}>
+        <code>{codeStr}</code>
+      </pre>
+    </div>
+  );
+}
                               );
                             },
                             a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>{children}</a>,
