@@ -732,7 +732,7 @@ function App() {
                           components={{
                             p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
                             ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
-               ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
+ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
 li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
 code: ({inline, className, children}) => {
   const codeStr = String(children).replace(/^\s+|\s+$/g, "");
@@ -759,9 +759,8 @@ code: ({inline, className, children}) => {
       </pre>
     </div>
   );
-}
-                              );
-                            },
+},
+a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>{children}</a>,
                             a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>{children}</a>,
                             blockquote: ({children}) => <blockquote style={{ borderInlineStart: "3px solid #3b82f6", margin: "8px 0", paddingInlineStart: 12, color: "#9aa4b2", fontStyle: "italic" }}>{children}</blockquote>,
                             table: ({children}) => <div style={{ overflowX: "auto", margin: "10px 0" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>{children}</table></div>,
