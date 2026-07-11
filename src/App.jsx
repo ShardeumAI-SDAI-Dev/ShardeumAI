@@ -662,12 +662,14 @@ function App() {
           </>
         ) : activeTab === "image" ? (
           <ImageGenerator t={t} isRTL={isRTL} />
-        ) : (
-          <div style={{ maxWidth: 480, margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: 20, padding: "20px 0", direction: isRTL ? "rtl" : "ltr" }}>
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "#e8edf2" }}>👤 Profile</h2>
-            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+
+        ) : activeTab === "profile" ? (
+          <div style={{ maxWidth: 480, margin: "0 auto", width: "100%", display: "flex", flexDirection: "column", gap: 16, padding: "16px 0", direction: isRTL ? "rtl" : "ltr", overflowY: "auto" }}>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#e8edf2" }}>👤 Profile</h2>
+            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Avatar preview */}
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div style={{ width: 64, height: 64, borderRadius: "50%", background: profile.avatar_color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, fontWeight: 700, color: "#fff", flexShrink: 0, boxShadow: `0 0 20px ${profile.avatar_color}88` }}>
+                <div style={{ width: 64, height: 64, borderRadius: "50%", background: profile.avatar_color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: "#fff", flexShrink: 0, boxShadow: `0 0 20px ${profile.avatar_color}66` }}>
                   {(profile.display_name || session?.user?.email || "?")[0].toUpperCase()}
                 </div>
                 <div>
@@ -675,38 +677,113 @@ function App() {
                   <div style={{ fontSize: 12, color: "#9aa4b2" }}>{session?.user?.email}</div>
                 </div>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <label style={{ fontSize: 12, color: "#9aa4b2" }}>Display Name</label>
-                <input value={profile.display_name} onChange={(e) => setProfile(p => ({ ...p, display_name: e.target.value }))}
-                  placeholder="Your name..." style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none" }} />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <label style={{ fontSize: 12, color: "#9aa4b2" }}>Bio</label>
-                <textarea value={profile.bio} onChange={(e) => setProfile(p => ({ ...p, bio: e.target.value }))}
-                  placeholder="Tell us about yourself..." rows={3}
-                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none", resize: "vertical" }} />
-              </div>
+              {/* Color picker */}
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <label style={{ fontSize: 12, color: "#9aa4b2" }}>Avatar Color</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {["#3b82f6","#8b5cf6","#ec4899","#22c55e","#f59e0b","#ef4444","#06b6d4","#f97316"].map(color => (
+                  {["#3b82f6","#8b5cf6","#ec4899","#ef4444","#f97316","#eab308","#22c55e","#14b8a6","#06b6d4","#6366f1","#ffffff","#64748b"].map(color => (
                     <div key={color} onClick={() => setProfile(p => ({ ...p, avatar_color: color }))}
                       style={{ width: 32, height: 32, borderRadius: "50%", background: color, cursor: "pointer", border: profile.avatar_color === color ? "3px solid #fff" : "3px solid transparent", boxShadow: profile.avatar_color === color ? `0 0 12px ${color}` : "none", transition: "all 0.15s ease" }} />
                   ))}
                 </div>
               </div>
+              {/* Display Name */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 12, color: "#9aa4b2" }}>Display Name</label>
+                <input value={profile.display_name} onChange={(e) => setProfile(p => ({ ...p, display_name: e.target.value }))}
+                  placeholder="Your name..."
+                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none" }} />
+              </div>
+              {/* Bio */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 12, color: "#9aa4b2" }}>Bio</label>
+                <textarea value={profile.bio} onChange={(e) => setProfile(p => ({ ...p, bio: e.target.value }))}
+                  placeholder="Tell us about yourself..." rows={3}
+                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit" }} />
+              </div>
               <button onClick={saveProfile} disabled={profileLoading}
-                style={{ padding: "10px 0", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #3b82f6, #22c55e)", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-                {profileLoading ? "Saving..." : "Save Profile"}
+                style={{ padding: "11px 0", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${profile.avatar_color}, #22c55e)`, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                {profileLoading ? "Saving..." : "💾 Save Profile"}
               </button>
             </div>
-            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 16, padding: 20 }}>
-              <div style={{ fontSize: 13, color: "#9aa4b2", marginBottom: 12 }}>Account Info</div>
+            <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 16, padding: 16 }}>
+              <div style={{ fontSize: 12, color: "#9aa4b2", marginBottom: 10 }}>Account Info</div>
               <div style={{ fontSize: 13, color: "#e8edf2" }}>📧 {session?.user?.email}</div>
-              <div style={{ fontSize: 12, color: "#9aa4b2", marginTop: 6 }}>Member since {new Date(session?.user?.created_at).toLocaleDateString()}</div>
+              <div style={{ fontSize: 12, color: "#9aa4b2", marginTop: 6 }}>🗓 Member since {new Date(session?.user?.created_at).toLocaleDateString()}</div>
             </div>
           </div>
-        )}
+
+        ) : activeTab === "admin" && session?.user?.email === ADMIN_EMAIL ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, overflowY: "auto", padding: "4px 0" }}>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#f59e0b" }}>⚙️ Admin Dashboard</h2>
+            {adminLoading ? (
+              <div style={{ color: "#9aa4b2", textAlign: "center", padding: 40 }}>Loading...</div>
+            ) : (
+              <>
+                {/* Stats */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                  {[
+                    { label: "Users", value: adminUsers.length, icon: "👥" },
+                    { label: "Messages", value: adminUsers.reduce((a, u) => a + (parseInt(u.total_messages) || 0), 0), icon: "💬" },
+                    { label: "Shared", value: adminUsers.reduce((a, u) => a + (parseInt(u.total_shared_chats) || 0), 0), icon: "🔗" },
+                  ].map(stat => (
+                    <div key={stat.label} style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 12, padding: 14, textAlign: "center" }}>
+                      <div style={{ fontSize: 20, marginBottom: 6 }}>{stat.icon}</div>
+                      <div style={{ fontSize: 20, fontWeight: 700, color: "#f59e0b" }}>{stat.value}</div>
+                      <div style={{ fontSize: 10, color: "#9aa4b2", marginTop: 4 }}>{stat.label}</div>
+                    </div>
+                  ))}
+                </div>
+                {/* System Settings */}
+                <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#f59e0b", marginBottom: 12 }}>🔧 System Settings</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {Object.entries(adminSettings).map(([key, value]) => (
+                      <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                        <span style={{ fontSize: 12, color: "#9aa4b2" }}>{key}</span>
+                        {value === "true" || value === "false" ? (
+                          <button onClick={() => updateSetting(key, value === "true" ? "false" : "true")}
+                            style={{ padding: "4px 12px", borderRadius: 999, border: "none", background: value === "true" ? "#052e16" : "#1f2937", color: value === "true" ? "#22c55e" : "#9aa4b2", fontSize: 11, cursor: "pointer" }}>
+                            {value === "true" ? "ON" : "OFF"}
+                          </button>
+                        ) : (
+                          <input defaultValue={value} onBlur={e => updateSetting(key, e.target.value)}
+                            style={{ background: "#020617", border: "1px solid #1f2937", borderRadius: 6, padding: "4px 8px", color: "#e8edf2", fontSize: 12, width: 100, outline: "none" }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Users */}
+                <div style={{ background: "#0b1120", border: "1px solid #1f2937", borderRadius: 12, padding: 16 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#f59e0b", marginBottom: 12 }}>👥 Users ({adminUsers.length})</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 280, overflowY: "auto" }}>
+                    {adminUsers.map(user => (
+                      <div key={user.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#020617", borderRadius: 8, border: "1px solid #1f2937" }}>
+                        <div style={{ width: 30, height: 30, borderRadius: "50%", background: "linear-gradient(135deg, #3b82f6, #22c55e)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                          {user.email?.[0]?.toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, color: "#e8edf2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.display_name || user.email}</div>
+                          <div style={{ fontSize: 10, color: "#9aa4b2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
+                        </div>
+                        <div style={{ textAlign: "center", flexShrink: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: "#3b82f6" }}>{user.total_messages}</div>
+                          <div style={{ fontSize: 9, color: "#9aa4b2" }}>msgs</div>
+                        </div>
+                        <div style={{ fontSize: 10, color: "#9aa4b2", flexShrink: 0 }}>
+                          {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : "Never"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+        ) : null}
+
       </main>
     </div>
   );
