@@ -3,25 +3,19 @@ import { createClient } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-if (typeof document !== "undefined" && !document.getElementById("hljs-css")) {
-  const link = document.createElement("link");
-  link.id = "hljs-css";
-  link.rel = "stylesheet";
-  link.href = "https://cloudflare.com";
-  document.head.appendChild(link);
 
-  const script = document.createElement("script");
-  script.src = "https://cloudflare.com";
-  script.onload = () => { if (window.hljs) window.hljs.highlightAll(); };
-  document.head.appendChild(script);
-}
 
-if (typeof document !== "undefined" && !document.getElementById("vazirmatn-font")) {
-  const link = document.createElement("link");
-  link.id = "vazirmatn-font";
-  link.rel = "stylesheet";
-  link.href = "https://jsdelivr.net";
-  document.head.appendChild(link);
+// Load fonts
+if (typeof document !== "undefined" && !document.getElementById("app-fonts")) {
+  const style = document.createElement("style");
+  style.id = "app-fonts";
+  style.textContent = `
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
+    * { font-family: 'Vazirmatn', 'Inter', system-ui, sans-serif; }
+    code, pre, .code-block { font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important; }
+  `;
+  document.head.appendChild(style);
 }
 
 const SUPABASE_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co";
@@ -248,22 +242,67 @@ function ImageGenerator({ t, isRTL }) {
   );
 }
 
+// ── Syntax highlighting colors ──
+const TOKEN_COLORS = {
+  keyword: "#c678dd",
+  string: "#98c379",
+  comment: "#5c6370",
+  number: "#d19a66",
+  function: "#61afef",
+  operator: "#56b6c2",
+  tag: "#e06c75",
+  attr: "#d19a66",
+  builtin: "#e5c07b",
+};
+
+function highlightCode(code, lang) {
+  const l = (lang || "").toLowerCase();
+  let result = code.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+  if (["js","jsx","ts","tsx","javascript","typescript"].includes(l)) {
+    result = result
+      .replace(/(\/\/[^
+]*)/g, `<span style="color:${TOKEN_COLORS.comment}">$1</span>`)
+      .replace(/("(?:[^"\]|\.)*"|'(?:[^'\]|\.)*'|`(?:[^`\]|\.)*`)/g, `<span style="color:${TOKEN_COLORS.string}">$1</span>`)
+      .replace(/(const|let|var|function|return|if|else|for|while|class|import|export|from|default|async|await|new|this|typeof|instanceof|true|false|null|undefined|void|try|catch|throw|switch|case|break|continue|of|in)/g, `<span style="color:${TOKEN_COLORS.keyword}">$1</span>`)
+      .replace(/(\d+\.?\d*)/g, `<span style="color:${TOKEN_COLORS.number}">$1</span>`);
+  } else if (["py","python"].includes(l)) {
+    result = result
+      .replace(/(#[^
+]*)/g, `<span style="color:${TOKEN_COLORS.comment}">$1</span>`)
+      .replace(/("(?:[^"\]|\.)*"|'(?:[^'\]|\.)*')/g, `<span style="color:${TOKEN_COLORS.string}">$1</span>`)
+      .replace(/(def|class|import|from|return|if|elif|else|for|while|in|not|and|or|True|False|None|try|except|with|as|pass|break|continue|raise|lambda|yield)/g, `<span style="color:${TOKEN_COLORS.keyword}">$1</span>`)
+      .replace(/(\d+\.?\d*)/g, `<span style="color:${TOKEN_COLORS.number}">$1</span>`);
+  } else if (["html","xml"].includes(l)) {
+    result = result
+      .replace(/(&lt;\/?)([\w-]+)/g, `$1<span style="color:${TOKEN_COLORS.tag}">$2</span>`)
+      .replace(/([\w-]+=)("(?:[^"]*)")/g, `<span style="color:${TOKEN_COLORS.attr}">$1</span><span style="color:${TOKEN_COLORS.string}">$2</span>`);
+  } else if (["css","scss"].includes(l)) {
+    result = result
+      .replace(/(\/\*[\s\S]*?\*\/)/g, `<span style="color:${TOKEN_COLORS.comment}">$1</span>`)
+      .replace(/("(?:[^"]*)")/g, `<span style="color:${TOKEN_COLORS.string}">$1</span>`)
+      .replace(/([\w-]+)(?=\s*:)/g, `<span style="color:${TOKEN_COLORS.attr}">$1</span>`);
+  } else if (["sh","bash","shell"].includes(l)) {
+    result = result
+      .replace(/(#[^
+]*)/g, `<span style="color:${TOKEN_COLORS.comment}">$1</span>`)
+      .replace(/("(?:[^"]*)")/g, `<span style="color:${TOKEN_COLORS.string}">$1</span>`)
+      .replace(/(echo|cd|ls|mkdir|rm|cp|mv|git|npm|pip|sudo|apt|curl|wget|chmod|export|source|if|then|fi|for|do|done|while|function)/g, `<span style="color:${TOKEN_COLORS.keyword}">$1</span>`);
+  }
+  return result;
+}
+
 // ── Code Block Component ──
 function CodeBlock({ code, lang }) {
   const [copied, setCopied] = React.useState(false);
-  const codeRef = React.useRef(null);
-
-  React.useEffect(() => {
-    if (codeRef.current && window.hljs) {
-      window.hljs.highlightElement(codeRef.current);
-    }
-  }, [code]);
 
   function handleCopy() {
     navigator.clipboard?.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
+  const highlighted = highlightCode(code, lang);
 
   return (
     <div style={{ margin: "12px 0", borderRadius: 10, overflow: "hidden", border: "1px solid #3d4451", direction: "ltr" }}>
@@ -274,10 +313,9 @@ function CodeBlock({ code, lang }) {
           {copied ? "✓ Copied!" : "Copy"}
         </button>
       </div>
-      <pre style={{ margin: 0, padding: 0, background: "#282c34", overflow: "auto" }}>
-        <code ref={codeRef} className={lang ? `language-${lang}` : ""} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", fontSize: 13, lineHeight: 1.7, display: "block", padding: "14px 16px" }}>
-          {code}
-        </code>
+      <pre style={{ margin: 0, background: "#282c34", overflow: "auto" }}>
+        <code dangerouslySetInnerHTML={{ __html: highlighted }}
+          style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", fontSize: 13, lineHeight: 1.7, display: "block", padding: "14px 16px", color: "#abb2bf" }} />
       </pre>
     </div>
   );
@@ -864,7 +902,7 @@ function App() {
                     {msg.role === "user" ? (
                       <div style={styles.userMessage}>{msg.content}</div>
                     ) : (
-                               <div style={styles.assistantMessage} dir="auto">
+                      <div style={styles.assistantMessage} dir="auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
@@ -874,14 +912,6 @@ function App() {
                             li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
                             code: ({inline, className, children}) => {
                               const codeStr = String(children).trimEnd();
-                              const codeRef = useRef(null);
-
-                              // اعمال هایلایت خودکار به محض لود شدن یا تغییر متن کد
-                              useEffect(() => {
-                                if (codeRef.current && window.hljs) {
-                                  window.hljs.highlightElement(codeRef.current);
-                                }
-                              }, [children]);
 
                               if (inline) return (
                                 <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
@@ -898,7 +928,7 @@ function App() {
                                     </button>
                                   </div>
                                   <pre style={{ margin: 0, padding: "12px", background: "#020617", borderRadius: "0 0 8px 8px", overflow: "auto", fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", lineHeight: 1.6, color: "#e2e8f0" }}>
-                                    <code ref={codeRef} className={className}>{codeStr}</code>
+                                    <code>{codeStr}</code>
                                   </pre>
                                 </div>
                               );
