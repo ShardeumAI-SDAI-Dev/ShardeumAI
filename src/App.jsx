@@ -2,11 +2,21 @@ import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeHighlight from "rehype-highlight";
-import "highlight.js/styles/github-dark.css"; // 
+
+// Load highlight.js
+if (typeof document !== "undefined" && !document.getElementById("hljs-css")) {
+  const link = document.createElement("link");
+  link.id = "hljs-css";
+  link.rel = "stylesheet";
+  link.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css";
+  document.head.appendChild(link);
+  const script = document.createElement("script");
+  script.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js";
+  script.onload = () => { if (window.hljs) window.hljs.highlightAll(); };
+  document.head.appendChild(script);
+}
 
 // Load Vazirmatn font
-
 if (typeof document !== "undefined" && !document.getElementById("vazirmatn-font")) {
   const link = document.createElement("link");
   link.id = "vazirmatn-font";
@@ -237,6 +247,105 @@ function ImageGenerator({ t, isRTL }) {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
+}
+
+// ── Code Block Component ──
+function CodeBlock({ code, lang }) {
+  const [copied, setCopied] = React.useState(false);
+  const codeRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (codeRef.current && window.hljs) {
+      window.hljs.highlightElement(codeRef.current);
+    }
+  }, [code]);
+
+  function handleCopy() {
+    navigator.clipboard?.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div style={{ margin: "12px 0", borderRadius: 10, overflow: "hidden", border: "1px solid #3d4451", direction: "ltr" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#21252b", padding: "7px 14px" }}>
+        <span style={{ fontSize: 11, color: "#abb2bf", fontFamily: "monospace" }}>{lang || "code"}</span>
+        <button onClick={handleCopy}
+          style={{ background: copied ? "#2d6a4f" : "#2c313a", border: "1px solid #3d4451", borderRadius: 5, color: copied ? "#95d5b2" : "#abb2bf", cursor: "pointer", fontSize: 11, padding: "3px 10px", transition: "all 0.2s" }}>
+          {copied ? "✓ Copied!" : "Copy"}
+        </button>
+      </div>
+      <pre style={{ margin: 0, padding: 0, background: "#282c34", overflow: "auto" }}>
+        <code ref={codeRef} className={lang ? `language-${lang}` : ""} style={{ fontFamily: "'JetBrains Mono', 'Fira Code', 'Consolas', monospace", fontSize: 13, lineHeight: 1.7, display: "block", padding: "14px 16px" }}>
+          {code}
+        </code>
+      </pre>
+    </div>
+  );
+}
+
+// ── Export Chat ──
+function exportChat(messages, format) {
+  if (!messages || messages.length === 0) return;
+  const title = "ShardeumAI Chat Export";
+  const date = new Date().toLocaleDateString();
+
+  if (format === "txt") {
+    const text = messages.map(m => `[${m.role === "user" ? "You" : "ShardeumAI"}]
+${m.content}
+`).join("
+---
+
+");
+    const blob = new Blob([`${title}
+${date}
+
+${text}`], { type: "text/plain" });
+    downloadBlob(blob, "chat.txt");
+
+  } else if (format === "md") {
+    const md = messages.map(m => `### ${m.role === "user" ? "👤 You" : "🤖 ShardeumAI"}
+
+${m.content}`).join("
+
+---
+
+");
+    const blob = new Blob([`# ${title}
+_${date}_
+
+${md}`], { type: "text/markdown" });
+    downloadBlob(blob, "chat.md");
+
+  } else if (format === "html") {
+    const rows = messages.map(m => {
+      const isUser = m.role === "user";
+      return `<div style="margin:12px 0;display:flex;justify-content:${isUser ? "flex-end" : "flex-start"}">
+        <div style="max-width:80%;padding:10px 14px;border-radius:12px;background:${isUser ? "#3b82f6" : "#1e293b"};color:#fff;font-size:14px;line-height:1.7;white-space:pre-wrap">${m.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+      </div>`;
+    }).join("
+");
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{background:#0b1120;font-family:system-ui,sans-serif;padding:20px;max-width:800px;margin:0 auto}h1{color:#3b82f6}p{color:#9aa4b2}</style></head><body><h1>${title}</h1><p>${date}</p>${rows}</body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    downloadBlob(blob, "chat.html");
+
+  } else if (format === "pdf") {
+    const rows = messages.map(m => {
+      const isUser = m.role === "user";
+      return `<div style="margin:12px 0;padding:10px 14px;border-radius:8px;background:${isUser ? "#3b82f6" : "#1e293b"};color:#fff;text-align:${isUser ? "right" : "left"};white-space:pre-wrap">${m.content.replace(/</g, "&lt;")}</div>`;
+    }).join("
+");
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:20px;max-width:700px;margin:0 auto}h1{color:#3b82f6;border-bottom:2px solid #3b82f6;padding-bottom:8px}</style></head><body><h1>${title}</h1><p style="color:#666">${date}</p>${rows}</body></html>`;
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); win.print(); }
+  }
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── Main App ──
@@ -773,7 +882,6 @@ function App() {
                       <div style={styles.assistantMessage} dir="auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
-                          rehypePlugins={[rehypeHighlight]}
                           components={{
                             p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
                             ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
@@ -827,13 +935,31 @@ function App() {
                 )}
               </div>
             </div>
-            {/* Share */}
+            {/* Share + Export */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {messages.length > 0 && (
-                <button onClick={shareChat} disabled={shareLoading}
-                  style={{ padding: "6px 14px", borderRadius: 999, border: "1px solid #1f2937", background: "#020617", color: "#9aa4b2", fontSize: 11, cursor: "pointer" }}>
-                  {shareLoading ? "..." : "🔗 Share Chat"}
-                </button>
+                <>
+                  <button onClick={shareChat} disabled={shareLoading}
+                    style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid #1f2937", background: "#020617", color: "#9aa4b2", fontSize: 11, cursor: "pointer" }}>
+                    {shareLoading ? "..." : "🔗 Share"}
+                  </button>
+                  <div style={{ position: "relative" }}>
+                    <button onClick={() => document.getElementById("export-menu").style.display === "none" ? document.getElementById("export-menu").style.display = "flex" : document.getElementById("export-menu").style.display = "none"}
+                      style={{ padding: "6px 12px", borderRadius: 999, border: "1px solid #1f2937", background: "#020617", color: "#9aa4b2", fontSize: 11, cursor: "pointer" }}>
+                      ⬇ Export
+                    </button>
+                    <div id="export-menu" style={{ display: "none", position: "absolute", bottom: "110%", left: 0, background: "#0b1120", border: "1px solid #1f2937", borderRadius: 10, padding: 6, flexDirection: "column", gap: 4, zIndex: 100, minWidth: 120 }}>
+                      {[["pdf","📄 PDF"],["md","📝 Markdown"],["html","🌐 HTML"],["txt","📃 TXT"]].map(([fmt, label]) => (
+                        <button key={fmt} onClick={() => { exportChat(messages, fmt); document.getElementById("export-menu").style.display = "none"; }}
+                          style={{ padding: "7px 12px", background: "none", border: "none", color: "#e8edf2", cursor: "pointer", fontSize: 12, textAlign: "left", borderRadius: 7, whiteSpace: "nowrap" }}
+                          onMouseEnter={e => e.target.style.background = "#1f2937"}
+                          onMouseLeave={e => e.target.style.background = "none"}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
               {shareUrl && (
                 <div style={{ flex: 1, fontSize: 11, color: "#22c55e", background: "#052e16", padding: "6px 12px", borderRadius: 8, wordBreak: "break-all" }}>
