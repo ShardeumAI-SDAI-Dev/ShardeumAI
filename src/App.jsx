@@ -304,24 +304,26 @@ function exportChat(messages, format) {
   } else if (format === "html") {
     const rows = messages.map(m => {
       const isUser = m.role === "user";
-      return `<div style="margin:12px 0;display:flex;justify-content:${isUser ? "flex-end" : "flex-start"}">
-        <div style="max-width:80%;padding:10px 14px;border-radius:12px;background:${isUser ? "#3b82f6" : "#1e293b"};color:#fff;font-size:14px;line-height:1.7;white-space:pre-wrap">${m.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
-      </div>`;
-    }).join("
-");
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{background:#0b1120;font-family:system-ui,sans-serif;padding:20px;max-width:800px;margin:0 auto}h1{color:#3b82f6}p{color:#9aa4b2}</style></head><body><h1>${title}</h1><p>${date}</p>${rows}</body></html>`;
-    const blob = new Blob([html], { type: "text/html" });
+      const bg = isUser ? "#3b82f6" : "#1e293b";
+      const align = isUser ? "flex-end" : "flex-start";
+      const safe = m.content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      return '<div style="margin:12px 0;display:flex;justify-content:' + align + '"><div style="max-width:80%;padding:10px 14px;border-radius:12px;background:' + bg + ';color:#fff;font-size:14px;line-height:1.7;white-space:pre-wrap">' + safe + '</div></div>';
+    }).join(NL);
+    const htmlHead = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title><style>body{background:#0b1120;font-family:system-ui,sans-serif;padding:20px;max-width:800px;margin:0 auto}h1{color:#3b82f6}p{color:#9aa4b2}</style></head><body><h1>' + title + '</h1><p>' + date + '</p>';
+    const blob = new Blob([htmlHead + rows + '</body></html>'], { type: "text/html" });
     downloadBlob(blob, "chat.html");
 
   } else if (format === "pdf") {
     const rows = messages.map(m => {
       const isUser = m.role === "user";
-      return `<div style="margin:12px 0;padding:10px 14px;border-radius:8px;background:${isUser ? "#3b82f6" : "#1e293b"};color:#fff;text-align:${isUser ? "right" : "left"};white-space:pre-wrap">${m.content.replace(/</g, "&lt;")}</div>`;
-    }).join("
-");
-    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;padding:20px;max-width:700px;margin:0 auto}h1{color:#3b82f6;border-bottom:2px solid #3b82f6;padding-bottom:8px}</style></head><body><h1>${title}</h1><p style="color:#666">${date}</p>${rows}</body></html>`;
+      const bg = isUser ? "#3b82f6" : "#1e293b";
+      const align = isUser ? "right" : "left";
+      const safe = m.content.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      return '<div style="margin:12px 0;padding:10px 14px;border-radius:8px;background:' + bg + ';color:#fff;text-align:' + align + ';white-space:pre-wrap">' + safe + '</div>';
+    }).join(NL);
+    const htmlHead = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title><style>body{font-family:Arial,sans-serif;padding:20px;max-width:700px;margin:0 auto}h1{color:#3b82f6;border-bottom:2px solid #3b82f6;padding-bottom:8px}</style></head><body><h1>' + title + '</h1><p style="color:#666">' + date + '</p>';
     const win = window.open("", "_blank");
-    if (win) { win.document.write(html); win.document.close(); win.print(); }
+    if (win) { win.document.write(htmlHead + rows + '</body></html>'); win.document.close(); win.print(); }
   }
 }
 
