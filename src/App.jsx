@@ -693,11 +693,10 @@ function App() {
             ☰
           </button>
           <div style={styles.brandRow}>
-          <div style={{ ...styles.logoCircle, background: profile.avatar_color, boxShadow: `0 0 12px ${profile.avatar_color}88` }}>
-            {session ? (profile.display_name || session.user.email || "S")[0].toUpperCase() : "S"}
-          </div>
-              <div><h1 style={{ ...styles.title, fontSize: 18 }}>{t.title}</h1><p style={{ ...styles.subtitle, margin: 0 }}>{t.subtitle}</p></div>
+            <div style={{ ...styles.logoCircle, background: profile.avatar_color, boxShadow: `0 0 12px ${profile.avatar_color}88` }}>
+              {session ? (profile.display_name || session.user.email || "S")[0].toUpperCase() : "S"}
             </div>
+            <div><h1 style={{ ...styles.title, fontSize: 18 }}>{t.title}</h1><p style={{ ...styles.subtitle, margin: 0 }}>{t.subtitle}</p></div>
           </div>
         </div>
         <div style={styles.headerControls}>
