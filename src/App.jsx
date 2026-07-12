@@ -289,32 +289,16 @@ function exportChat(messages, format) {
   if (!messages || messages.length === 0) return;
   const title = "ShardeumAI Chat Export";
   const date = new Date().toLocaleDateString();
+  const NL = "\n";
 
   if (format === "txt") {
-    const text = messages.map(m => `[${m.role === "user" ? "You" : "ShardeumAI"}]
-${m.content}
-`).join("
----
-
-");
-    const blob = new Blob([`${title}
-${date}
-
-${text}`], { type: "text/plain" });
+    const text = messages.map(m => "[" + (m.role === "user" ? "You" : "ShardeumAI") + "]" + NL + m.content + NL).join(NL + "---" + NL + NL);
+    const blob = new Blob([title + NL + date + NL + NL + text], { type: "text/plain" });
     downloadBlob(blob, "chat.txt");
 
   } else if (format === "md") {
-    const md = messages.map(m => `### ${m.role === "user" ? "👤 You" : "🤖 ShardeumAI"}
-
-${m.content}`).join("
-
----
-
-");
-    const blob = new Blob([`# ${title}
-_${date}_
-
-${md}`], { type: "text/markdown" });
+    const md = messages.map(m => "### " + (m.role === "user" ? "👤 You" : "🤖 ShardeumAI") + NL + NL + m.content).join(NL + NL + "---" + NL + NL);
+    const blob = new Blob(["# " + title + NL + "_" + date + "_" + NL + NL + md], { type: "text/markdown" });
     downloadBlob(blob, "chat.md");
 
   } else if (format === "html") {
