@@ -2,6 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
+
+// Load highlight.js CSS
+if (typeof document !== "undefined" && !document.getElementById("hljs-css")) {
+  const link = document.createElement("link");
+  link.id = "hljs-css";
+  link.rel = "stylesheet";
+  link.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark.min.css";
+  document.head.appendChild(link);
+}
 
 // Load Vazirmatn font
 if (typeof document !== "undefined" && !document.getElementById("vazirmatn-font")) {
@@ -641,12 +651,54 @@ function App() {
 
   return (
     <div style={{ ...styles.app, direction: isRTL ? "rtl" : "ltr" }}>
+
+      {/* Sidebar */}
+      {showSidebar && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex" }}>
+          <div style={{ width: 280, background: "#0b1120", borderRight: "1px solid #1f2937", display: "flex", flexDirection: "column", height: "100%", zIndex: 51 }}>
+            <div style={{ padding: "16px", borderBottom: "1px solid #1f2937", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: "#e8edf2" }}>💬 Recent Chats</span>
+              <button onClick={() => setShowSidebar(false)} style={{ background: "none", border: "none", color: "#9aa4b2", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>✕</button>
+            </div>
+            <button onClick={startNewConversation}
+              style={{ margin: 12, padding: "10px 0", borderRadius: 10, border: "1px dashed #374151", background: "transparent", color: "#3b82f6", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
+              ✏️ New Chat
+            </button>
+            <div style={{ flex: 1, overflowY: "auto", padding: "0 8px 16px" }}>
+              {conversations.length === 0 && (
+                <div style={{ color: "#9aa4b2", fontSize: 12, textAlign: "center", padding: 20 }}>No conversations yet</div>
+              )}
+              {conversations.map(convo => (
+                <div key={convo.id}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, marginBottom: 4, background: activeConvoId === convo.id ? "#1e3a5f" : "transparent", cursor: "pointer", border: `1px solid ${activeConvoId === convo.id ? "#3b82f6" : "transparent"}` }}
+                  onClick={() => loadConversationMessages(convo.id)}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, color: "#e8edf2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{convo.title}</div>
+                    <div style={{ fontSize: 10, color: "#9aa4b2", marginTop: 2 }}>{new Date(convo.created_at).toLocaleDateString()}</div>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); deleteConversation(convo.id); }}
+                    style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 14, padding: "2px 4px", flexShrink: 0 }}>🗑</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ flex: 1, background: "rgba(0,0,0,0.6)" }} onClick={() => setShowSidebar(false)} />
+        </div>
+      )}
+
       <header style={styles.header}>
-        <div style={styles.brandRow}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <button onClick={() => setShowSidebar(true)}
+            style={{ background: "none", border: "1px solid #1f2937", borderRadius: 8, color: "#9aa4b2", cursor: "pointer", padding: "6px 10px", fontSize: 18, lineHeight: 1 }}>
+            ☰
+          </button>
+          <div style={styles.brandRow}>
           <div style={{ ...styles.logoCircle, background: profile.avatar_color, boxShadow: `0 0 12px ${profile.avatar_color}88` }}>
             {session ? (profile.display_name || session.user.email || "S")[0].toUpperCase() : "S"}
           </div>
-          <div><h1 style={{ ...styles.title, fontSize: 18 }}>{t.title}</h1><p style={{ ...styles.subtitle, margin: 0 }}>{t.subtitle}</p></div>
+              <div><h1 style={{ ...styles.title, fontSize: 18 }}>{t.title}</h1><p style={{ ...styles.subtitle, margin: 0 }}>{t.subtitle}</p></div>
+            </div>
+          </div>
         </div>
         <div style={styles.headerControls}>
           <div style={styles.selectGroup}>
@@ -729,6 +781,7 @@ function App() {
                       <div style={styles.assistantMessage} dir="auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
+                          rehypePlugins={[rehypeHighlight]}
                           components={{
                             p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
                             ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
