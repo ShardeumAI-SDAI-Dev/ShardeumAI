@@ -242,54 +242,57 @@ function ImageGenerator({ t, isRTL }) {
   );
 }
 
-// ── Syntax highlighting colors ──
-const TOKEN_COLORS = {
-  keyword: "#c678dd",
-  string: "#98c379",
-  comment: "#5c6370",
-  number: "#d19a66",
-  function: "#61afef",
-  operator: "#56b6c2",
-  tag: "#e06c75",
-  attr: "#d19a66",
-  builtin: "#e5c07b",
-};
+// ── Syntax Highlighting ──
+const KC = { kw:"#c678dd", str:"#98c379", cmt:"#5c6370", num:"#d19a66", tag:"#e06c75", attr:"#d19a66" };
+function sp(color, text) { return '<span style="color:' + color + '">' + text + '</span>'; }
+function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function applyKw(text, kws, color) {
+  let r = text;
+  kws.forEach(kw => {
+    r = r.split(new RegExp("(\\b" + kw + "\\b)")).map((p,i) => i%2===1 ? sp(color,p) : p).join("");
+  });
+  return r;
+}
 
 function highlightCode(code, lang) {
   const l = (lang || "").toLowerCase();
-  let result = code.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const jsKW = ["const","let","var","function","return","if","else","for","while","class","import","export","from","default","async","await","new","this","typeof","true","false","null","undefined","try","catch","throw","switch","case","break","continue","of","in"];
+  const pyKW = ["def","class","import","from","return","if","elif","else","for","while","in","not","and","or","True","False","None","try","except","with","as","pass","break","continue","raise","lambda","yield"];
+  const shKW = ["echo","cd","ls","mkdir","rm","cp","mv","git","npm","pip","sudo","curl","wget","chmod","export","if","then","fi","for","do","done","function"];
 
   if (["js","jsx","ts","tsx","javascript","typescript"].includes(l)) {
-    result = result
-      .replace(/(\/\/[^
-]*)/g, `<span style="color:${TOKEN_COLORS.comment}">$1</span>`)
-      .replace(/("(?:[^"\]|\.)*"|'(?:[^'\]|\.)*'|`(?:[^`\]|\.)*`)/g, `<span style="color:${TOKEN_COLORS.string}">$1</span>`)
-      .replace(/(const|let|var|function|return|if|else|for|while|class|import|export|from|default|async|await|new|this|typeof|instanceof|true|false|null|undefined|void|try|catch|throw|switch|case|break|continue|of|in)/g, `<span style="color:${TOKEN_COLORS.keyword}">$1</span>`)
-      .replace(/(\d+\.?\d*)/g, `<span style="color:${TOKEN_COLORS.number}">$1</span>`);
-  } else if (["py","python"].includes(l)) {
-    result = result
-      .replace(/(#[^
-]*)/g, `<span style="color:${TOKEN_COLORS.comment}">$1</span>`)
-      .replace(/("(?:[^"\]|\.)*"|'(?:[^'\]|\.)*')/g, `<span style="color:${TOKEN_COLORS.string}">$1</span>`)
-      .replace(/(def|class|import|from|return|if|elif|else|for|while|in|not|and|or|True|False|None|try|except|with|as|pass|break|continue|raise|lambda|yield)/g, `<span style="color:${TOKEN_COLORS.keyword}">$1</span>`)
-      .replace(/(\d+\.?\d*)/g, `<span style="color:${TOKEN_COLORS.number}">$1</span>`);
-  } else if (["html","xml"].includes(l)) {
-    result = result
-      .replace(/(&lt;\/?)([\w-]+)/g, `$1<span style="color:${TOKEN_COLORS.tag}">$2</span>`)
-      .replace(/([\w-]+=)("(?:[^"]*)")/g, `<span style="color:${TOKEN_COLORS.attr}">$1</span><span style="color:${TOKEN_COLORS.string}">$2</span>`);
-  } else if (["css","scss"].includes(l)) {
-    result = result
-      .replace(/(\/\*[\s\S]*?\*\/)/g, `<span style="color:${TOKEN_COLORS.comment}">$1</span>`)
-      .replace(/("(?:[^"]*)")/g, `<span style="color:${TOKEN_COLORS.string}">$1</span>`)
-      .replace(/([\w-]+)(?=\s*:)/g, `<span style="color:${TOKEN_COLORS.attr}">$1</span>`);
-  } else if (["sh","bash","shell"].includes(l)) {
-    result = result
-      .replace(/(#[^
-]*)/g, `<span style="color:${TOKEN_COLORS.comment}">$1</span>`)
-      .replace(/("(?:[^"]*)")/g, `<span style="color:${TOKEN_COLORS.string}">$1</span>`)
-      .replace(/(echo|cd|ls|mkdir|rm|cp|mv|git|npm|pip|sudo|apt|curl|wget|chmod|export|source|if|then|fi|for|do|done|while|function)/g, `<span style="color:${TOKEN_COLORS.keyword}">$1</span>`);
+    return code.split("\n").map(line => {
+      let s = esc(line);
+      if (s.trimStart().startsWith("//")) return sp(KC.cmt, s);
+      s = s.replace(/(\d+\.?\d*)/g, m => sp(KC.num, m));
+      s = applyKw(s, jsKW, KC.kw);
+      return s;
+    }).join("\n");
   }
-  return result;
+  if (["py","python"].includes(l)) {
+    return code.split("\n").map(line => {
+      let s = esc(line);
+      if (s.trimStart().startsWith("#")) return sp(KC.cmt, s);
+      s = s.replace(/(\d+\.?\d*)/g, m => sp(KC.num, m));
+      s = applyKw(s, pyKW, KC.kw);
+      return s;
+    }).join("\n");
+  }
+  if (["html","xml"].includes(l)) {
+    return esc(code)
+      .replace(/(&lt;\/?)([\w][\w-]*)/g, (_, a, b) => a + sp(KC.tag, b))
+      .replace(/([\w][\w-]*)(?==)/g, m => sp(KC.attr, m));
+  }
+  if (["sh","bash","shell"].includes(l)) {
+    return code.split("\n").map(line => {
+      let s = esc(line);
+      if (s.trimStart().startsWith("#")) return sp(KC.cmt, s);
+      s = applyKw(s, shKW, KC.kw);
+      return s;
+    }).join("\n");
+  }
+  return esc(code);
 }
 
 // ── Code Block Component ──
