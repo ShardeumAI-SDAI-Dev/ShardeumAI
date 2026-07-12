@@ -917,49 +917,37 @@ function App() {
                       <div style={styles.assistantMessage} dir="auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
-                            ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
-                            ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
-                            li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
-                            code: ({inline, className, children}) => {
-                              const codeStr = String(children).trimEnd();
-                              const match = /language-(\w+)/.exec(className || '');
-                              const lang = match ? match[1] : '';
+            components={{
+  p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
+  ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
+  ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
+  li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
+  code: ({inline, className, children}) => {
+    const codeStr = String(children).trimEnd();
+    const match = /language-(\w+)/.exec(className || '');
+    const lang = match ? match[1] : '';
 
-                              if (inline) return (
-                                <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
-                                  {children}
-                                </code>
-                              );
-                              return (<CodeBlock code={codeStr} lang={lang} />;
-                             }, 
-                                <div style={{ position: "relative", margin: "10px 0", direction: "ltr" }}>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0f172a", padding: "6px 12px", borderRadius: "8px 8px 0 0", borderBottom: "1px solid #1f2937" }}>
-                                    <span style={{ fontSize: 11, color: "#9aa4b2" }}>{className?.replace("language-", "") || "code"}</span>
-                                    <button onClick={() => navigator.clipboard?.writeText(codeStr)}
-                                      style={{ background: "none", border: "1px solid #374151", borderRadius: 5, color: "#9aa4b2", cursor: "pointer", fontSize: 10, padding: "2px 8px" }}>
-                                      Copy
-                                    </button>
-                                  </div>
-                                  <pre style={{ margin: 0, padding: "12px", background: "#020617", borderRadius: "0 0 8px 8px", overflow: "auto", fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", lineHeight: 1.6, color: "#e2e8f0" }}>
-                                    <code>{codeStr}</code>
-                                  </pre>
-                                </div>
-                              );
-                            },
-                            a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>{children}</a>,
-                            blockquote: ({children}) => <blockquote style={{ borderInlineStart: "3px solid #3b82f6", margin: "8px 0", paddingInlineStart: 12, color: "#9aa4b2", fontStyle: "italic" }}>{children}</blockquote>,
-                            table: ({children}) => <div style={{ overflowX: "auto", margin: "10px 0" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>{children}</table></div>,
-                            th: ({children}) => <th style={{ border: "1px solid #374151", padding: "8px 12px", background: "#0f172a", textAlign: "right", color: "#e8edf2" }}>{children}</th>,
-                            td: ({children}) => <td style={{ border: "1px solid #1f2937", padding: "8px 12px", color: "#e8edf2" }}>{children}</td>,
-                            h1: ({children}) => <h1 style={{ fontSize: 20, fontWeight: 700, margin: "12px 0 8px", color: "#e8edf2" }}>{children}</h1>,
-                            h2: ({children}) => <h2 style={{ fontSize: 17, fontWeight: 700, margin: "10px 0 6px", color: "#e8edf2" }}>{children}</h2>,
-                            h3: ({children}) => <h3 style={{ fontSize: 15, fontWeight: 600, margin: "8px 0 4px", color: "#e8edf2" }}>{children}</h3>,
-                            strong: ({children}) => <strong style={{ fontWeight: 700, color: "#f1f5f9" }}>{children}</strong>,
-                            hr: () => <hr style={{ border: "none", borderTop: "1px solid #1f2937", margin: "12px 0" }} />,
-                          }}
-                        >
+    if (inline) {
+      return (
+        <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
+          {children}
+        </code>
+      );
+    }
+    // اینجا از کامپوننت CodeBlock استفاده می‌کنیم
+    return <CodeBlock code={codeStr} lang={lang} />;
+  },
+  a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>{children}</a>,
+  blockquote: ({children}) => <blockquote style={{ borderInlineStart: "3px solid #3b82f6", margin: "8px 0", paddingInlineStart: 12, color: "#9aa4b2", fontStyle: "italic" }}>{children}</blockquote>,
+  table: ({children}) => <div style={{ overflowX: "auto", margin: "10px 0" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>{children}</table></div>,
+  th: ({children}) => <th style={{ border: "1px solid #374151", padding: "8px 12px", background: "#0f172a", textAlign: "right", color: "#e8edf2" }}>{children}</th>,
+  td: ({children}) => <td style={{ border: "1px solid #1f2937", padding: "8px 12px", color: "#e8edf2" }}>{children}</td>,
+  h1: ({children}) => <h1 style={{ fontSize: 20, fontWeight: 700, margin: "12px 0 8px", color: "#e8edf2" }}>{children}</h1>,
+  h2: ({children}) => <h2 style={{ fontSize: 17, fontWeight: 700, margin: "10px 0 6px", color: "#e8edf2" }}>{children}</h2>,
+  h3: ({children}) => <h3 style={{ fontSize: 15, fontWeight: 600, margin: "8px 0 4px", color: "#e8edf2" }}>{children}</h3>,
+  strong: ({children}) => <strong style={{ fontWeight: 700, color: "#f1f5f9" }}>{children}</strong>,
+  hr: () => <hr style={{ border: "none", borderTop: "1px solid #1f2937", margin: "12px 0" }} />,
+}}
                           {msg.content}
                         </ReactMarkdown>
                       </div>
