@@ -1,46 +1,25 @@
 {
-  "name": "ShardeumAI",
+  "name": "shardeumai",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "main": "main.mjs",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "desktop": "electron ."
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@capacitor/android": "^8.4.1",
-    "@capacitor/cli": "^8.4.1",
-    "@capacitor/core": "^8.4.1",
     "@supabase/supabase-js": "^2.45.0",
-    "highlight.js": "^11.11.1",
     "lucide-react": "^0.383.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-markdown": "^10.1.0",
-    "rehype-highlight": "^7.0.2",
-    "remark-gfm": "^4.0.1"
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
+    "rehype-highlight": "^7.0.0",
+    "highlight.js": "^11.10.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.7.0",
-    "electron": "^43.0.0",
-    "electron-builder": "^26.15.3",
+    "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.0"
-  },
-  "build": {
-    "appId": "com.shardeum.ai",
-    "productName": "ShardeumAI",
-    "files": [
-      "**/*"
-    ],
-    "directories": {
-      "buildResources": "assets"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "public/logo.png"
-    }
   }
 }
