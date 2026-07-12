@@ -917,7 +917,7 @@ function App() {
                       <div style={styles.assistantMessage} dir="auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
-            components={{
+components={{
   p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
   ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
   ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
@@ -926,15 +926,7 @@ function App() {
     const codeStr = String(children).trimEnd();
     const match = /language-(\w+)/.exec(className || '');
     const lang = match ? match[1] : '';
-
-    if (inline) {
-      return (
-        <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
-          {children}
-        </code>
-      );
-    }
-    // اینجا از کامپوننت CodeBlock استفاده می‌کنیم
+    if (inline) return <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>{children}</code>;
     return <CodeBlock code={codeStr} lang={lang} />;
   },
   a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#60a5fa", textDecoration: "underline" }}>{children}</a>,
@@ -947,9 +939,9 @@ function App() {
   h3: ({children}) => <h3 style={{ fontSize: 15, fontWeight: 600, margin: "8px 0 4px", color: "#e8edf2" }}>{children}</h3>,
   strong: ({children}) => <strong style={{ fontWeight: 700, color: "#f1f5f9" }}>{children}</strong>,
   hr: () => <hr style={{ border: "none", borderTop: "1px solid #1f2937", margin: "12px 0" }} />,
-}}
-                          {msg.content}
-                        </ReactMarkdown>
+}}>
+  {msg.content}
+</ReactMarkdown>
                       </div>
                     )}
                   </div>
