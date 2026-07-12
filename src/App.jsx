@@ -924,13 +924,15 @@ function App() {
                             li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
                             code: ({inline, className, children}) => {
                               const codeStr = String(children).trimEnd();
+                              const match = /language-(\w+)/.exec(className || '');
+                              const lang = match ? match[1] : '';
 
                               if (inline) return (
                                 <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
                                   {children}
                                 </code>
                               );
-                              return (
+                              return (<CodeBlock code={codeStr} lang={lang} />;
                                 <div style={{ position: "relative", margin: "10px 0", direction: "ltr" }}>
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0f172a", padding: "6px 12px", borderRadius: "8px 8px 0 0", borderBottom: "1px solid #1f2937" }}>
                                     <span style={{ fontSize: 11, color: "#9aa4b2" }}>{className?.replace("language-", "") || "code"}</span>
