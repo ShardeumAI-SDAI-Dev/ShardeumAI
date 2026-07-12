@@ -3,17 +3,10 @@ import { createClient } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
-
-// Load highlight.js CSS
-if (typeof document !== "undefined" && !document.getElementById("hljs-css")) {
-  const link = document.createElement("link");
-  link.id = "hljs-css";
-  link.rel = "stylesheet";
-  link.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark.min.css";
-  document.head.appendChild(link);
-}
+import "highlight.js/styles/github-dark.css"; // 
 
 // Load Vazirmatn font
+
 if (typeof document !== "undefined" && !document.getElementById("vazirmatn-font")) {
   const link = document.createElement("link");
   link.id = "vazirmatn-font";
