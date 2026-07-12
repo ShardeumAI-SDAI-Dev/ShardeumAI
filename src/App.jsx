@@ -47,7 +47,7 @@ const MODEL_LANGUAGES = [
 ];
 
 const AI_MODES = [
-  { id: "general", label: "🌐 General", prompt: "You are ShardeumAI (SDAI), a helpful bilingual AI assistant (Persian/English). Reply in the same language the user writes in. Be friendly, accurate, and helpful." },
+  { id: "general", label: "🌐 General", prompt: "You are ShardeumAI (SDAI), a helpful bilingual AI assistant. Reply ONLY in Persian (Farsi) or English. Never mix other languages like Chinese, Vietnamese, or any other language into your response. If user writes in Persian, reply fully in Persian. If in English, reply fully in English. Be friendly, accurate, and helpful." },
   { id: "crypto", label: "₿ Crypto", prompt: "You are ShardeumAI (SDAI), a crypto and blockchain expert assistant. You specialize in Shardeum, Ethereum, Bitcoin, DeFi, NFTs, Web3, tokenomics, and market analysis. Reply in the same language the user writes in. Give accurate, detailed crypto information." },
   { id: "shardeum", label: "⬡ Shardeum", prompt: "You are ShardeumAI (SDAI), a specialized Shardeum blockchain assistant. You have deep knowledge of Shardeum's architecture, SHM token, EVM compatibility, dynamic state sharding, validators, and ecosystem. Reply in the same language the user writes in." },
   { id: "defi", label: "💰 DeFi", prompt: "You are ShardeumAI (SDAI), a DeFi (Decentralized Finance) expert. You specialize in liquidity pools, yield farming, DEXs, lending protocols, staking, and DeFi strategies. Reply in the same language the user writes in." },
@@ -255,8 +255,17 @@ function applyKw(text, kws, color) {
   return r;
 }
 
+function detectLang(code) {
+  if (code.includes("def ") || code.includes("import ") && code.includes(":")) return "python";
+  if (code.includes("function ") || code.includes("const ") || code.includes("=>")) return "javascript";
+  if (code.includes("<html") || code.includes("</div>") || code.includes("<!DOCTYPE")) return "html";
+  if (code.includes("$ ") || code.includes("sudo ") || code.includes("npm ") || code.includes("pip ")) return "shell";
+  if (code.includes("{") && code.includes(":") && code.includes(";")) return "css";
+  return "";
+}
+
 function highlightCode(code, lang) {
-  const l = (lang || "").toLowerCase();
+  const l = (lang || detectLang(code)).toLowerCase();
   const jsKW = ["const","let","var","function","return","if","else","for","while","class","import","export","from","default","async","await","new","this","typeof","true","false","null","undefined","try","catch","throw","switch","case","break","continue","of","in"];
   const pyKW = ["def","class","import","from","return","if","elif","else","for","while","in","not","and","or","True","False","None","try","except","with","as","pass","break","continue","raise","lambda","yield"];
   const shKW = ["echo","cd","ls","mkdir","rm","cp","mv","git","npm","pip","sudo","curl","wget","chmod","export","if","then","fi","for","do","done","function"];
