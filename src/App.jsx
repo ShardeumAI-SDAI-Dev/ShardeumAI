@@ -887,7 +887,7 @@ function App() {
                   </button>
                 ) : (
                   <button onClick={sendTestNotification}
-                    style={{ padding: "8px 16px", borderRadius: 8, background: "#052e16", color: "#22c55e", fontSize: 12, cursor: "pointer", border: "1px solid #22c55e" }}>
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #22c55e", background: "#052e16", color: "#22c55e", fontSize: 12, cursor: "pointer" }}>
                     🧪 Send Test Notification
                   </button>
                 )}
