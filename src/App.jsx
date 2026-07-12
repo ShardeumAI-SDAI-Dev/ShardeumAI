@@ -933,6 +933,7 @@ function App() {
                                 </code>
                               );
                               return (<CodeBlock code={codeStr} lang={lang} />;
+                             }, 
                                 <div style={{ position: "relative", margin: "10px 0", direction: "ltr" }}>
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0f172a", padding: "6px 12px", borderRadius: "8px 8px 0 0", borderBottom: "1px solid #1f2937" }}>
                                     <span style={{ fontSize: 11, color: "#9aa4b2" }}>{className?.replace("language-", "") || "code"}</span>
