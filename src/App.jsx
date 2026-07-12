@@ -3,25 +3,24 @@ import { createClient } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-// Load highlight.js
 if (typeof document !== "undefined" && !document.getElementById("hljs-css")) {
   const link = document.createElement("link");
   link.id = "hljs-css";
   link.rel = "stylesheet";
-  link.href = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/atom-one-dark.min.css";
+  link.href = "https://cloudflare.com";
   document.head.appendChild(link);
+
   const script = document.createElement("script");
-  script.src = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js";
+  script.src = "https://cloudflare.com";
   script.onload = () => { if (window.hljs) window.hljs.highlightAll(); };
   document.head.appendChild(script);
 }
 
-// Load Vazirmatn font
 if (typeof document !== "undefined" && !document.getElementById("vazirmatn-font")) {
   const link = document.createElement("link");
   link.id = "vazirmatn-font";
   link.rel = "stylesheet";
-  link.href = "https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css";
+  link.href = "https://jsdelivr.net";
   document.head.appendChild(link);
 }
 
@@ -865,7 +864,7 @@ function App() {
                     {msg.role === "user" ? (
                       <div style={styles.userMessage}>{msg.content}</div>
                     ) : (
-                      <div style={styles.assistantMessage} dir="auto">
+                               <div style={styles.assistantMessage} dir="auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
@@ -875,6 +874,14 @@ function App() {
                             li: ({children}) => <li style={{ marginBottom: 4 }}>{children}</li>,
                             code: ({inline, className, children}) => {
                               const codeStr = String(children).trimEnd();
+                              const codeRef = useRef(null);
+
+                              // اعمال هایلایت خودکار به محض لود شدن یا تغییر متن کد
+                              useEffect(() => {
+                                if (codeRef.current && window.hljs) {
+                                  window.hljs.highlightElement(codeRef.current);
+                                }
+                              }, [children]);
 
                               if (inline) return (
                                 <code style={{ background: "#1e293b", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", color: "#7dd3fc", direction: "ltr", display: "inline-block" }}>
@@ -891,7 +898,7 @@ function App() {
                                     </button>
                                   </div>
                                   <pre style={{ margin: 0, padding: "12px", background: "#020617", borderRadius: "0 0 8px 8px", overflow: "auto", fontSize: 12, fontFamily: "JetBrains Mono, Fira Code, monospace", lineHeight: 1.6, color: "#e2e8f0" }}>
-                                    <code>{codeStr}</code>
+                                    <code ref={codeRef} className={className}>{codeStr}</code>
                                   </pre>
                                 </div>
                               );
