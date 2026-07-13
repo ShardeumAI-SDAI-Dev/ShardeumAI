@@ -803,16 +803,16 @@ function App() {
   return (
     <div style={{ ...styles.app, direction: isRTL ? "rtl" : "ltr" }}>
 
-      {/* Sidebar - always visible on desktop, overlay on mobile */}
+      {/* Sidebar */}
       {showSidebar && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex" }}>
-          <div style={{ width: 260, background: "#171717", borderRight: "1px solid #2d2d2d", display: "flex", flexDirection: "column", height: "100%", zIndex: 51 }}>
-            <div style={{ padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontWeight: 600, fontSize: 14, color: "#ececec" }}>💬 Recent Chats</span>
+          <div style={{ width: 280, background: "#0b1120", borderRight: "1px solid #1f2937", display: "flex", flexDirection: "column", height: "100%", zIndex: 51 }}>
+            <div style={{ padding: "16px", borderBottom: "1px solid #1f2937", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: "#e8edf2" }}>💬 Recent Chats</span>
               <button onClick={() => setShowSidebar(false)} style={{ background: "none", border: "none", color: "#9aa4b2", cursor: "pointer", fontSize: 20, lineHeight: 1 }}>✕</button>
             </div>
             <button onClick={startNewConversation}
-              style={{ margin: "8px 12px", padding: "8px 12px", borderRadius: 8, border: "none", background: "#2d2d2d", color: "#ececec", fontSize: 13, cursor: "pointer", fontWeight: 500, textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+              style={{ margin: 12, padding: "10px 0", borderRadius: 10, border: "1px dashed #374151", background: "transparent", color: "#3b82f6", fontSize: 13, cursor: "pointer", fontWeight: 600 }}>
               ✏️ New Chat
             </button>
             <div style={{ flex: 1, overflowY: "auto", padding: "0 8px 16px" }}>
@@ -821,7 +821,7 @@ function App() {
               )}
               {conversations.map(convo => (
                 <div key={convo.id}
-                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 12px", borderRadius: 8, marginBottom: 2, background: activeConvoId === convo.id ? "#2d2d2d" : "transparent", cursor: "pointer", border: "none" }}
+                  style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", borderRadius: 10, marginBottom: 4, background: activeConvoId === convo.id ? "#1e3a5f" : "transparent", cursor: "pointer", border: `1px solid ${activeConvoId === convo.id ? "#3b82f6" : "transparent"}` }}
                   onClick={() => loadConversationMessages(convo.id)}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: "#e8edf2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{convo.title}</div>
@@ -892,7 +892,7 @@ function App() {
         {activeTab === "chat" ? (
           <>
             {/* AI Mode selector */}
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", maxWidth: 768, margin: "8px auto 0", padding: "0 16px" }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {AI_MODES.map(mode => (
                 <button key={mode.id} onClick={() => setAiMode(mode.id)}
                   style={{ padding: "5px 12px", borderRadius: 999, border: `1px solid ${aiMode === mode.id ? "#3b82f6" : "#1f2937"}`, background: aiMode === mode.id ? "#1e3a5f" : "#020617", color: aiMode === mode.id ? "#60a5fa" : "#9aa4b2", fontSize: 11, cursor: "pointer", fontWeight: aiMode === mode.id ? 600 : 400 }}>
@@ -901,7 +901,7 @@ function App() {
               ))}
             </div>
             {/* Web Search Toggle */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", maxWidth: 768, margin: "6px auto 0", padding: "0 16px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <button onClick={() => setWebSearch(!webSearch)}
                 style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, border: `1px solid ${webSearch ? "#22c55e" : "#1f2937"}`, background: webSearch ? "#052e16" : "#020617", color: webSearch ? "#22c55e" : "#9aa4b2", fontSize: 11, cursor: "pointer", fontWeight: webSearch ? 600 : 400 }}>
                 🔍 {webSearch ? "Web Search ON" : "Web Search OFF"}
@@ -921,21 +921,15 @@ function App() {
               <div style={styles.chat} ref={chatRef}>
                 {messages.map((msg, idx) => (
                   <div key={idx} style={{
-                    padding: msg.role === "user" ? "4px 0" : "4px 0",
                     display: "flex",
                     justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
-                    maxWidth: 768,
                     width: "100%",
-                    margin: "0 auto",
-                    paddingLeft: 16,
-                    paddingRight: 16,
+                    marginBottom: 8,
                   }}>
                     {msg.role === "user" ? (
                       <div style={styles.userMessage}>{msg.content}</div>
                     ) : (
-                      <div style={{ display: "flex", gap: 14, width: "100%", alignItems: "flex-start" }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff", flexShrink: 0, marginTop: 2 }}>S</div>
-                        <div style={{ ...styles.assistantMessage, flex: 1 }} dir="auto">
+                      <div style={{ ...styles.assistantMessage, maxWidth: "100%" }} dir="auto">
                         <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
 components={{
@@ -964,22 +958,18 @@ components={{
   {msg.content}
 </ReactMarkdown>
                       </div>
-                        </div>
                     )}
                   </div>
                 ))}
                 {chatLoading && (
-                  <div style={{ display: "flex", gap: 14, maxWidth: 768, width: "100%", margin: "0 auto", padding: "4px 16px", alignItems: "flex-start" }}>
-                    <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff", flexShrink: 0 }}>S</div>
-                    <div style={{ display: "flex", gap: 5, alignItems: "center", padding: "14px 0" }}>
-                      <div style={styles.dot} /><div style={styles.dot} /><div style={styles.dot} />
-                    </div>
+                  <div style={styles.loadingRow}>
+                    <div style={styles.dot} /><div style={styles.dot} /><div style={styles.dot} />
                   </div>
                 )}
               </div>
             </div>
             {/* Share + Export */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", maxWidth: 768, margin: "6px auto 0", padding: "0 16px 6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
               {messages.length > 0 && (
                 <>
                   <button onClick={shareChat} disabled={shareLoading}
@@ -1010,8 +1000,7 @@ components={{
                 </div>
               )}
             </div>
-            <div style={{ background: "#212121", padding: "12px 16px 20px", flexShrink: 0 }}>
-        <form onSubmit={handleSend} style={styles.composer}>
+            <form onSubmit={handleSend} style={styles.composer}>
               <textarea
                 value={input}
                 onChange={(e) => {
@@ -1030,10 +1019,8 @@ components={{
                 disabled={chatLoading}
                 rows={1}
               />
-              <button type="submit" disabled={!input.trim() || chatLoading} style={{ ...styles.sendBtn, opacity: !input.trim() || chatLoading ? 0.4 : 1 }}>➤</button>
+              <button type="submit" disabled={!input.trim() || chatLoading} style={styles.sendBtn}>➤</button>
             </form>
-            <p style={{ textAlign: "center", fontSize: 11, color: "#666", marginTop: 8 }}>ShardeumAI · Powered by Groq</p>
-        </div>
           </>
         ) : activeTab === "image" ? (
           <ImageGenerator t={t} isRTL={isRTL} />
@@ -1237,35 +1224,35 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
 }
 
 const styles = {
-  app: { height: "100vh", display: "flex", background: "#212121", color: "#ececec", fontFamily: "'Vazirmatn', system-ui, -apple-system, sans-serif", overflow: "hidden" },
-  center: { display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#020617" },
-  card: { background: "linear-gradient(145deg, rgba(15,23,42,0.95), rgba(17,24,39,0.98))", border: "1px solid #1f2937", borderRadius: 24, padding: "32px 28px", width: "100%", maxWidth: 420, boxShadow: "0 24px 80px rgba(0,0,0,0.65)", color: "#e8edf2" },
+  app: { height: "100vh", display: "flex", flexDirection: "column", background: "#212121", color: "#ececec", fontFamily: "'Vazirmatn', system-ui, -apple-system, sans-serif" },
+  center: { display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#212121" },
+  card: { background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 16, padding: "32px 28px", width: "100%", maxWidth: 420, boxShadow: "0 24px 60px rgba(0,0,0,0.5)", color: "#ececec" },
   logoCircle: { width: 32, height: 32, borderRadius: "50%", background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14, color: "#fff", flexShrink: 0 },
-  title: { margin: 0, fontSize: 24, fontWeight: 700 },
-  subtitle: { marginTop: 6, fontSize: 13, color: "#9aa4b2" },
-  form: { marginTop: 24, display: "flex", flexDirection: "column", gap: 12 },
-  input: { padding: "10px 12px", borderRadius: 12, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none" },
-  button: { marginTop: 8, padding: "10px 12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #3b82f6, #0ea5e9, #22c55e)", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" },
-  header: { padding: "10px 12px", borderBottom: "1px solid #1f2937", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8, backdropFilter: "blur(12px)", background: "rgba(2,6,23,0.85)", flexShrink: 0 },
-  brandRow: { display: "flex", alignItems: "center", gap: 8, cursor: "pointer" },
+  title: { margin: 0, fontSize: 22, fontWeight: 700 },
+  subtitle: { marginTop: 4, fontSize: 12, color: "#8e8ea0" },
+  form: { marginTop: 20, display: "flex", flexDirection: "column", gap: 12 },
+  input: { padding: "11px 14px", borderRadius: 10, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 14, outline: "none" },
+  button: { marginTop: 8, padding: "11px 0", borderRadius: 10, border: "none", background: "#10a37f", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" },
+  header: { padding: "8px 14px", borderBottom: "1px solid #2d2d2d", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 8, background: "#212121", flexShrink: 0 },
+  brandRow: { display: "flex", alignItems: "center", gap: 8 },
   headerControls: { display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  selectGroup: { display: "flex", flexDirection: "column", gap: 6 },
-  label: { fontSize: 11, color: "#9aa4b2" },
+  selectGroup: { display: "flex", flexDirection: "column", gap: 4 },
+  label: { fontSize: 10, color: "#8e8ea0" },
   flagSelect: { display: "flex", flexWrap: "wrap", gap: 4, maxWidth: 220 },
-  flagBtn: { display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 8, border: "1px solid #3d3d3d", background: "#2f2f2f", color: "#ececec", fontSize: 10, cursor: "pointer" },
-  flagIcon: { fontSize: 14 },
-  flagLabel: { fontSize: 11 },
-  logoutBtn: { padding: "8px 10px", borderRadius: 999, border: "1px solid #374151", background: "#020617", color: "#e8edf2", fontSize: 12, cursor: "pointer" },
-  main: { flex: 1, display: "flex", flexDirection: "column", padding: "10px 12px 12px", gap: 10, overflow: "hidden" },
-  chatWrapper: { flex: 1, overflow: "hidden", background: "#212121" },
-  chat: { height: "100%", overflowY: "auto", padding: "24px 0", display: "flex", flexDirection: "column", gap: 0, fontSize: 15, lineHeight: 1.85, background: "#212121" },
-  userMessage: { background: "#2f2f2f", color: "#ececec", padding: "12px 18px", borderRadius: 18, lineHeight: 1.8, fontSize: 15, maxWidth: 640, wordBreak: "break-word" },
-  assistantMessage: { background: "transparent", color: "#ececec", padding: "12px 0", lineHeight: 1.85, fontSize: 15, width: "100%" },
-  loadingRow: { display: "flex", gap: 4, marginTop: 6, marginLeft: 4 },
-  dot: { width: 7, height: 7, borderRadius: 999, background: "#10a37f", animation: "pulse 1.2s infinite ease-in-out" },
-  composer: { display: "flex", gap: 10, alignItems: "center" },
-  composerInput: { flex: 1, padding: "10px 14px", borderRadius: 16, border: "1px solid #1f2937", background: "#020617", color: "#e8edf2", fontSize: 13, outline: "none", fontFamily: "inherit", lineHeight: 1.5 },
-  sendBtn: { padding: "10px 18px", borderRadius: 999, border: "none", background: "linear-gradient(135deg, #3b82f6, #0ea5e9)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" },
+  flagBtn: { display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", borderRadius: 8, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 10, cursor: "pointer" },
+  flagIcon: { fontSize: 13 },
+  flagLabel: { fontSize: 10 },
+  logoutBtn: { padding: "6px 12px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#ececec", fontSize: 12, cursor: "pointer" },
+  main: { flex: 1, display: "flex", flexDirection: "column", padding: "8px 12px 12px", gap: 8, overflow: "hidden" },
+  chatWrapper: { flex: 1, borderRadius: 12, border: "1px solid #2d2d2d", background: "#212121", overflow: "hidden" },
+  chat: { height: "100%", background: "#212121", padding: "16px", overflowY: "auto", fontSize: 15, display: "flex", flexDirection: "column", gap: 4, fontFamily: "'Vazirmatn', system-ui, sans-serif", lineHeight: 1.85 },
+  userMessage: { background: "#2d2d2d", color: "#ececec", padding: "12px 16px", borderRadius: 16, lineHeight: 1.8, fontSize: 15, maxWidth: "80%", alignSelf: "flex-end", wordBreak: "break-word" },
+  assistantMessage: { background: "transparent", color: "#ececec", padding: "8px 4px", lineHeight: 1.85, fontSize: 15, width: "100%" },
+  loadingRow: { display: "flex", gap: 5, padding: "8px 4px", alignItems: "center" },
+  dot: { width: 7, height: 7, borderRadius: "50%", background: "#10a37f", animation: "pulse 1.2s infinite ease-in-out" },
+  composer: { display: "flex", gap: 8, alignItems: "flex-end" },
+  composerInput: { flex: 1, padding: "12px 16px", borderRadius: 14, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 14, outline: "none", fontFamily: "inherit", lineHeight: 1.6 },
+  sendBtn: { width: 42, height: 42, borderRadius: 10, border: "none", background: "#10a37f", color: "#fff", fontSize: 16, fontWeight: 700, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
 };
 
 export default App;
