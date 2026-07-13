@@ -48,7 +48,7 @@ const MODEL_LANGUAGES = [
 
 const AI_MODES = [
   { id: "general", label: "🌐 General", prompt: "You are ShardeumAI (SDAI), a helpful bilingual AI assistant. Reply ONLY in Persian (Farsi) or English. Never mix other languages like Chinese, Vietnamese, or any other language into your response. If user writes in Persian, reply fully in Persian. If in English, reply fully in English. Be friendly, accurate, and helpful." },
-  { id: "crypto", label: "₿ Crypto", prompt: "You are ShardeumAI (SDAI), a crypto and blockchain expert assistant. You specialize in Shardeum, Ethereum, Bitcoin, DeFi, NFTs, Web3, tokenomics, and market analysis. Reply in the same language the user writes in. Give accurate, detailed crypto information." },
+  { id: "crypto", label: "₿ Crypto", prompt: "You are ShardeumAI (SDAI), a crypto and blockchain expert assistant. You specialize in Shardeum, Ethereum, Bitcoin, DeFi, NFTs, Web3, tokenomics, and market analysis. Reply ONLY in Persian or English, never mix other languages. Give accurate, detailed crypto information." },
   { id: "shardeum", label: "⬡ Shardeum", prompt: "You are ShardeumAI (SDAI), a specialized Shardeum blockchain assistant. You have deep knowledge of Shardeum's architecture, SHM token, EVM compatibility, dynamic state sharding, validators, and ecosystem. Reply in the same language the user writes in." },
   { id: "defi", label: "💰 DeFi", prompt: "You are ShardeumAI (SDAI), a DeFi (Decentralized Finance) expert. You specialize in liquidity pools, yield farming, DEXs, lending protocols, staking, and DeFi strategies. Reply in the same language the user writes in." },
   { id: "web3", label: "🔗 Web3", prompt: "You are ShardeumAI (SDAI), a Web3 and smart contract expert. You specialize in Solidity, dApps, MetaMask, wallets, NFTs, DAOs, and decentralized technologies. Reply in the same language the user writes in." },
@@ -256,11 +256,14 @@ function applyKw(text, kws, color) {
 }
 
 function detectLang(code) {
-  if (code.includes("def ") || code.includes("import ") && code.includes(":")) return "python";
-  if (code.includes("function ") || code.includes("const ") || code.includes("=>")) return "javascript";
-  if (code.includes("<html") || code.includes("</div>") || code.includes("<!DOCTYPE")) return "html";
-  if (code.includes("$ ") || code.includes("sudo ") || code.includes("npm ") || code.includes("pip ")) return "shell";
-  if (code.includes("{") && code.includes(":") && code.includes(";")) return "css";
+  const t = code.trim();
+  if ((t.startsWith("{") || t.startsWith("[")) && (() => { try { JSON.parse(t); return true; } catch(e) { return false; } })()) return "json";
+  if (t.includes("def ") || (t.includes("import ") && t.includes(":"))) return "python";
+  if (t.includes("function ") || t.includes("const ") || t.includes("=>") || t.includes("let ") || t.includes("var ")) return "javascript";
+  if (t.includes("<html") || t.includes("</div>") || t.includes("<!DOCTYPE")) return "html";
+  if (t.includes("sudo ") || t.includes("npm ") || t.includes("pip ") || t.startsWith("$ ")) return "shell";
+  if (t.includes("{") && t.includes(":") && t.includes(";")) return "css";
+  if (t.includes("SELECT ") || t.includes("FROM ") || t.includes("WHERE ")) return "sql";
   return "";
 }
 
@@ -300,6 +303,17 @@ function highlightCode(code, lang) {
       s = applyKw(s, shKW, KC.kw);
       return s;
     }).join("\n");
+  }
+  if (["json"].includes(l)) {
+    return esc(code)
+      .replace(/("(?:[^"\\]|\\.)*")\s*:/g, m => sp(KC.attr, m.slice(0,-1)) + ":")
+      .replace(/:\s*("(?:[^"\\]|\\.)*")/g, (_, s) => ": " + sp(KC.str, s))
+      .replace(/:\s*(true|false|null)/g, (_, v) => ": " + sp(KC.kw, v))
+      .replace(/:\s*(-?\d+\.?\d*)/g, (_, n) => ": " + sp(KC.num, n));
+  }
+  if (["sql"].includes(l)) {
+    const sqlKW = ["SELECT","FROM","WHERE","JOIN","LEFT","RIGHT","INNER","ON","INSERT","UPDATE","DELETE","CREATE","TABLE","INDEX","DROP","ALTER","AND","OR","NOT","IN","IS","NULL","ORDER","BY","GROUP","HAVING","LIMIT","OFFSET","AS","DISTINCT","COUNT","SUM","AVG","MAX","MIN"];
+    return applyKw(esc(code), sqlKW, KC.kw);
   }
   return esc(code);
 }
