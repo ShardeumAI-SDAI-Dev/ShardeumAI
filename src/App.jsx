@@ -16,6 +16,38 @@ if (typeof document !== "undefined" && !document.getElementById("app-fonts")) {
   document.head.appendChild(style);
 }
 
+// ── Responsive Styles ──
+if (typeof document !== "undefined" && !document.getElementById("app-responsive")) {
+  const respStyle = document.createElement("style");
+  respStyle.id = "app-responsive";
+  respStyle.textContent = `
+    @media (max-width: 768px) {
+      .chat-sidebar { width: 0 !important; min-width: 0 !important; }
+      .chat-sidebar.open { width: 260px !important; min-width: 260px !important; position: fixed; z-index: 200; height: 100vh; }
+      .chat-sidebar-overlay { display: none; }
+      .chat-sidebar-overlay.show { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 199; }
+      .chat-main { padding: 0 8px !important; }
+      .chat-msg-content { padding: 12px 8px !important; }
+      .chat-header { padding: 0 8px !important; }
+      .chat-header select { font-size: 11px !important; padding: 2px 4px !important; }
+      .chat-input-area { padding: 8px 8px 16px !important; }
+      .chat-welcome h1 { font-size: 24px !important; }
+      .chat-welcome p { font-size: 14px !important; }
+      .chat-avatar { width: 24px !important; height: 24px !important; font-size: 10px !important; }
+      .chat-msg-text { font-size: 14px !important; }
+      .admin-grid { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 480px) {
+      .chat-header { flex-wrap: wrap; gap: 4px !important; height: auto !important; padding: 6px 8px !important; }
+      .chat-header > div:first-child { width: 100%; }
+      .chat-header > div:last-child { width: 100%; justify-content: flex-start; overflow-x: auto; }
+      .chat-welcome-icon { width: 48px !important; height: 48px !important; font-size: 24px !important; }
+      .chat-msg-content { gap: 10px !important; }
+    }
+  `;
+  document.head.appendChild(respStyle);
+}
+
 const SUPABASE_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co";
 const ADMIN_EMAIL = "farhad1984crypto@gmail.com";
 const SUPABASE_KEY = "sb_publishable_mxVEWWeumrPEedmA4yD0cg_ZMPgwWYU";
@@ -596,7 +628,7 @@ function App() {
     <div style={{ display: "flex", height: "100vh", background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden" }}>
 
       {/* SIDEBAR */}
-      <div style={{
+      <div className={`chat-sidebar ${sidebarOpen ? "open" : ""}`} style={{
         width: sidebarOpen ? 260 : 0,
         minWidth: sidebarOpen ? 260 : 0,
         background: "#171717",
@@ -635,9 +667,9 @@ function App() {
                 <div style={{ fontSize: 12, color: "#ececec", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{convo.title}</div>
               </div>
               <button onClick={(e) => { e.stopPropagation(); deleteConversation(convo.id); }}
-                style={{ background: "none", border: "none", color: "#5c5c5c", cursor: "pointer", fontSize: 12, padding: "2px 4px", opacity: 0, transition: "opacity 0.2s" }}
-                onMouseEnter={e => e.currentTarget.style.opacity = 1}
-                onMouseLeave={e => e.currentTarget.style.opacity = 0}
+                style={{ background: "none", border: "none", color: "#8e8ea0", cursor: "pointer", fontSize: 14, padding: "4px 6px", borderRadius: 4, opacity: 0.6, transition: "all 0.2s" }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "#ef444422"; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.color = "#8e8ea0"; e.currentTarget.style.background = "transparent"; }}
               >🗑</button>
             </div>
           ))}
@@ -655,11 +687,14 @@ function App() {
         </div>
       </div>
 
+      {/* Mobile Sidebar Overlay */}
+      <div className={`chat-sidebar-overlay ${sidebarOpen ? "show" : ""}`} onClick={() => setSidebarOpen(false)} />
+
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
+      <div className="chat-main" style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
 
         {/* Header */}
-        <div style={{
+        <div className="chat-header" style={{
           height: 48, display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 16px", borderBottom: "1px solid #2d2d2d", flexShrink: 0,
         }}>
@@ -729,8 +764,8 @@ function App() {
           <>
             <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0" }}>
               {messages.length === 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 40 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 12, background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 24 }}>S</div>
+                <div className="chat-welcome" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 40 }}>
+                  <div className="chat-welcome-icon" style={{ width: 64, height: 64, borderRadius: 12, background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 24 }}>S</div>
                   <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{t.welcomeTitle}</h1>
                   <p style={{ margin: 0, fontSize: 16, color: "#8e8ea0" }}>{t.welcomeSubtitle}</p>
                 </div>
@@ -740,13 +775,13 @@ function App() {
                     background: msg.role === "user" ? "transparent" : "#171717",
                     borderBottom: msg.role === "assistant" ? "1px solid #2d2d2d" : "none",
                   }}>
-                    <div style={{ maxWidth: 768, margin: "0 auto", padding: "20px 24px", display: "flex", gap: 16, direction: isRTL ? "rtl" : "ltr" }}>
-                      <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#fff",
+                    <div className="chat-msg-content" style={{ maxWidth: 768, margin: "0 auto", padding: "20px 24px", display: "flex", gap: 16, direction: isRTL ? "rtl" : "ltr" }}>
+                      <div className="chat-avatar" style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#fff",
                         background: msg.role === "user" ? profile.avatar_color : "#10a37f",
                       }}>
                         {msg.role === "user" ? (profile.display_name || "U")[0].toUpperCase() : "S"}
                       </div>
-                      <div style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: 15, lineHeight: 1.7, direction: "auto" }}>
+                      <div className="chat-msg-text" style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: 15, lineHeight: 1.7, direction: "auto" }}>
                         {msg.role === "user" ? (
                           <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
                         ) : (
@@ -797,7 +832,7 @@ function App() {
             </div>
 
             {/* Input Area */}
-            <div style={{ padding: "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
+            <div className="chat-input-area" style={{ padding: "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
               <div style={{ maxWidth: 768, margin: "0 auto", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ position: "relative" }}>
                   <textarea
@@ -963,7 +998,7 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
               <div style={{ color: "#8e8ea0", textAlign: "center", padding: 40 }}>Loading...</div>
             ) : (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+                <div className="admin-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
                   {[
                     { label: "Users", value: adminUsers.length, icon: "👥" },
                     { label: "Messages", value: adminUsers.reduce((a, u) => a + (parseInt(u.total_messages) || 0), 0), icon: "💬" },
