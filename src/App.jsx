@@ -131,13 +131,6 @@ if (typeof document !== "undefined" && !document.getElementById("app-animations"
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-10px); }
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 0.4; transform: scale(0.8); }
-      50% { opacity: 1; transform: scale(1); }
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
     .welcome-anim-1 { animation: welcomeFadeIn 0.8s ease-out 0.2s both; }
     .welcome-anim-2 { animation: welcomeFadeIn 0.8s ease-out 0.5s both; }
     .welcome-anim-3 { animation: welcomeFadeIn 0.8s ease-out 0.8s both; }
@@ -477,7 +470,6 @@ function ImageGenerator({ t, isRTL }) {
     </div>
   );
 }
-
 
 // ═══════════════════════════════════════════════════════════════
 // ═══ WELCOME PAGE ═══
@@ -965,6 +957,9 @@ function App() {
           <button onClick={handleLogout} style={{ background: "none", border: "none", color: "#8e8ea0", cursor: "pointer", fontSize: 16 }}>↪</button>
         </div>
       </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <div className={`chat-sidebar-overlay ${sidebarOpen ? "show" : ""}`} onClick={() => setSidebarOpen(false)} />
 
       {/* MAIN CONTENT */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
