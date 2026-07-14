@@ -185,16 +185,16 @@ const MODELS = [
 
 const translations = {
   fa: {
-    title: "ShardeumAI", subtitle: "Dastyar-e Hoshmand-e Chandzabane",
-    placeholder: "Payam khod ra benevisid...", send: "Ersal",
-    loginTitle: "Vorud", email: "Email", password: "Ramz-e Obur", login: "Vorud", logout: "Khoruj", signup: "Sabt-e Nam",
-    newChat: "Goftegu-ye Jadid", recentChats: "Gofteguha-ye Akhir", noChats: "Goftegui vojud nadarad",
-    imageTab: "Tolid-e Akk", chatTab: "Goftegu", profileTab: "Profile", adminTab: "Modiriyat",
-    imagePlaceholder: "Tozih-e akk ra benevisid...", generate: "Sakht-e Akk", generating: "Dar hale sakht...",
-    welcomeTitle: "ShardeumAI", welcomeSubtitle: "Che kari mitavanam baraye shoma anjam daham?",
-    share: "Eshtrak-gozari", export: "Khoruji", copy: "Copy", copied: "Copy shod!",
-    model: "Model", language: "Zaban", webSearch: "Josteju-ye Web",
-    welcomePageTitle: "Welcome to ShardeumAI", welcomePageSubtitle: "A MultiLingual AI Platform", start: "Shoru'",
+    title: "ShardeumAI", subtitle: "دستیار هوشمند چندزبانه",
+    placeholder: "پیام خود را بنویسید...", send: "ارسال",
+    loginTitle: "ورود", email: "ایمیل", password: "رمز عبور", login: "ورود", logout: "خروج", signup: "ثبت نام",
+    newChat: "گفتگوی جدید", recentChats: "گفتگوهای اخیر", noChats: "گفتگویی وجود ندارد",
+    imageTab: "تولید عکس", chatTab: "گفتگو", profileTab: "پروفایل", adminTab: "مدیریت",
+    imagePlaceholder: "توضیح عکس را بنویسید...", generate: "ساخت عکس", generating: "در حال ساخت...",
+    welcomeTitle: "ShardeumAI", welcomeSubtitle: "چه کاری می‌توانم برای شما انجام دهم؟",
+    share: "اشتراک‌گذاری", export: "خروجی", copy: "کپی", copied: "کپی شد!",
+    model: "مدل", language: "زبان", webSearch: "جستجوی وب",
+    welcomePageTitle: "به ShardeumAI خوش آمدید", welcomePageSubtitle: "یک پلتفرم هوش مصنوعی چندزبانه", start: "شروع",
   },
   en: {
     title: "ShardeumAI", subtitle: "Your Intelligent Assistant",
@@ -627,7 +627,7 @@ function App() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const th = THEMES[resolvedTheme];
   const [showWelcome, setShowWelcome] = useState(() => {
-    return !localStorage.getItem("shardeumai-welcome-shown");
+    return !localStorage.getItem("shardeumai-welcome-v2");
   });
   const [uiLang, setUiLang] = useState("en");
   const [modelLang, setModelLang] = useState("auto");
@@ -831,7 +831,7 @@ function App() {
         uiLang={uiLang}
         setUiLang={setUiLang}
         onStart={() => {
-          localStorage.setItem("shardeumai-welcome-shown", "true");
+          localStorage.setItem("shardeumai-welcome-v2", "true");
           setShowWelcome(false);
         }}
       />
