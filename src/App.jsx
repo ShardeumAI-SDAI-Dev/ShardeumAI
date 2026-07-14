@@ -3,6 +3,64 @@ import { createClient } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+// ═══════════════════════════════════════════════════════════════
+// ═══ THEME SYSTEM ═══
+// ═══════════════════════════════════════════════════════════════
+
+const THEMES = {
+  dark: {
+    bg: "#000000", bgSecondary: "#171717", bgTertiary: "#0d0d0d",
+    border: "#2d2d2d", borderLight: "#3d3d3d",
+    text: "#ececec", textSecondary: "#8e8ea0", textMuted: "#5c5c5c",
+    primary: "#10a37f", primaryLight: "#10a37f22",
+    inputBg: "#2d2d2d", hoverBg: "#262626", activeBg: "#404040",
+    codeBg: "#282c34", userMsgBg: "#3b82f6", assistantMsgBg: "#1e293b",
+    error: "#e0746a", success: "#95d5b2", warning: "#f59e0b",
+    shadow: "0 8px 32px rgba(0,0,0,0.4)",
+    gradient: "linear-gradient(135deg, #10a37f, #22c55e)",
+    overlay: "rgba(0,0,0,0.7)",
+  },
+  light: {
+    bg: "#ffffff", bgSecondary: "#f7f7f8", bgTertiary: "#ffffff",
+    border: "#e5e5e5", borderLight: "#d9d9e3",
+    text: "#343541", textSecondary: "#6e6e80", textMuted: "#acacbe",
+    primary: "#10a37f", primaryLight: "#10a37f15",
+    inputBg: "#ffffff", hoverBg: "#f0f0f0", activeBg: "#e3e3e3",
+    codeBg: "#f6f8fa", userMsgBg: "#3b82f6", assistantMsgBg: "#f7f7f8",
+    error: "#ef4444", success: "#22c55e", warning: "#f59e0b",
+    shadow: "0 8px 32px rgba(0,0,0,0.08)",
+    gradient: "linear-gradient(135deg, #10a37f, #22c55e)",
+    overlay: "rgba(0,0,0,0.3)",
+  },
+};
+
+function useTheme() {
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("shardeumai-theme");
+    if (saved && ["dark", "light", "auto"].includes(saved)) return saved;
+    return "auto";
+  });
+  const [resolvedTheme, setResolvedTheme] = useState("dark");
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const resolve = () => {
+      const t = theme === "auto" ? (mq.matches ? "dark" : "light") : theme;
+      setResolvedTheme(t);
+      document.documentElement.setAttribute("data-theme", t);
+    };
+    resolve();
+    mq.addEventListener("change", resolve);
+    return () => mq.removeEventListener("change", resolve);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem("shardeumai-theme", theme);
+  }, [theme]);
+
+  return { theme, setTheme, resolvedTheme };
+}
+
 // ── Fonts ──
 if (typeof document !== "undefined" && !document.getElementById("app-fonts")) {
   const style = document.createElement("style");
@@ -46,6 +104,48 @@ if (typeof document !== "undefined" && !document.getElementById("app-responsive"
     }
   `;
   document.head.appendChild(respStyle);
+}
+
+// ── Animation Styles ──
+if (typeof document !== "undefined" && !document.getElementById("app-animations")) {
+  const animStyle = document.createElement("style");
+  animStyle.id = "app-animations";
+  animStyle.textContent = `
+    @keyframes welcomeFadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes welcomeSlideUp {
+      from { opacity: 0; transform: translateY(60px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes welcomeScale {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes welcomeGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(16,163,127,0.3); }
+      50% { box-shadow: 0 0 40px rgba(16,163,127,0.6); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .welcome-anim-1 { animation: welcomeFadeIn 0.8s ease-out 0.2s both; }
+    .welcome-anim-2 { animation: welcomeFadeIn 0.8s ease-out 0.5s both; }
+    .welcome-anim-3 { animation: welcomeFadeIn 0.8s ease-out 0.8s both; }
+    .welcome-anim-4 { animation: welcomeSlideUp 0.8s ease-out 1.1s both; }
+    .welcome-logo { animation: welcomeScale 0.6s ease-out 0.1s both, welcomeGlow 3s ease-in-out 1s infinite; }
+    .welcome-float { animation: float 3s ease-in-out infinite; }
+  `;
+  document.head.appendChild(animStyle);
 }
 
 const SUPABASE_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co";
@@ -101,6 +201,7 @@ const translations = {
     welcomeTitle: "ShardeumAI", welcomeSubtitle: "Che kari mitavanam baraye shoma anjam daham?",
     share: "Eshtrak-gozari", export: "Khoruji", copy: "Copy", copied: "Copy shod!",
     model: "Model", language: "Zaban", webSearch: "Josteju-ye Web",
+    welcomePageTitle: "Welcome to ShardeumAI", welcomePageSubtitle: "A MultiLingual AI Platform", start: "Shoru'",
   },
   en: {
     title: "ShardeumAI", subtitle: "Your Intelligent Assistant",
@@ -112,6 +213,7 @@ const translations = {
     welcomeTitle: "ShardeumAI", welcomeSubtitle: "What can I help you with?",
     share: "Share", export: "Export", copy: "Copy", copied: "Copied!",
     model: "Model", language: "Language", webSearch: "Web search",
+    welcomePageTitle: "Welcome to ShardeumAI", welcomePageSubtitle: "A MultiLingual AI Platform", start: "Start",
   },
   es: {
     title: "ShardeumAI", subtitle: "Tu Asistente Inteligente",
@@ -123,6 +225,7 @@ const translations = {
     welcomeTitle: "ShardeumAI", welcomeSubtitle: "En que puedo ayudarte?",
     share: "Compartir", export: "Exportar", copy: "Copiar", copied: "Copiado!",
     model: "Modelo", language: "Idioma", webSearch: "Busqueda web",
+    welcomePageTitle: "Bienvenido a ShardeumAI", welcomePageSubtitle: "Una Plataforma de IA Multilingue", start: "Comenzar",
   },
   fr: {
     title: "ShardeumAI", subtitle: "Votre Assistant Intelligent",
@@ -134,6 +237,7 @@ const translations = {
     welcomeTitle: "ShardeumAI", welcomeSubtitle: "Comment puis-je vous aider?",
     share: "Partager", export: "Exporter", copy: "Copier", copied: "Copie!",
     model: "Modele", language: "Langue", webSearch: "Recherche web",
+    welcomePageTitle: "Bienvenue sur ShardeumAI", welcomePageSubtitle: "Une Plateforme IA Multilingue", start: "Commencer",
   },
   de: {
     title: "ShardeumAI", subtitle: "Ihr Intelligenter Assistent",
@@ -145,6 +249,7 @@ const translations = {
     welcomeTitle: "ShardeumAI", welcomeSubtitle: "Wie kann ich Ihnen helfen?",
     share: "Teilen", export: "Exportieren", copy: "Kopieren", copied: "Kopiert!",
     model: "Modell", language: "Sprache", webSearch: "Websuche",
+    welcomePageTitle: "Willkommen bei ShardeumAI", welcomePageSubtitle: "Eine Mehrsprachige KI-Plattform", start: "Starten",
   },
   ru: {
     title: "ShardeumAI", subtitle: "Vash Intellektualnyy Pomoshchnik",
@@ -156,6 +261,7 @@ const translations = {
     welcomeTitle: "ShardeumAI", welcomeSubtitle: "Chem mogu pomoch'?",
     share: "Podelit'sya", export: "Eksport", copy: "Kopirovat'", copied: "Skopirovano!",
     model: "Model'", language: "Yazyk", webSearch: "Veb-poisk",
+    welcomePageTitle: "Dobro pozhalovat' v ShardeumAI", welcomePageSubtitle: "Mnogoyazychnaya Platforma Iskusstvennogo Intellekta", start: "Nachat'",
   },
   ar: {
     title: "ShardeumAI", subtitle: "Musa'iduka al-Thakiy",
@@ -167,6 +273,7 @@ const translations = {
     welcomeTitle: "ShardeumAI", welcomeSubtitle: "Kayfa Yumkinuni Musa'adatuka?",
     share: "Musharaka", export: "Tasdir", copy: "Nuskh", copied: "Nusikha!",
     model: "Al-Namudhaj", language: "Al-Lugha", webSearch: "Bahth al-Wib",
+    welcomePageTitle: "Ahlan wa Sahlan fi ShardeumAI", welcomePageSubtitle: "Minassat Zaka' Istitna'iyya Mutadaddat al-Lughat", start: "Ibdah",
   },
 };
 
@@ -371,11 +478,165 @@ function ImageGenerator({ t, isRTL }) {
   );
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ WELCOME PAGE ═══
+// ═══════════════════════════════════════════════════════════════
+
+function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart }) {
+  const isRTL = uiLang === "fa" || uiLang === "ar";
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      background: th.bg,
+      color: th.text,
+      direction: isRTL ? "rtl" : "ltr",
+      position: "relative",
+      overflow: "hidden",
+    }}>
+      <div style={{
+        position: "absolute", top: "10%", left: "10%", width: 300, height: 300,
+        borderRadius: "50%", background: th.primary, opacity: 0.03, filter: "blur(80px)",
+      }} />
+      <div style={{
+        position: "absolute", bottom: "10%", right: "10%", width: 400, height: 400,
+        borderRadius: "50%", background: th.primary, opacity: 0.02, filter: "blur(100px)",
+      }} />
+
+      <div className="welcome-anim-1" style={{
+        position: "absolute", top: 24, right: 24,
+        display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end",
+      }}>
+        {UI_LANGUAGES.map(lang => (
+          <button key={lang.code} onClick={() => setUiLang(lang.code)}
+            style={{
+              padding: "4px 10px", borderRadius: 6,
+              border: `1px solid ${uiLang === lang.code ? th.primary : th.border}`,
+              background: uiLang === lang.code ? th.primaryLight : "transparent",
+              color: uiLang === lang.code ? th.primary : th.textSecondary,
+              fontSize: 12, cursor: "pointer", transition: "all 0.2s",
+            }}>
+            {lang.flag} {lang.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="welcome-anim-1" style={{ position: "absolute", top: 24, left: 24, display: "flex", gap: 4 }}>
+        {[
+          { id: "light", icon: "☀️", label: "Light" },
+          { id: "dark", icon: "🌙", label: "Dark" },
+          { id: "auto", icon: "⚙️", label: "Auto" },
+        ].map(toggle => (
+          <button key={toggle.id} onClick={() => setTheme(toggle.id)}
+            title={toggle.label}
+            style={{
+              padding: "6px 10px", borderRadius: 8,
+              border: `1px solid ${theme === toggle.id ? th.primary : th.border}`,
+              background: theme === toggle.id ? th.primaryLight : "transparent",
+              color: theme === toggle.id ? th.primary : th.textSecondary,
+              fontSize: 14, cursor: "pointer", transition: "all 0.2s",
+            }}>
+            {toggle.icon}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ textAlign: "center", maxWidth: 600, padding: "0 24px", zIndex: 1 }}>
+        <div className="welcome-logo welcome-float" style={{
+          width: 100, height: 100, borderRadius: 24,
+          background: th.gradient,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 48, fontWeight: 700, color: "#fff",
+          margin: "0 auto 32px",
+        }}>
+          S
+        </div>
+
+        <h1 className="welcome-anim-2" style={{
+          margin: 0, fontSize: 42, fontWeight: 800,
+          color: th.text, lineHeight: 1.2,
+          letterSpacing: "-0.02em",
+        }}>
+          {t.welcomePageTitle}
+        </h1>
+
+        <p className="welcome-anim-3" style={{
+          margin: "16px 0 0", fontSize: 18,
+          color: th.textSecondary, fontWeight: 400,
+        }}>
+          {t.welcomePageSubtitle}
+        </p>
+
+        <div className="welcome-anim-3" style={{
+          display: "flex", gap: 24, justifyContent: "center",
+          marginTop: 40, flexWrap: "wrap",
+        }}>
+          {[
+            { icon: "🤖", text: "AI Chat" },
+            { icon: "🎨", text: "Image Gen" },
+            { icon: "🌐", text: "7 Languages" },
+            { icon: "⚡", text: "Fast" },
+          ].map(f => (
+            <div key={f.text} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              padding: "16px 20px", borderRadius: 12,
+              background: th.bgSecondary, border: `1px solid ${th.border}`,
+              minWidth: 100,
+            }}>
+              <span style={{ fontSize: 28 }}>{f.icon}</span>
+              <span style={{ fontSize: 12, color: th.textSecondary, fontWeight: 500 }}>{f.text}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="welcome-anim-4" style={{ marginTop: 48 }}>
+          <button onClick={onStart}
+            style={{
+              padding: "16px 48px", borderRadius: 14,
+              border: "none", background: th.gradient,
+              color: "#fff", fontSize: 18, fontWeight: 700,
+              cursor: "pointer", letterSpacing: "0.5px",
+              boxShadow: `0 4px 20px ${th.primary}44`,
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = `0 8px 30px ${th.primary}66`;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = `0 4px 20px ${th.primary}44`;
+            }}
+          >
+            {t.start} →
+          </button>
+        </div>
+
+        <p className="welcome-anim-4" style={{
+          marginTop: 40, fontSize: 12, color: th.textMuted,
+        }}>
+          Powered by Groq AI · ShardeumAI 2026
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════
 // ═══ OPTION 1: ChatGPT-Style Single File (Complete Redesign) ═══
 // ═══════════════════════════════════════════════════════════════
 
 function App() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const th = THEMES[resolvedTheme];
+  const [showWelcome, setShowWelcome] = useState(() => {
+    return !localStorage.getItem("shardeumai-welcome-shown");
+  });
   const [uiLang, setUiLang] = useState("en");
   const [modelLang, setModelLang] = useState("auto");
   const [session, setSession] = useState(null);
@@ -567,6 +828,24 @@ function App() {
     setChatLoading(false);
   }
 
+  // ── Welcome Page ──
+  if (showWelcome) {
+    return (
+      <WelcomePage
+        t={t}
+        th={th}
+        theme={theme}
+        setTheme={setTheme}
+        uiLang={uiLang}
+        setUiLang={setUiLang}
+        onStart={() => {
+          localStorage.setItem("shardeumai-welcome-shown", "true");
+          setShowWelcome(false);
+        }}
+      />
+    );
+  }
+
   // ── Auth Screen ──
   if (!session) {
     return (
@@ -628,7 +907,7 @@ function App() {
     <div style={{ display: "flex", height: "100vh", background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden" }}>
 
       {/* SIDEBAR */}
-      <div className={`chat-sidebar ${sidebarOpen ? "open" : ""}`} style={{
+      <div style={{
         width: sidebarOpen ? 260 : 0,
         minWidth: sidebarOpen ? 260 : 0,
         background: "#171717",
@@ -667,9 +946,9 @@ function App() {
                 <div style={{ fontSize: 12, color: "#ececec", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{convo.title}</div>
               </div>
               <button onClick={(e) => { e.stopPropagation(); deleteConversation(convo.id); }}
-                style={{ background: "none", border: "none", color: "#8e8ea0", cursor: "pointer", fontSize: 14, padding: "4px 6px", borderRadius: 4, opacity: 0.6, transition: "all 0.2s" }}
-                onMouseEnter={e => { e.currentTarget.style.opacity = 1; e.currentTarget.style.color = "#ef4444"; e.currentTarget.style.background = "#ef444422"; }}
-                onMouseLeave={e => { e.currentTarget.style.opacity = 0.6; e.currentTarget.style.color = "#8e8ea0"; e.currentTarget.style.background = "transparent"; }}
+                style={{ background: "none", border: "none", color: "#5c5c5c", cursor: "pointer", fontSize: 12, padding: "2px 4px", opacity: 0, transition: "opacity 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                onMouseLeave={e => e.currentTarget.style.opacity = 0}
               >🗑</button>
             </div>
           ))}
@@ -687,14 +966,11 @@ function App() {
         </div>
       </div>
 
-      {/* Mobile Sidebar Overlay */}
-      <div className={`chat-sidebar-overlay ${sidebarOpen ? "show" : ""}`} onClick={() => setSidebarOpen(false)} />
-
       {/* MAIN CONTENT */}
-      <div className="chat-main" style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
 
         {/* Header */}
-        <div className="chat-header" style={{
+        <div style={{
           height: 48, display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 16px", borderBottom: "1px solid #2d2d2d", flexShrink: 0,
         }}>
@@ -732,6 +1008,26 @@ function App() {
               style={{ background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, color: "#ececec", fontSize: 12, padding: "4px 8px", outline: "none", cursor: "pointer" }}>
               {MODEL_LANGUAGES.map(l => <option key={l.code} value={l.code}>{l.flag} {l.label}</option>)}
             </select>
+            {/* Theme Toggle */}
+            <div style={{ display: "flex", gap: 4 }}>
+              {[
+                { id: "light", icon: "☀️" },
+                { id: "dark", icon: "🌙" },
+                { id: "auto", icon: "⚙️" },
+              ].map(toggle => (
+                <button key={toggle.id} onClick={() => setTheme(toggle.id)}
+                  title={toggle.id}
+                  style={{
+                    padding: "4px 8px", borderRadius: 6,
+                    border: `1px solid ${theme === toggle.id ? "#10a37f" : "#3d3d3d"}`,
+                    background: theme === toggle.id ? "#10a37f22" : "transparent",
+                    color: theme === toggle.id ? "#10a37f" : "#8e8ea0",
+                    fontSize: 12, cursor: "pointer", transition: "all 0.2s",
+                  }}>
+                  {toggle.icon}
+                </button>
+              ))}
+            </div>
             <button onClick={() => setWebSearch(!webSearch)}
               style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
               🔍
@@ -764,8 +1060,8 @@ function App() {
           <>
             <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0" }}>
               {messages.length === 0 ? (
-                <div className="chat-welcome" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 40 }}>
-                  <div className="chat-welcome-icon" style={{ width: 64, height: 64, borderRadius: 12, background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 24 }}>S</div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 40 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: 12, background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 24 }}>S</div>
                   <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{t.welcomeTitle}</h1>
                   <p style={{ margin: 0, fontSize: 16, color: "#8e8ea0" }}>{t.welcomeSubtitle}</p>
                 </div>
@@ -775,13 +1071,13 @@ function App() {
                     background: msg.role === "user" ? "transparent" : "#171717",
                     borderBottom: msg.role === "assistant" ? "1px solid #2d2d2d" : "none",
                   }}>
-                    <div className="chat-msg-content" style={{ maxWidth: 768, margin: "0 auto", padding: "20px 24px", display: "flex", gap: 16, direction: isRTL ? "rtl" : "ltr" }}>
-                      <div className="chat-avatar" style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#fff",
+                    <div style={{ maxWidth: 768, margin: "0 auto", padding: "20px 24px", display: "flex", gap: 16, direction: isRTL ? "rtl" : "ltr" }}>
+                      <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#fff",
                         background: msg.role === "user" ? profile.avatar_color : "#10a37f",
                       }}>
                         {msg.role === "user" ? (profile.display_name || "U")[0].toUpperCase() : "S"}
                       </div>
-                      <div className="chat-msg-text" style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: 15, lineHeight: 1.7, direction: "auto" }}>
+                      <div style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: 15, lineHeight: 1.7, direction: "auto" }}>
                         {msg.role === "user" ? (
                           <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
                         ) : (
@@ -832,7 +1128,7 @@ function App() {
             </div>
 
             {/* Input Area */}
-            <div className="chat-input-area" style={{ padding: "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
+            <div style={{ padding: "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
               <div style={{ maxWidth: 768, margin: "0 auto", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ position: "relative" }}>
                   <textarea
@@ -998,7 +1294,7 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
               <div style={{ color: "#8e8ea0", textAlign: "center", padding: 40 }}>Loading...</div>
             ) : (
               <>
-                <div className="admin-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
                   {[
                     { label: "Users", value: adminUsers.length, icon: "👥" },
                     { label: "Messages", value: adminUsers.reduce((a, u) => a + (parseInt(u.total_messages) || 0), 0), icon: "💬" },
