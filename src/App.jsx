@@ -367,6 +367,8 @@ function App() {
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminSettings, setAdminSettings] = useState({});
   const [adminLoading, setAdminLoading] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -391,6 +393,18 @@ function App() {
   useEffect(() => {
     if (inputRef.current) inputRef.current.focus();
   }, [activeConvoId]);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    if ("Notification" in window) setPushEnabled(Notification.permission === "granted");
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   // ── Data Loading ──
   async function loadHistory(userId) {
@@ -687,10 +701,18 @@ function App() {
               style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
               🔍
             </button>
-            {["chat", "image"].map(tab => (
+            {webSearch && (
+              <select value={searchProvider} onChange={e => setSearchProvider(e.target.value)}
+                style={{ background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, color: "#ececec", fontSize: 11, padding: "4px 8px", outline: "none", cursor: "pointer" }}>
+                <option value="tavily">Tavily</option>
+                <option value="exa">Exa</option>
+                <option value="firecrawl">Firecrawl</option>
+              </select>
+            )}
+            {["chat", "image", "profile", "api"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
-                style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? "#ececec" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                {tab === "chat" ? "💬" : "🎨"}
+                style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : "🔌"}
               </button>
             ))}
             {session?.user?.email === ADMIN_EMAIL && (
@@ -845,6 +867,94 @@ function App() {
         ) : activeTab === "image" ? (
           <div style={{ flex: 1, overflow: "auto", padding: "0 16px" }}>
             <ImageGenerator t={t} isRTL={isRTL} />
+          </div>
+        ) : activeTab === "profile" ? (
+          <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 480, margin: "0 auto", width: "100%" }}>
+            <h2 style={{ margin: "0 0 16px", fontSize: 18, fontWeight: 700, color: "#ececec" }}>👤 Profile</h2>
+            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div style={{ width: 64, height: 64, borderRadius: "50%", background: profile.avatar_color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, fontWeight: 700, color: "#fff", flexShrink: 0 }}>
+                  {(profile.display_name || session?.user?.email || "?")[0].toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: 16 }}>{profile.display_name || session?.user?.email?.split("@")[0]}</div>
+                  <div style={{ fontSize: 12, color: "#8e8ea0" }}>{session?.user?.email}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ fontSize: 12, color: "#8e8ea0" }}>Avatar Color</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                  {["#3b82f6","#8b5cf6","#ec4899","#ef4444","#f97316","#eab308","#22c55e","#14b8a6","#06b6d4","#6366f1","#ffffff","#64748b"].map(color => (
+                    <div key={color} onClick={() => setProfile(p => ({ ...p, avatar_color: color }))}
+                      style={{ width: 32, height: 32, borderRadius: "50%", background: color, cursor: "pointer", border: profile.avatar_color === color ? "3px solid #fff" : "3px solid transparent", boxShadow: profile.avatar_color === color ? `0 0 12px ${color}` : "none", transition: "all 0.15s ease" }} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 12, color: "#8e8ea0" }}>Display Name</label>
+                <input value={profile.display_name} onChange={(e) => setProfile(p => ({ ...p, display_name: e.target.value }))}
+                  placeholder="Your name..."
+                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #2d2d2d", background: "#0d0d0d", color: "#ececec", fontSize: 13, outline: "none" }} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <label style={{ fontSize: 12, color: "#8e8ea0" }}>Bio</label>
+                <textarea value={profile.bio} onChange={(e) => setProfile(p => ({ ...p, bio: e.target.value }))}
+                  placeholder="Tell us about yourself..." rows={3}
+                  style={{ padding: "10px 12px", borderRadius: 10, border: "1px solid #2d2d2d", background: "#0d0d0d", color: "#ececec", fontSize: 13, outline: "none", resize: "vertical", fontFamily: "inherit" }} />
+              </div>
+              <button onClick={async () => { if (!session) return; await supabase.from("user_profiles").upsert({ id: session.user.id, display_name: profile.display_name, bio: profile.bio, avatar_color: profile.avatar_color, updated_at: new Date().toISOString() }); }}
+                style={{ padding: "11px 0", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${profile.avatar_color}, #22c55e)`, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                Save Profile
+              </button>
+            </div>
+            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 12, color: "#8e8ea0", marginBottom: 10 }}>Account Info</div>
+              <div style={{ fontSize: 13, color: "#ececec" }}>{session?.user?.email}</div>
+              <div style={{ fontSize: 12, color: "#8e8ea0", marginTop: 6 }}>Member since {new Date(session?.user?.created_at).toLocaleDateString()}</div>
+            </div>
+          </div>
+        ) : activeTab === "api" ? (
+          <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 640, margin: "0 auto", width: "100%" }}>
+            <h2 style={{ margin: "0 0 16px", fontSize: 18, fontWeight: 700, color: "#a855f7" }}>🔌 API Documentation</h2>
+            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a855f7", marginBottom: 12 }}>🔔 Push Notifications</div>
+              <div style={{ fontSize: 12, color: "#8e8ea0", marginBottom: 12 }}>Status: {pushEnabled ? <span style={{ color: "#10a37f" }}>Enabled</span> : <span style={{ color: "#ef4444" }}>Disabled</span>}</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                {!pushEnabled ? (
+                  <button onClick={async () => { if (!("Notification" in window)) return alert("Not supported"); const p = await Notification.requestPermission(); setPushEnabled(p === "granted"); if (p === "granted") new Notification("ShardeumAI", { body: "Enabled!", icon: "/icons/icon-192.png" }); }}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#7c3aed", color: "#fff", fontSize: 12, cursor: "pointer" }}>
+                    Enable Notifications
+                  </button>
+                ) : (
+                  <button onClick={() => new Notification("ShardeumAI Test", { body: "Test notification!", icon: "/icons/icon-192.png" })}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #10a37f", background: "#10a37f22", color: "#10a37f", fontSize: 12, cursor: "pointer" }}>
+                    Send Test
+                  </button>
+                )}
+              </div>
+            </div>
+            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 12, padding: 16, marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a855f7", marginBottom: 12 }}>📵 Offline Mode</div>
+              <div style={{ fontSize: 12, color: "#8e8ea0" }}>Status: {isOffline ? <span style={{ color: "#ef4444" }}>Offline</span> : <span style={{ color: "#10a37f" }}>Online</span>}</div>
+            </div>
+            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 12, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#a855f7", marginBottom: 12 }}>📡 Chat API</div>
+              <code style={{ display: "block", background: "#0d0d0d", padding: "10px 12px", borderRadius: 8, fontSize: 11, color: "#22c55e", wordBreak: "break-all", marginBottom: 12 }}>
+                POST https://zzolokpbjkrvkyaubcoq.supabase.co/functions/v1/chat
+              </code>
+              <pre style={{ background: "#0d0d0d", padding: "10px 12px", borderRadius: 8, fontSize: 11, color: "#60a5fa", overflow: "auto", marginBottom: 12 }}>{`Content-Type: application/json
+Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
+              <pre style={{ background: "#0d0d0d", padding: "10px 12px", borderRadius: 8, fontSize: 11, color: "#60a5fa", overflow: "auto", marginBottom: 12 }}>{`{
+  "messages": [{"role": "user", "content": "Hello"}],
+  "language": "auto",
+  "web_search": false,
+  "search_provider": "tavily"
+}`}</pre>
+              <pre style={{ background: "#0d0d0d", padding: "10px 12px", borderRadius: 8, fontSize: 11, color: "#22c55e", overflow: "auto" }}>{`{
+  "reply": "Hello! How can I help you?",
+  "web_searched": false
+}`}</pre>
+            </div>
           </div>
         ) : activeTab === "admin" && session?.user?.email === ADMIN_EMAIL ? (
           <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
