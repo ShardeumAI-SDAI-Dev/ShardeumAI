@@ -412,6 +412,7 @@ function App() {
   const [showSignup, setShowSignup] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [aiMode, setAiMode] = useState("general");
+  const [selectedModel, setSelectedModel] = useState("llama-3.1-8b-instant");
   const [webSearch, setWebSearch] = useState(false);
   const [searchProvider, setSearchProvider] = useState("tavily");
   const [adminUsers, setAdminUsers] = useState([]);
@@ -655,6 +656,7 @@ function App() {
           system_prompt: currentMode?.prompt,
           web_search: webSearch,
           search_provider: searchProvider,
+          model: selectedModel,
         }),
       });
       const data = await response.json();
@@ -900,6 +902,23 @@ function App() {
                 </button>
               ))}
             </div>
+            {/* Model Selector */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11, color: "#8e8ea0" }}>⚙️ Model:</span>
+              {[
+                { id: "llama-3.1-8b-instant", label: "⚡ Llama 3.1 Instant" },
+                { id: "llama-3.3-70b", label: "🧠 Llama 3.3 70B" },
+                { id: "deepseek-r1", label: "🔥 DeepSeek R1" },
+                { id: "gemma2-9b", label: "💎 Gemma 2" },
+                { id: "qwen-32b", label: "🌍 Qwen 32B" },
+              ].map(m => (
+                <button key={m.id} onClick={() => setSelectedModel(m.id)}
+                  style={{ padding: "4px 10px", borderRadius: 999, border: `1px solid ${selectedModel === m.id ? "#10a37f" : "#3d3d3d"}`, background: selectedModel === m.id ? "#0d3326" : "#2d2d2d", color: selectedModel === m.id ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", fontWeight: selectedModel === m.id ? 600 : 400 }}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
             {/* Web Search Toggle */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <button onClick={() => setWebSearch(!webSearch)}
