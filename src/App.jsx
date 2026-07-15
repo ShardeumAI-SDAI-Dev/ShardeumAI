@@ -61,6 +61,17 @@ function useTheme() {
   return { theme, setTheme, resolvedTheme };
 }
 
+// ── Mobile Detection ──
+function useMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+}
+
 // ── Fonts ──
 if (typeof document !== "undefined" && !document.getElementById("app-fonts")) {
   const style = document.createElement("style");
@@ -513,7 +524,7 @@ function ImageGenerator({ t, isRTL }) {
 // ═══ WELCOME PAGE ═══
 // ═══════════════════════════════════════════════════════════════
 
-function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart }) {
+function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart, isMobile }) {
   const isRTL = uiLang === "fa" || uiLang === "ar";
 
   return (
@@ -578,7 +589,7 @@ function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart }) {
 
       <div style={{ textAlign: "center", maxWidth: 600, padding: "0 24px", zIndex: 1 }}>
         <div className="welcome-logo welcome-float" style={{
-          width: 100, height: 100, borderRadius: 24,
+          width: isMobile ? 70 : 100, height: isMobile ? 70 : 100, borderRadius: 24,
           background: th.gradient,
           display: "flex", alignItems: "center", justifyContent: "center",
           fontSize: 48, fontWeight: 700, color: "#fff",
@@ -588,7 +599,7 @@ function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart }) {
         </div>
 
         <h1 className="welcome-anim-2" style={{
-          margin: 0, fontSize: 42, fontWeight: 800,
+          margin: 0, fontSize: isMobile ? 28 : 42, fontWeight: 800,
           color: th.text, lineHeight: 1.2,
           letterSpacing: "-0.02em",
         }}>
@@ -596,15 +607,15 @@ function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart }) {
         </h1>
 
         <p className="welcome-anim-3" style={{
-          margin: "16px 0 0", fontSize: 18,
+          margin: "16px 0 0", fontSize: isMobile ? 14 : 18,
           color: th.textSecondary, fontWeight: 400,
         }}>
           {t.welcomePageSubtitle}
         </p>
 
         <div className="welcome-anim-3" style={{
-          display: "flex", gap: 24, justifyContent: "center",
-          marginTop: 40, flexWrap: "wrap",
+          display: "flex", gap: isMobile ? 12 : 24, justifyContent: "center",
+          marginTop: isMobile ? 24 : 40, flexWrap: "wrap",
         }}>
           {[
             { icon: "🤖", text: "AI Chat" },
@@ -614,9 +625,9 @@ function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart }) {
           ].map(f => (
             <div key={f.text} style={{
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-              padding: "16px 20px", borderRadius: 12,
+              padding: isMobile ? "12px 14px" : "16px 20px", borderRadius: 12,
               background: th.bgSecondary, border: `1px solid ${th.border}`,
-              minWidth: 100,
+              minWidth: isMobile ? 80 : 100,
             }}>
               <span style={{ fontSize: 28 }}>{f.icon}</span>
               <span style={{ fontSize: 12, color: th.textSecondary, fontWeight: 500 }}>{f.text}</span>
@@ -627,7 +638,7 @@ function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart }) {
         <div className="welcome-anim-4" style={{ marginTop: 48 }}>
           <button onClick={onStart}
             style={{
-              padding: "16px 48px", borderRadius: 14,
+              padding: isMobile ? "12px 32px" : "16px 48px", borderRadius: 14,
               border: "none", background: th.gradient,
               color: "#fff", fontSize: 18, fontWeight: 700,
               cursor: "pointer", letterSpacing: "0.5px",
@@ -664,6 +675,7 @@ function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart }) {
 function App() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const th = THEMES[resolvedTheme];
+  const isMobile = useMobile();
   const [showWelcome, setShowWelcome] = useState(() => {
     return !localStorage.getItem("shardeumai-welcome-v2");
   });
@@ -965,6 +977,7 @@ function App() {
         setTheme={setTheme}
         uiLang={uiLang}
         setUiLang={setUiLang}
+        isMobile={isMobile}
         onStart={() => {
           localStorage.setItem("shardeumai-welcome-v2", "true");
           setShowWelcome(false);
@@ -1034,9 +1047,14 @@ function App() {
     <div style={{ display: "flex", height: "100vh", background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden" }}>
 
       {/* SIDEBAR */}
-      <div className={`chat-sidebar ${sidebarOpen ? "open" : ""}`} style={{
-        width: sidebarOpen ? 260 : 0,
-        minWidth: sidebarOpen ? 260 : 0,
+      <div style={{
+        width: isMobile ? (sidebarOpen ? 260 : 0) : (sidebarOpen ? 260 : 0),
+        minWidth: isMobile ? (sidebarOpen ? 260 : 0) : (sidebarOpen ? 260 : 0),
+        position: isMobile && sidebarOpen ? "fixed" : "relative",
+        zIndex: isMobile && sidebarOpen ? 200 : "auto",
+        height: isMobile ? "100vh" : "auto",
+        top: isMobile ? 0 : "auto",
+        left: isMobile ? 0 : "auto",
         background: "#171717",
         borderRight: "1px solid #2d2d2d",
         display: "flex",
@@ -1094,15 +1112,22 @@ function App() {
       </div>
 
       {/* Mobile Sidebar Overlay */}
-      <div className={`chat-sidebar-overlay ${sidebarOpen ? "show" : ""}`} onClick={() => setSidebarOpen(false)} />
+      {isMobile && sidebarOpen && (
+        <div onClick={() => setSidebarOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 199 }} />
+      )}
 
       {/* MAIN CONTENT */}
-      <div className="chat-main" style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
 
         {/* Header */}
-        <div className="chat-header" style={{
-          height: 48, display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 16px", borderBottom: "1px solid #2d2d2d", flexShrink: 0,
+        <div style={{
+          height: isMobile ? "auto" : 48,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: isMobile ? "6px 8px" : "0 16px",
+          borderBottom: "1px solid #2d2d2d", flexShrink: 0,
+          flexWrap: isMobile ? "wrap" : "nowrap",
+          gap: isMobile ? 4 : 0,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -1190,7 +1215,7 @@ function App() {
           <>
             <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0" }}>
               {messages.length === 0 ? (
-                <div className="chat-welcome" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 40 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: isMobile ? 20 : 40 }}>
                   <div style={{ width: 64, height: 64, borderRadius: 12, background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 24 }}>S</div>
                   <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{t.welcomeTitle}</h1>
                   <p style={{ margin: 0, fontSize: 16, color: "#8e8ea0" }}>{t.welcomeSubtitle}</p>
@@ -1201,13 +1226,13 @@ function App() {
                     background: msg.role === "user" ? "transparent" : "#171717",
                     borderBottom: msg.role === "assistant" ? "1px solid #2d2d2d" : "none",
                   }}>
-                    <div className="chat-msg-content" style={{ maxWidth: 768, margin: "0 auto", padding: "20px 24px", display: "flex", gap: 16, direction: isRTL ? "rtl" : "ltr" }}>
-                      <div className="chat-avatar" style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#fff",
+                    <div style={{ maxWidth: 768, margin: "0 auto", padding: isMobile ? "12px 8px" : "20px 24px", display: "flex", gap: isMobile ? 10 : 16, direction: isRTL ? "rtl" : "ltr" }}>
+                      <div style={{ width: isMobile ? 24 : 28, height: isMobile ? 24 : 28, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: isMobile ? 10 : 12, fontWeight: 600, color: "#fff",
                         background: msg.role === "user" ? profile.avatar_color : "#10a37f",
                       }}>
                         {msg.role === "user" ? (profile.display_name || "U")[0].toUpperCase() : "S"}
                       </div>
-                      <div className="chat-msg-text" style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: 15, lineHeight: 1.7, direction: "auto" }}>
+                      <div style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: isMobile ? 14 : 15, lineHeight: 1.7, direction: "auto" }}>
                         {msg.role === "user" ? (
                           <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
                         ) : (
@@ -1258,7 +1283,7 @@ function App() {
             </div>
 
             {/* Input Area */}
-            <div className="chat-input-area" style={{ padding: "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
+            <div style={{ padding: isMobile ? "8px 8px 16px" : "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
               <div style={{ maxWidth: 768, margin: "0 auto", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ position: "relative" }}>
                   {/* Uploaded Files Preview */}
@@ -1290,7 +1315,7 @@ function App() {
                     placeholder={t.placeholder}
                     rows={1}
                     style={{
-                      width: "100%", padding: "14px 110px 14px 16px", borderRadius: 16,
+                      width: "100%", padding: isMobile ? "14px 90px 14px 12px" : "14px 110px 14px 16px", borderRadius: 16,
                       border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec",
                       fontSize: 15, outline: "none", resize: "none", overflow: "hidden",
                       minHeight: 52, maxHeight: 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
@@ -1300,7 +1325,7 @@ function App() {
                   {/* Voice Button */}
                   <button type="button" onClick={toggleVoiceInput}
                     style={{
-                      position: "absolute", bottom: 10, right: 48,
+                      position: "absolute", bottom: 10, right: isMobile ? 40 : 48,
                       width: 32, height: 32, borderRadius: "50%",
                       border: "none", background: isListening ? "#ef4444" : "#404040",
                       color: "#fff", fontSize: 14, cursor: "pointer",
@@ -1313,7 +1338,7 @@ function App() {
                   {/* Upload Button */}
                   <button type="button" onClick={() => fileInputRef.current?.click()}
                     style={{
-                      position: "absolute", bottom: 10, right: 86,
+                      position: "absolute", bottom: 10, right: isMobile ? 74 : 86,
                       width: 32, height: 32, borderRadius: "50%",
                       border: "none", background: "#404040",
                       color: "#fff", fontSize: 14, cursor: "pointer",
@@ -1331,7 +1356,7 @@ function App() {
                   />
                   <button type="submit" disabled={(!input.trim() && uploadedFiles.length === 0) || chatLoading}
                     style={{
-                      position: "absolute", bottom: 10, right: 10,
+                      position: "absolute", bottom: 10, right: isMobile ? 6 : 10,
                       width: 32, height: 32, borderRadius: "50%",
                       border: "none", background: (input.trim() || uploadedFiles.length > 0) ? "#10a37f" : "#5c5c5c",
                       color: "#fff", fontSize: 14, cursor: (input.trim() || uploadedFiles.length > 0) ? "pointer" : "default",
@@ -1340,8 +1365,8 @@ function App() {
                     ➤
                   </button>
                 </form>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                  <div style={{ display: "flex", gap: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, flexWrap: "wrap", gap: 4 }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     {messages.length > 0 && (
                       <>
                         <button onClick={shareChat} disabled={shareLoading}
@@ -1518,7 +1543,7 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
               <div style={{ color: "#8e8ea0", textAlign: "center", padding: 40 }}>Loading...</div>
             ) : (
               <>
-                <div className="admin-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+                <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
                   {[
                     { label: "Users", value: adminUsers.length, icon: "👥" },
                     { label: "Messages", value: adminUsers.reduce((a, u) => a + (parseInt(u.total_messages) || 0), 0), icon: "💬" },
