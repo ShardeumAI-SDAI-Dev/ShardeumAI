@@ -752,22 +752,14 @@ function App() {
   }, [showSavedChats]);
 
   // ── Voice Recognition ──
+  const recognitionRef = useRef(null);
+
   useEffect(() => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) return;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = uiLang === "fa" ? "fa-IR" : uiLang === "ar" ? "ar-SA" : uiLang === "ru" ? "ru-RU" : uiLang === "de" ? "de-DE" : uiLang === "fr" ? "fr-FR" : uiLang === "es" ? "es-ES" : "en-US";
-
-    recognition.onresult = (e) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
-      setInput(transcript);
-    };
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-
-    window._voiceRecognition = recognition;
+    // Cleanup previous instance
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch(e) {}
+    }
   }, [uiLang]);
 
   // ── Data Loading ──
@@ -864,18 +856,46 @@ function App() {
 
   // ── Voice Input ──
   function toggleVoiceInput() {
-    if (!window._voiceRecognition) {
-      alert("Voice input not supported in your browser.");
+    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+      alert("Voice input not supported in your browser. Please use Chrome or Safari.");
       return;
     }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
     if (isListening) {
-      window._voiceRecognition.stop();
+      if (recognitionRef.current) {
+        try { recognitionRef.current.stop(); } catch(e) {}
+      }
       setIsListening(false);
-    } else {
-      setInput("");
-      window._voiceRecognition.start();
-      setIsListening(true);
+      return;
     }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = uiLang === "fa" ? "fa-IR" : uiLang === "ar" ? "ar-SA" : uiLang === "ru" ? "ru-RU" : uiLang === "de" ? "de-DE" : uiLang === "fr" ? "fr-FR" : uiLang === "es" ? "es-ES" : "en-US";
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
+      setInput(prev => prev ? prev + " " + transcript : transcript);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onerror = (e) => {
+      console.log("Voice error:", e.error);
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = recognition;
+    setInput("");
+    recognition.start();
+    setIsListening(true);
   }
 
   // ── File Upload ──
@@ -1189,7 +1209,7 @@ function App() {
             </button>
             {webSearch && (
               <select value={searchProvider} onChange={e => setSearchProvider(e.target.value)}
-                style={{ background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, color: "#ececec", fontSize: 11, padding: "4px 8px", outline: "none", cursor: "pointer" }}>
+                style={{ background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, color: "#ececec", fontSize: isMobile ? 10 : 11, padding: isMobile ? "2px 4px" : "4px 8px", outline: "none", cursor: "pointer", maxWidth: isMobile ? 70 : "auto" }}>
                 <option value="tavily">Tavily</option>
                 <option value="exa">Exa</option>
                 <option value="firecrawl">Firecrawl</option>
@@ -1285,10 +1305,10 @@ function App() {
             {/* Input Area */}
             <div style={{ padding: isMobile ? "8px 8px 16px" : "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
               <div style={{ maxWidth: 768, margin: "0 auto", position: "relative" }}>
-                <form onSubmit={handleSend} style={{ position: "relative" }}>
+                <form onSubmit={handleSend} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {/* Uploaded Files Preview */}
                   {uploadedFiles.length > 0 && (
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8, padding: "0 4px" }}>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "0 4px" }}>
                       {uploadedFiles.map(file => (
                         <div key={file.id} style={{
                           display: "flex", alignItems: "center", gap: 6,
@@ -1299,7 +1319,7 @@ function App() {
                           <span>{file.type.startsWith("image/") ? "🖼️" : "📄"}</span>
                           <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
                           <span style={{ color: "#8e8ea0", fontSize: 10 }}>({formatFileSize(file.size)})</span>
-                          <button onClick={() => removeUploadedFile(file.id)}
+                          <button type="button" onClick={() => removeUploadedFile(file.id)}
                             style={{ background: "none", border: "none", color: "#e0746a", cursor: "pointer", fontSize: 14, padding: 0, marginLeft: 4 }}>
                             ×
                           </button>
@@ -1307,45 +1327,57 @@ function App() {
                       ))}
                     </div>
                   )}
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={(e) => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if ((input.trim() || uploadedFiles.length > 0) && !chatLoading) handleSend(e); } }}
-                    placeholder={t.placeholder}
-                    rows={1}
-                    style={{
-                      width: "100%", padding: isMobile ? "14px 90px 14px 12px" : "14px 110px 14px 16px", borderRadius: 16,
-                      border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec",
-                      fontSize: 15, outline: "none", resize: "none", overflow: "hidden",
-                      minHeight: 52, maxHeight: 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
-                    }}
-                    disabled={chatLoading || isListening}
-                  />
-                  {/* Voice Button */}
-                  <button type="button" onClick={toggleVoiceInput}
-                    style={{
-                      position: "absolute", bottom: 10, right: isMobile ? 40 : 48,
-                      width: 32, height: 32, borderRadius: "50%",
-                      border: "none", background: isListening ? "#ef4444" : "#404040",
-                      color: "#fff", fontSize: 14, cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      transition: "all 0.3s",
-                      animation: isListening ? "pulse 1.5s infinite" : "none",
-                    }}>
-                    {isListening ? "🔴" : "🎤"}
-                  </button>
-                  {/* Upload Button */}
-                  <button type="button" onClick={() => fileInputRef.current?.click()}
-                    style={{
-                      position: "absolute", bottom: 10, right: isMobile ? 74 : 86,
-                      width: 32, height: 32, borderRadius: "50%",
-                      border: "none", background: "#404040",
-                      color: "#fff", fontSize: 14, cursor: "pointer",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                    📎
-                  </button>
+                  <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={(e) => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if ((input.trim() || uploadedFiles.length > 0) && !chatLoading) handleSend(e); } }}
+                      placeholder={isListening ? "Listening..." : t.placeholder}
+                      rows={1}
+                      style={{
+                        flex: 1, padding: "14px 16px", borderRadius: 16,
+                        border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec",
+                        fontSize: 15, outline: "none", resize: "none", overflow: "hidden",
+                        minHeight: 52, maxHeight: 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
+                      }}
+                      disabled={chatLoading || isListening}
+                    />
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <button type="button" onClick={toggleVoiceInput}
+                        style={{
+                          width: 36, height: 36, borderRadius: "50%",
+                          border: "none", background: isListening ? "#ef4444" : "#404040",
+                          color: "#fff", fontSize: 14, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          transition: "all 0.3s",
+                          animation: isListening ? "pulse 1.5s infinite" : "none",
+                          flexShrink: 0,
+                        }}>
+                        {isListening ? "🔴" : "🎤"}
+                      </button>
+                      <button type="button" onClick={() => fileInputRef.current?.click()}
+                        style={{
+                          width: 36, height: 36, borderRadius: "50%",
+                          border: "none", background: "#404040",
+                          color: "#fff", fontSize: 14, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0,
+                        }}>
+                        📎
+                      </button>
+                      <button type="submit" disabled={(!input.trim() && uploadedFiles.length === 0) || chatLoading}
+                        style={{
+                          width: 36, height: 36, borderRadius: "50%",
+                          border: "none", background: (input.trim() || uploadedFiles.length > 0) ? "#10a37f" : "#5c5c5c",
+                          color: "#fff", fontSize: 14, cursor: (input.trim() || uploadedFiles.length > 0) ? "pointer" : "default",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          flexShrink: 0,
+                        }}>
+                        ➤
+                      </button>
+                    </div>
+                  </div>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -1354,16 +1386,6 @@ function App() {
                     accept="image/*,.txt,.md,.pdf,.js,.py,.json,.csv,.html,.css"
                     style={{ display: "none" }}
                   />
-                  <button type="submit" disabled={(!input.trim() && uploadedFiles.length === 0) || chatLoading}
-                    style={{
-                      position: "absolute", bottom: 10, right: isMobile ? 6 : 10,
-                      width: 32, height: 32, borderRadius: "50%",
-                      border: "none", background: (input.trim() || uploadedFiles.length > 0) ? "#10a37f" : "#5c5c5c",
-                      color: "#fff", fontSize: 14, cursor: (input.trim() || uploadedFiles.length > 0) ? "pointer" : "default",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                    ➤
-                  </button>
                 </form>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, flexWrap: "wrap", gap: 4 }}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
