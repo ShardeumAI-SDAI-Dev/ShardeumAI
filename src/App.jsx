@@ -371,6 +371,44 @@ function CodeBlock({ code, lang }) {
   );
 }
 
+// ── Save Chat ──
+function saveChatToLocal(messages, title) {
+  const chats = JSON.parse(localStorage.getItem("shardeumai-saved-chats") || "[]");
+  const newChat = {
+    id: Date.now().toString(),
+    title: title || "Saved Chat",
+    messages: messages,
+    savedAt: new Date().toISOString(),
+  };
+  chats.unshift(newChat);
+  localStorage.setItem("shardeumai-saved-chats", JSON.stringify(chats.slice(0, 50)));
+  return newChat.id;
+}
+
+function loadSavedChats() {
+  return JSON.parse(localStorage.getItem("shardeumai-saved-chats") || "[]");
+}
+
+function deleteSavedChat(chatId) {
+  const chats = loadSavedChats().filter(c => c.id !== chatId);
+  localStorage.setItem("shardeumai-saved-chats", JSON.stringify(chats));
+}
+
+function downloadChatJSON(messages, title) {
+  const data = {
+    title: title || "ShardeumAI Chat",
+    exportedAt: new Date().toISOString(),
+    messages: messages,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `chat-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function exportChat(messages, format) {
   if (!messages || messages.length === 0) return;
   const title = "ShardeumAI Chat Export";
@@ -654,6 +692,11 @@ function App() {
   const [adminLoading, setAdminLoading] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isListening, setIsListening] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [showSavedChats, setShowSavedChats] = useState(false);
+  const [savedChats, setSavedChats] = useState([]);
+  const fileInputRef = useRef(null);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -690,6 +733,30 @@ function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
+
+  // ── Load Saved Chats ──
+  useEffect(() => {
+    setSavedChats(loadSavedChats());
+  }, [showSavedChats]);
+
+  // ── Voice Recognition ──
+  useEffect(() => {
+    if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) return;
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = uiLang === "fa" ? "fa-IR" : uiLang === "ar" ? "ar-SA" : uiLang === "ru" ? "ru-RU" : uiLang === "de" ? "de-DE" : uiLang === "fr" ? "fr-FR" : uiLang === "es" ? "es-ES" : "en-US";
+
+    recognition.onresult = (e) => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
+      setInput(transcript);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    window._voiceRecognition = recognition;
+  }, [uiLang]);
 
   // ── Data Loading ──
   async function loadHistory(userId) {
@@ -783,11 +850,78 @@ function App() {
     setActiveConvoId(null);
   }
 
+  // ── Voice Input ──
+  function toggleVoiceInput() {
+    if (!window._voiceRecognition) {
+      alert("Voice input not supported in your browser.");
+      return;
+    }
+    if (isListening) {
+      window._voiceRecognition.stop();
+      setIsListening(false);
+    } else {
+      setInput("");
+      window._voiceRecognition.start();
+      setIsListening(true);
+    }
+  }
+
+  // ── File Upload ──
+  function handleFileSelect(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedFiles(prev => [...prev, {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          content: event.target.result,
+          id: Date.now().toString() + Math.random().toString(36).slice(2),
+        }]);
+      };
+      if (file.type.startsWith("image/")) {
+        reader.readAsDataURL(file);
+      } else if (file.type === "application/pdf" || file.type.includes("text") || file.name.endsWith(".txt") || file.name.endsWith(".md") || file.name.endsWith(".js") || file.name.endsWith(".py") || file.name.endsWith(".json")) {
+        reader.readAsText(file);
+      } else {
+        reader.readAsDataURL(file);
+      }
+    });
+    e.target.value = "";
+  }
+
+  function removeUploadedFile(fileId) {
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  }
+
   async function handleSend(e) {
     e.preventDefault();
     if (!input.trim()) return;
     if (!session) { alert("Please login first."); return; }
-    const userMsg = { role: "user", content: input.trim() };
+    let messageContent = input.trim();
+
+    // Add uploaded files context
+    if (uploadedFiles.length > 0) {
+      const fileContext = uploadedFiles.map(f => {
+        if (f.type.startsWith("image/")) {
+          return `[Uploaded Image: ${f.name}]`;
+        } else if (f.content && f.content.length < 5000) {
+          return `[File: ${f.name}]\n${f.content}`;
+        } else {
+          return `[File: ${f.name} (${formatFileSize(f.size)})]`;
+        }
+      }).join("\n\n");
+      messageContent = messageContent ? messageContent + "\n\n" + fileContext : fileContext;
+    }
+
+    const userMsg = { role: "user", content: messageContent };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setInput("");
@@ -817,6 +951,7 @@ function App() {
     } catch {
       setMessages(prev => [...prev, { role: "assistant", content: "Error connecting to AI." }]);
     }
+    setUploadedFiles([]);
     setChatLoading(false);
   }
 
@@ -1126,27 +1261,80 @@ function App() {
             <div style={{ padding: "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
               <div style={{ maxWidth: 768, margin: "0 auto", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ position: "relative" }}>
+                  {/* Uploaded Files Preview */}
+                  {uploadedFiles.length > 0 && (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8, padding: "0 4px" }}>
+                      {uploadedFiles.map(file => (
+                        <div key={file.id} style={{
+                          display: "flex", alignItems: "center", gap: 6,
+                          padding: "4px 10px", borderRadius: 8,
+                          background: "#404040", border: "1px solid #3d3d3d",
+                          fontSize: 12, color: "#ececec",
+                        }}>
+                          <span>{file.type.startsWith("image/") ? "🖼️" : "📄"}</span>
+                          <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
+                          <span style={{ color: "#8e8ea0", fontSize: 10 }}>({formatFileSize(file.size)})</span>
+                          <button onClick={() => removeUploadedFile(file.id)}
+                            style={{ background: "none", border: "none", color: "#e0746a", cursor: "pointer", fontSize: 14, padding: 0, marginLeft: 4 }}>
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <textarea
                     ref={inputRef}
                     value={input}
                     onChange={(e) => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 200) + "px"; }}
-                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (input.trim() && !chatLoading) handleSend(e); } }}
+                    onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if ((input.trim() || uploadedFiles.length > 0) && !chatLoading) handleSend(e); } }}
                     placeholder={t.placeholder}
                     rows={1}
                     style={{
-                      width: "100%", padding: "14px 48px 14px 16px", borderRadius: 16,
+                      width: "100%", padding: "14px 96px 14px 16px", borderRadius: 16,
                       border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec",
                       fontSize: 15, outline: "none", resize: "none", overflow: "hidden",
                       minHeight: 52, maxHeight: 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
                     }}
-                    disabled={chatLoading}
+                    disabled={chatLoading || isListening}
                   />
-                  <button type="submit" disabled={!input.trim() || chatLoading}
+                  {/* Voice Button */}
+                  <button type="button" onClick={toggleVoiceInput}
+                    style={{
+                      position: "absolute", bottom: 10, right: 48,
+                      width: 32, height: 32, borderRadius: "50%",
+                      border: "none", background: isListening ? "#ef4444" : "#404040",
+                      color: "#fff", fontSize: 14, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "all 0.3s",
+                      animation: isListening ? "pulse 1.5s infinite" : "none",
+                    }}>
+                    {isListening ? "🔴" : "🎤"}
+                  </button>
+                  {/* Upload Button */}
+                  <button type="button" onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      position: "absolute", bottom: 10, right: 86,
+                      width: 32, height: 32, borderRadius: "50%",
+                      border: "none", background: "#404040",
+                      color: "#fff", fontSize: 14, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}>
+                    📎
+                  </button>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    multiple
+                    accept="image/*,.txt,.md,.pdf,.js,.py,.json,.csv,.html,.css"
+                    style={{ display: "none" }}
+                  />
+                  <button type="submit" disabled={(!input.trim() && uploadedFiles.length === 0) || chatLoading}
                     style={{
                       position: "absolute", bottom: 10, right: 10,
                       width: 32, height: 32, borderRadius: "50%",
-                      border: "none", background: input.trim() ? "#10a37f" : "#5c5c5c",
-                      color: "#fff", fontSize: 14, cursor: input.trim() ? "pointer" : "default",
+                      border: "none", background: (input.trim() || uploadedFiles.length > 0) ? "#10a37f" : "#5c5c5c",
+                      color: "#fff", fontSize: 14, cursor: (input.trim() || uploadedFiles.length > 0) ? "pointer" : "default",
                       display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
                     ➤
@@ -1181,6 +1369,47 @@ function App() {
                       </>
                     )}
                   </div>
+                  {/* Save Chat Button */}
+                  {messages.length > 0 && (
+                    <div style={{ position: "relative" }}>
+                      <button onClick={() => {
+                        const title = messages[0]?.content?.slice(0, 50) || "Saved Chat";
+                        saveChatToLocal(messages, title);
+                        alert("Chat saved!");
+                        setSavedChats(loadSavedChats());
+                      }}
+                        style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>
+                        💾 Save
+                      </button>
+                    </div>
+                  )}
+                  {/* Saved Chats Dropdown */}
+                  {savedChats.length > 0 && (
+                    <div style={{ position: "relative" }}>
+                      <button onClick={() => setShowSavedChats(!showSavedChats)}
+                        style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>
+                        📂 Saved ({savedChats.length})
+                      </button>
+                      {showSavedChats && (
+                        <div style={{ position: "absolute", bottom: "calc(100% + 4px)", left: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, padding: 4, minWidth: 220, zIndex: 100, maxHeight: 300, overflowY: "auto" }}>
+                          {savedChats.map(chat => (
+                            <div key={chat.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 4, cursor: "pointer" }}
+                              onMouseEnter={e => e.currentTarget.style.background = "#404040"}
+                              onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                              <span onClick={() => { setMessages(chat.messages); setShowSavedChats(false); }}
+                                style={{ flex: 1, fontSize: 12, color: "#ececec", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {chat.title}
+                              </span>
+                              <button onClick={(e) => { e.stopPropagation(); deleteSavedChat(chat.id); setSavedChats(loadSavedChats()); }}
+                                style={{ background: "none", border: "none", color: "#e0746a", cursor: "pointer", fontSize: 12 }}>
+                                🗑
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   {shareUrl && (
                     <div style={{ fontSize: 11, color: "#10a37f" }}>
                       ✓ {t.copied}
