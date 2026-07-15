@@ -691,6 +691,7 @@ function App() {
   const [aiMode, setAiMode] = useState("general");
   const [webSearch, setWebSearch] = useState(false);
   const [searchProvider, setSearchProvider] = useState("tavily");
+  const [showSearchProvider, setShowSearchProvider] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [activeConvoId, setActiveConvoId] = useState(null);
   const [showSignup, setShowSignup] = useState(false);
@@ -1203,18 +1204,28 @@ function App() {
                 </button>
               ))}
             </div>
-            <button onClick={() => setWebSearch(!webSearch)}
-              style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-              🔍
-            </button>
-            {webSearch && (
-              <select value={searchProvider} onChange={e => setSearchProvider(e.target.value)}
-                style={{ background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, color: "#ececec", fontSize: isMobile ? 10 : 11, padding: isMobile ? "2px 4px" : "4px 8px", outline: "none", cursor: "pointer", maxWidth: isMobile ? 70 : "auto" }}>
-                <option value="tavily">Tavily</option>
-                <option value="exa">Exa</option>
-                <option value="firecrawl">Firecrawl</option>
-              </select>
-            )}
+            <div style={{ position: "relative" }}>
+              <button onClick={() => setWebSearch(!webSearch)}
+                style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                🔍
+              </button>
+              {webSearch && (
+                <button onClick={() => setShowSearchProvider(!showSearchProvider)}
+                  style={{ padding: "4px 6px", borderRadius: 8, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#8e8ea0", fontSize: 10, cursor: "pointer", marginLeft: 4 }}>
+                  ▼
+                </button>
+              )}
+              {webSearch && showSearchProvider && (
+                <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, padding: 4, zIndex: 100, minWidth: 100 }}>
+                  {["tavily", "exa", "firecrawl"].map(p => (
+                    <button key={p} onClick={() => { setSearchProvider(p); setShowSearchProvider(false); }}
+                      style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "none", background: searchProvider === p ? "#404040" : "transparent", color: searchProvider === p ? "#10a37f" : "#ececec", fontSize: 12, cursor: "pointer", textAlign: "left" }}>
+                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {["chat", "image", "profile", "api"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
@@ -1304,7 +1315,7 @@ function App() {
 
             {/* Input Area */}
             <div style={{ padding: isMobile ? "8px 8px 16px" : "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
-              <div style={{ maxWidth: 768, margin: "0 auto", position: "relative" }}>
+              <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {/* Uploaded Files Preview */}
                   {uploadedFiles.length > 0 && (
@@ -1327,7 +1338,7 @@ function App() {
                       ))}
                     </div>
                   )}
-                  <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+                  <div style={{ display: "flex", gap: 8, alignItems: "flex-end", width: "100%" }}>
                     <textarea
                       ref={inputRef}
                       value={input}
@@ -1346,7 +1357,7 @@ function App() {
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       <button type="button" onClick={toggleVoiceInput}
                         style={{
-                          width: 36, height: 36, borderRadius: "50%",
+                          width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, borderRadius: "50%",
                           border: "none", background: isListening ? "#ef4444" : "#404040",
                           color: "#fff", fontSize: 14, cursor: "pointer",
                           display: "flex", alignItems: "center", justifyContent: "center",
@@ -1358,7 +1369,7 @@ function App() {
                       </button>
                       <button type="button" onClick={() => fileInputRef.current?.click()}
                         style={{
-                          width: 36, height: 36, borderRadius: "50%",
+                          width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, borderRadius: "50%",
                           border: "none", background: "#404040",
                           color: "#fff", fontSize: 14, cursor: "pointer",
                           display: "flex", alignItems: "center", justifyContent: "center",
@@ -1368,7 +1379,7 @@ function App() {
                       </button>
                       <button type="submit" disabled={(!input.trim() && uploadedFiles.length === 0) || chatLoading}
                         style={{
-                          width: 36, height: 36, borderRadius: "50%",
+                          width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, borderRadius: "50%",
                           border: "none", background: (input.trim() || uploadedFiles.length > 0) ? "#10a37f" : "#5c5c5c",
                           color: "#fff", fontSize: 14, cursor: (input.trim() || uploadedFiles.length > 0) ? "pointer" : "default",
                           display: "flex", alignItems: "center", justifyContent: "center",
