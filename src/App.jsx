@@ -218,6 +218,9 @@ const translations = {
     share: "Share", export: "Export", copy: "Copy", copied: "Copied!",
     model: "Model", language: "Language", webSearch: "Web search",
     welcomePageTitle: "Welcome to ShardeumAI", welcomePageSubtitle: "A MultiLingual AI Platform", start: "Start",
+    streaming: "Streaming", analytics: "Analytics", notifications: "Notifications", customTheme: "Custom Theme", shortcuts: "Shortcuts", feedback: "Feedback", sendFeedback: "Send Feedback", feedbackPlaceholder: "Your feedback...", feedbackSent: "Feedback sent! Thank you!",
+    totalMessages: "Total Messages", totalChats: "Total Chats", avgResponseTime: "Avg Response", charactersTyped: "Characters Typed", today: "Today", thisWeek: "This Week", thisMonth: "This Month",
+    shortcutSend: "Send Message", shortcutNewChat: "New Chat", shortcutSearch: "Toggle Search", shortcutFocus: "Focus Input", shortcutTheme: "Toggle Theme",
   },
   es: {
     title: "ShardeumAI", subtitle: "Tu Asistente Inteligente",
@@ -230,6 +233,9 @@ const translations = {
     share: "Compartir", export: "Exportar", copy: "Copiar", copied: "Copiado!",
     model: "Modelo", language: "Idioma", webSearch: "Busqueda web",
     welcomePageTitle: "Bienvenido a ShardeumAI", welcomePageSubtitle: "Una Plataforma de IA Multilingue", start: "Comenzar",
+    streaming: "Transmision", analytics: "Analiticas", notifications: "Notificaciones", customTheme: "Tema Personalizado", shortcuts: "Atajos", feedback: "Comentarios", sendFeedback: "Enviar Comentarios", feedbackPlaceholder: "Tus comentarios...", feedbackSent: "Comentarios enviados! Gracias!",
+    totalMessages: "Mensajes Totales", totalChats: "Chats Totales", avgResponseTime: "Tiempo Promedio", charactersTyped: "Caracteres", today: "Hoy", thisWeek: "Esta Semana", thisMonth: "Este Mes",
+    shortcutSend: "Enviar Mensaje", shortcutNewChat: "Nuevo Chat", shortcutSearch: "Busqueda", shortcutFocus: "Enfocar Input", shortcutTheme: "Cambiar Tema",
   },
   fr: {
     title: "ShardeumAI", subtitle: "Votre Assistant Intelligent",
@@ -242,6 +248,9 @@ const translations = {
     share: "Partager", export: "Exporter", copy: "Copier", copied: "Copie!",
     model: "Modele", language: "Langue", webSearch: "Recherche web",
     welcomePageTitle: "Bienvenue sur ShardeumAI", welcomePageSubtitle: "Une Plateforme IA Multilingue", start: "Commencer",
+    streaming: "Diffusion", analytics: "Analyses", notifications: "Notifications", customTheme: "Theme Personnalise", shortcuts: "Raccourcis", feedback: "Retour", sendFeedback: "Envoyer Retour", feedbackPlaceholder: "Vos commentaires...", feedbackSent: "Retour envoye! Merci!",
+    totalMessages: "Messages Totaux", totalChats: "Chats Totaux", avgResponseTime: "Temps Moyen", charactersTyped: "Caracteres", today: "Aujourd'hui", thisWeek: "Cette Semaine", thisMonth: "Ce Mois",
+    shortcutSend: "Envoyer Message", shortcutNewChat: "Nouveau Chat", shortcutSearch: "Recherche", shortcutFocus: "Focus Input", shortcutTheme: "Changer Theme",
   },
   de: {
     title: "ShardeumAI", subtitle: "Ihr Intelligenter Assistent",
@@ -254,6 +263,9 @@ const translations = {
     share: "Teilen", export: "Exportieren", copy: "Kopieren", copied: "Kopiert!",
     model: "Modell", language: "Sprache", webSearch: "Websuche",
     welcomePageTitle: "Willkommen bei ShardeumAI", welcomePageSubtitle: "Eine Mehrsprachige KI-Plattform", start: "Starten",
+    streaming: "Streaming", analytics: "Analysen", notifications: "Benachrichtigungen", customTheme: "Benutzerdefiniertes Theme", shortcuts: "Tastenkombinationen", feedback: "Feedback", sendFeedback: "Feedback Senden", feedbackPlaceholder: "Ihr Feedback...", feedbackSent: "Feedback gesendet! Danke!",
+    totalMessages: "Nachrichten Gesamt", totalChats: "Chats Gesamt", avgResponseTime: "Durchschnittszeit", charactersTyped: "Zeichen", today: "Heute", thisWeek: "Diese Woche", thisMonth: "Dieser Monat",
+    shortcutSend: "Nachricht Senden", shortcutNewChat: "Neuer Chat", shortcutSearch: "Suche", shortcutFocus: "Input Fokus", shortcutTheme: "Theme Wechseln",
   },
   ru: {
     title: "ShardeumAI", subtitle: "Vash Intellektualnyy Pomoshchnik",
@@ -266,6 +278,9 @@ const translations = {
     share: "Podelit'sya", export: "Eksport", copy: "Kopirovat'", copied: "Skopirovano!",
     model: "Model'", language: "Yazyk", webSearch: "Veb-poisk",
     welcomePageTitle: "Dobro pozhalovat' v ShardeumAI", welcomePageSubtitle: "Mnogoyazychnaya Platforma Iskusstvennogo Intellekta", start: "Nachat'",
+    streaming: "Translyatsiya", analytics: "Analitika", notifications: "Uvedomleniya", customTheme: "Pol'zovatel'skaya Tema", shortcuts: "Goryachie Klavishi", feedback: "Otziv", sendFeedback: "Otpravit' Otziv", feedbackPlaceholder: "Vash otziv...", feedbackSent: "Otziv otpravlen! Spasibo!",
+    totalMessages: "Vsego Soobshcheniy", totalChats: "Vsego Chatov", avgResponseTime: "Srednee Vremya", charactersTyped: "Simvolov", today: "Segodnya", thisWeek: "Etu Nedelyu", thisMonth: "Etot Mesyats",
+    shortcutSend: "Otpravit' Soobshchenie", shortcutNewChat: "Novyy Chat", shortcutSearch: "Poisk", shortcutFocus: "Fokus Inputa", shortcutTheme: "Smene Temy",
   },
   ar: {
     title: "ShardeumAI", subtitle: "Musa'iduka al-Thakiy",
@@ -278,6 +293,9 @@ const translations = {
     share: "Musharaka", export: "Tasdir", copy: "Nuskh", copied: "Nusikha!",
     model: "Al-Namudhaj", language: "Al-Lugha", webSearch: "Bahth al-Wib",
     welcomePageTitle: "Ahlan wa Sahlan fi ShardeumAI", welcomePageSubtitle: "Minassat Zaka' Istitna'iyya Mutadaddat al-Lughat", start: "Ibdah",
+    streaming: "Bath Mubashar", analytics: "Tahlilat", notifications: "Tanzimat", customTheme: "Mawzu' Mukassas", shortcuts: "Iqtirahat", feedback: "Raja'", sendFeedback: "Irsal Raja'", feedbackPlaceholder: "Tafqidak...", feedbackSent: "Raja' Irsal! Shukran!",
+    totalMessages: "Ijmal al-Rasail", totalChats: "Ijmal al-Muhadathat", avgResponseTime: "Zaman al-Ijaba", charactersTyped: "Huruf", today: "Al-Yawm", thisWeek: "Hadha al-Usbua'", thisMonth: "Hadha al-Shahr",
+    shortcutSend: "Irsal Risala", shortcutNewChat: "Muhadatha Jadida", shortcutSearch: "Bahth", shortcutFocus: "Turkiz Input", shortcutTheme: "Taghyir al-Mawzu'",
   },
 };
 
@@ -709,9 +727,18 @@ function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showSavedChats, setShowSavedChats] = useState(false);
   const [savedChats, setSavedChats] = useState([]);
+  const [streamingEnabled, setStreamingEnabled] = useState(() => localStorage.getItem("shardeumai-streaming") !== "false");
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState({ totalMessages: 0, totalChats: 0, avgResponseTime: 0, charactersTyped: 0, messagesToday: 0, messagesThisWeek: 0, messagesThisMonth: 0 });
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSent, setFeedbackSent] = useState(false);
+  const [customAccentColor, setCustomAccentColor] = useState(() => localStorage.getItem("shardeumai-accent") || "#10a37f");
   const fileInputRef = useRef(null);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
+  const responseTimeRef = useRef(null);
 
   const t = translations[uiLang] || translations.en;
   const isRTL = uiLang === "fa" || uiLang === "ar";
@@ -855,6 +882,80 @@ function App() {
     setActiveConvoId(null);
   }
 
+  // ── Analytics ──
+  function calculateAnalytics() {
+    const allChats = [...conversations];
+    const now = new Date();
+    const today = now.toDateString();
+    const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+
+    let totalMsgs = messages.length;
+    let charsTyped = messages.filter(m => m.role === "user").reduce((a, m) => a + m.content.length, 0);
+    let msgToday = messages.filter(m => new Date(m.created_at || Date.now()).toDateString() === today).length;
+    let msgWeek = messages.filter(m => new Date(m.created_at || Date.now()) > weekAgo).length;
+    let msgMonth = messages.filter(m => new Date(m.created_at || Date.now()) > monthAgo).length;
+
+    setAnalyticsData({
+      totalMessages: totalMsgs,
+      totalChats: allChats.length + (activeConvoId ? 1 : 0),
+      avgResponseTime: 0,
+      charactersTyped: charsTyped,
+      messagesToday: msgToday,
+      messagesThisWeek: msgWeek,
+      messagesThisMonth: msgMonth,
+    });
+  }
+
+  // ── Feedback ──
+  async function sendFeedback() {
+    if (!feedbackText.trim()) return;
+    try {
+      await supabase.from("feedback").insert({
+        user_id: session?.user?.id || null,
+        email: session?.user?.email || "anonymous",
+        message: feedbackText.trim(),
+        rating: 5,
+        created_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      console.log("Feedback save error:", e);
+    }
+    setFeedbackSent(true);
+    setFeedbackText("");
+    setTimeout(() => setFeedbackSent(false), 3000);
+  }
+
+  // ── Keyboard Shortcuts ──
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "/" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+      if (e.key === "n" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        startNewChat();
+      }
+      if (e.key === "k" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setWebSearch(prev => !prev);
+      }
+      if (e.key === "t" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setTheme(theme === "dark" ? "light" : theme === "light" ? "auto" : "dark");
+      }
+      if (e.key === "?" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setShowShortcuts(true);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [theme]);
+
   // ── Voice Input ──
   function toggleVoiceInput() {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
@@ -961,17 +1062,62 @@ function App() {
     setChatLoading(true);
     try {
       const currentMode = AI_MODES.find(m => m.id === aiMode);
-      const response = await fetch(EDGE_FUNCTION_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
-        body: JSON.stringify({
-          messages: newMessages, language: modelLang, system_prompt: currentMode?.prompt,
-          web_search: webSearch, search_provider: searchProvider, model: selectedModel,
-        }),
-      });
-      const data = await response.json();
-      const reply = data.reply || "No response";
-      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+
+      if (streamingEnabled) {
+        // Streaming mode
+        const response = await fetch(EDGE_FUNCTION_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+          body: JSON.stringify({
+            messages: newMessages, language: modelLang, system_prompt: currentMode?.prompt,
+            web_search: webSearch, search_provider: searchProvider, model: selectedModel,
+            stream: true,
+          }),
+        });
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let fullReply = "";
+
+        setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+        while (reader) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const data = line.slice(6);
+              if (data === "[DONE]") continue;
+              try {
+                const parsed = JSON.parse(data);
+                const delta = parsed.choices?.[0]?.delta?.content || "";
+                fullReply += delta;
+                setMessages(prev => {
+                  const newMsgs = [...prev];
+                  newMsgs[newMsgs.length - 1] = { role: "assistant", content: fullReply };
+                  return newMsgs;
+                });
+              } catch (e) {}
+            }
+          }
+        }
+        var reply = fullReply || "No response";
+      } else {
+        // Non-streaming mode
+        const response = await fetch(EDGE_FUNCTION_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+          body: JSON.stringify({
+            messages: newMessages, language: modelLang, system_prompt: currentMode?.prompt,
+            web_search: webSearch, search_provider: searchProvider, model: selectedModel,
+          }),
+        });
+        const data = await response.json();
+        var reply = data.reply || "No response";
+        setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      }
 
       let convoId = activeConvoId;
       if (!convoId) {
@@ -1204,6 +1350,44 @@ function App() {
                 </button>
               ))}
             </div>
+            {/* Streaming Toggle */}
+            <button onClick={() => { setStreamingEnabled(!streamingEnabled); localStorage.setItem("shardeumai-streaming", !streamingEnabled); }}
+              title={t.streaming}
+              style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+              🔄
+            </button>
+            {/* Analytics */}
+            <button onClick={() => { calculateAnalytics(); setShowAnalytics(!showAnalytics); }}
+              title={t.analytics}
+              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showAnalytics ? "#404040" : "transparent", color: showAnalytics ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+              📊
+            </button>
+            {/* Shortcuts */}
+            <button onClick={() => setShowShortcuts(!showShortcuts)}
+              title={t.shortcuts}
+              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showShortcuts ? "#404040" : "transparent", color: showShortcuts ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+              ⌨️
+            </button>
+            {/* Feedback */}
+            <button onClick={() => setShowFeedback(!showFeedback)}
+              title={t.feedback}
+              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showFeedback ? "#404040" : "transparent", color: showFeedback ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+              💬
+            </button>
+            {/* Custom Accent Color */}
+            <div style={{ position: "relative" }}>
+              <button onClick={() => setShowFeedback(false)} title={t.customTheme}
+                style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 12, height: 12, borderRadius: "50%", background: customAccentColor, display: "inline-block" }}></span>
+                🎨
+              </button>
+              <input
+                type="color"
+                value={customAccentColor}
+                onChange={(e) => { setCustomAccentColor(e.target.value); localStorage.setItem("shardeumai-accent", e.target.value); }}
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
+              />
+            </div>
             <div style={{ position: "relative" }}>
               <button onClick={() => setWebSearch(!webSearch)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
@@ -1261,6 +1445,85 @@ function App() {
                 ⚙️ Admin
               </button>
             )}
+          </div>
+        )}
+
+        {/* Analytics Panel */}
+        {showAnalytics && (
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
+            <div style={{ maxWidth: 768, margin: "0 auto", display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+              {[
+                { label: t.totalMessages, value: analyticsData.totalMessages, icon: "💬" },
+                { label: t.totalChats, value: analyticsData.totalChats, icon: "📁" },
+                { label: t.charactersTyped, value: analyticsData.charactersTyped, icon: "📝" },
+                { label: t.today, value: analyticsData.messagesToday, icon: "📅" },
+                { label: t.thisWeek, value: analyticsData.messagesThisWeek, icon: "📆" },
+                { label: t.thisMonth, value: analyticsData.messagesThisMonth, icon: "🗓️" },
+              ].map(stat => (
+                <div key={stat.label} style={{ textAlign: "center", padding: "8px 16px", borderRadius: 10, background: "#2d2d2d", border: "1px solid #3d3d3d", minWidth: 100 }}>
+                  <div style={{ fontSize: 20, marginBottom: 4 }}>{stat.icon}</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#10a37f" }}>{stat.value}</div>
+                  <div style={{ fontSize: 10, color: "#8e8ea0" }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Shortcuts Panel */}
+        {showShortcuts && (
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
+            <div style={{ maxWidth: 768, margin: "0 auto" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 10 }}>⌨️ {t.shortcuts}</div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 8 }}>
+                {[
+                  { key: "Ctrl + Enter / ⌘ + Enter", action: t.shortcutSend },
+                  { key: "Ctrl + N / ⌘ + N", action: t.shortcutNewChat },
+                  { key: "Ctrl + K / ⌘ + K", action: t.shortcutSearch },
+                  { key: "/", action: t.shortcutFocus },
+                  { key: "Ctrl + T / ⌘ + T", action: t.shortcutTheme },
+                  { key: "Ctrl + ? / ⌘ + ?", action: t.shortcuts },
+                ].map(s => (
+                  <div key={s.action} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", background: "#2d2d2d", borderRadius: 6, fontSize: 12 }}>
+                    <span style={{ color: "#8e8ea0" }}>{s.action}</span>
+                    <kbd style={{ background: "#404040", padding: "2px 6px", borderRadius: 4, fontSize: 11, color: "#ececec", fontFamily: "monospace" }}>{s.key}</kbd>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => setShowShortcuts(false)} style={{ marginTop: 8, padding: "4px 12px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* Feedback Panel */}
+        {showFeedback && (
+          <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
+            <div style={{ maxWidth: 768, margin: "0 auto" }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 10 }}>💬 {t.feedback}</div>
+              {feedbackSent ? (
+                <div style={{ color: "#10a37f", fontSize: 14, padding: "10px 0" }}>✅ {t.feedbackSent}</div>
+              ) : (
+                <>
+                  <textarea
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    placeholder={t.feedbackPlaceholder}
+                    rows={3}
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 13, outline: "none", resize: "vertical", marginBottom: 8 }}
+                  />
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={sendFeedback} disabled={!feedbackText.trim()}
+                      style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#10a37f", color: "#fff", fontSize: 13, cursor: feedbackText.trim() ? "pointer" : "default", opacity: feedbackText.trim() ? 1 : 0.5 }}>
+                      {t.sendFeedback}
+                    </button>
+                    <button onClick={() => setShowFeedback(false)}
+                      style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 13, cursor: "pointer" }}>
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
 
