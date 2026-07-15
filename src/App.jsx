@@ -1350,44 +1350,44 @@ function App() {
                 </button>
               ))}
             </div>
-            {/* Streaming Toggle */}
-            <button onClick={() => { setStreamingEnabled(!streamingEnabled); localStorage.setItem("shardeumai-streaming", !streamingEnabled); }}
-              title={t.streaming}
-              style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-              🔄
-            </button>
-            {/* Analytics */}
-            <button onClick={() => { calculateAnalytics(); setShowAnalytics(!showAnalytics); }}
-              title={t.analytics}
-              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showAnalytics ? "#404040" : "transparent", color: showAnalytics ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-              📊
-            </button>
-            {/* Shortcuts */}
-            <button onClick={() => setShowShortcuts(!showShortcuts)}
-              title={t.shortcuts}
-              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showShortcuts ? "#404040" : "transparent", color: showShortcuts ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-              ⌨️
-            </button>
-            {/* Feedback */}
-            <button onClick={() => setShowFeedback(!showFeedback)}
-              title={t.feedback}
-              style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showFeedback ? "#404040" : "transparent", color: showFeedback ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-              💬
-            </button>
-            {/* Custom Accent Color */}
-            <div style={{ position: "relative" }}>
-              <button onClick={() => setShowFeedback(false)} title={t.customTheme}
-                style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 12, height: 12, borderRadius: "50%", background: customAccentColor, display: "inline-block" }}></span>
-                🎨
-              </button>
-              <input
-                type="color"
-                value={customAccentColor}
-                onChange={(e) => { setCustomAccentColor(e.target.value); localStorage.setItem("shardeumai-accent", e.target.value); }}
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
-              />
-            </div>
+            {/* Desktop Feature Buttons */}
+            {!isMobile && (
+              <>
+                <button onClick={() => { setStreamingEnabled(!streamingEnabled); localStorage.setItem("shardeumai-streaming", !streamingEnabled); }}
+                  title={t.streaming}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  🔄
+                </button>
+                <button onClick={() => { calculateAnalytics(); setShowAnalytics(!showAnalytics); }}
+                  title={t.analytics}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showAnalytics ? "#404040" : "transparent", color: showAnalytics ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  📊
+                </button>
+                <button onClick={() => setShowShortcuts(!showShortcuts)}
+                  title={t.shortcuts}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showShortcuts ? "#404040" : "transparent", color: showShortcuts ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  ⌨️
+                </button>
+                <button onClick={() => setShowFeedback(!showFeedback)}
+                  title={t.feedback}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showFeedback ? "#404040" : "transparent", color: showFeedback ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  💬
+                </button>
+                <div style={{ position: "relative" }}>
+                  <button title={t.customTheme}
+                    style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: "50%", background: customAccentColor, display: "inline-block" }}></span>
+                    🎨
+                  </button>
+                  <input
+                    type="color"
+                    value={customAccentColor}
+                    onChange={(e) => { setCustomAccentColor(e.target.value); localStorage.setItem("shardeumai-accent", e.target.value); }}
+                    style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
+                  />
+                </div>
+              </>
+            )}
             <div style={{ position: "relative" }}>
               <button onClick={() => setWebSearch(!webSearch)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
@@ -1445,6 +1445,40 @@ function App() {
                 ⚙️ Admin
               </button>
             )}
+            {/* Mobile Feature Buttons */}
+            <button onClick={() => { setStreamingEnabled(!streamingEnabled); localStorage.setItem("shardeumai-streaming", !streamingEnabled); }}
+              title={t.streaming}
+              style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+              🔄
+            </button>
+            <button onClick={() => { calculateAnalytics(); setShowAnalytics(!showAnalytics); }}
+              title={t.analytics}
+              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showAnalytics ? "#404040" : "transparent", color: showAnalytics ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+              📊
+            </button>
+            <button onClick={() => setShowShortcuts(!showShortcuts)}
+              title={t.shortcuts}
+              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showShortcuts ? "#404040" : "transparent", color: showShortcuts ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+              ⌨️
+            </button>
+            <button onClick={() => setShowFeedback(!showFeedback)}
+              title={t.feedback}
+              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showFeedback ? "#404040" : "transparent", color: showFeedback ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+              💬
+            </button>
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button title={t.customTheme}
+                style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: customAccentColor, display: "inline-block" }}></span>
+                🎨
+              </button>
+              <input
+                type="color"
+                value={customAccentColor}
+                onChange={(e) => { setCustomAccentColor(e.target.value); localStorage.setItem("shardeumai-accent", e.target.value); }}
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
+              />
+            </div>
           </div>
         )}
 
