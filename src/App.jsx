@@ -170,11 +170,11 @@ const MODEL_LANGUAGES = [
 ];
 
 const AI_MODES = [
-  { id: "general", label: "General", prompt: "You are ShardeumAI (SDAI), a helpful bilingual AI assistant. Reply ONLY in Persian (Farsi) or English. Never mix other languages like Chinese, Vietnamese, or any other language into your response. If user writes in Persian, reply fully in Persian. If in English, reply fully in English. Be friendly, accurate, and helpful." },
-  { id: "crypto", label: "Crypto", prompt: "You are ShardeumAI (SDAI), a crypto and blockchain expert assistant. You specialize in Shardeum, Ethereum, Bitcoin, DeFi, NFTs, Web3, tokenomics, and market analysis. Reply ONLY in Persian or English, never mix other languages. Give accurate, detailed crypto information." },
-  { id: "shardeum", label: "Shardeum", prompt: "You are ShardeumAI (SDAI), a specialized Shardeum blockchain assistant. You have deep knowledge of Shardeum's architecture, SHM token, EVM compatibility, dynamic state sharding, validators, and ecosystem. Reply in the same language the user writes in." },
-  { id: "defi", label: "DeFi", prompt: "You are ShardeumAI (SDAI), a DeFi (Decentralized Finance) expert. You specialize in liquidity pools, yield farming, DEXs, lending protocols, staking, and DeFi strategies. Reply in the same language the user writes in." },
-  { id: "web3", label: "Web3", prompt: "You are ShardeumAI (SDAI), a Web3 and smart contract expert. You specialize in Solidity, dApps, MetaMask, wallets, NFTs, DAOs, and decentralized technologies. Reply in the same language the user writes in." },
+  { id: "general", label: "General", prompt: "You are ShardeumAI (SDAI), a helpful AI assistant. CRITICAL RULE: Detect the user's language from their message and reply ONLY in that exact same language. If user writes in Persian (Farsi), reply 100% in Persian using proper Persian script (نه فینگلیش). If user writes in English, reply 100% in English. Never mix languages. Never use Hindi, Arabic, Chinese, or any other script. Only use the exact same language and script as the user's message. Be friendly, accurate, and helpful." },
+  { id: "crypto", label: "Crypto", prompt: "You are ShardeumAI (SDAI), a crypto and blockchain expert assistant. CRITICAL RULE: Detect the user's language from their message and reply ONLY in that exact same language. If user writes in Persian, reply 100% in Persian with proper Persian script. If English, reply 100% in English. Never mix languages or scripts. Never use Hindi, Arabic, Chinese, or other scripts. Give accurate, detailed crypto information." },
+  { id: "shardeum", label: "Shardeum", prompt: "You are ShardeumAI (SDAI), a specialized Shardeum blockchain assistant. CRITICAL RULE: Detect the user's language and reply ONLY in that exact same language with proper script. Never mix languages or use other scripts. You have deep knowledge of Shardeum's architecture, SHM token, EVM compatibility, dynamic state sharding, validators, and ecosystem." },
+  { id: "defi", label: "DeFi", prompt: "You are ShardeumAI (SDAI), a DeFi (Decentralized Finance) expert. CRITICAL RULE: Detect the user's language and reply ONLY in that exact same language with proper script. Never mix languages. You specialize in liquidity pools, yield farming, DEXs, lending protocols, staking, and DeFi strategies." },
+  { id: "web3", label: "Web3", prompt: "You are ShardeumAI (SDAI), a Web3 and smart contract expert. CRITICAL RULE: Detect the user's language and reply ONLY in that exact same language with proper script. Never mix languages. You specialize in Solidity, dApps, MetaMask, wallets, NFTs, DAOs, and decentralized technologies." },
 ];
 
 const MODELS = [
@@ -1097,10 +1097,10 @@ function App() {
       <div className={`chat-sidebar-overlay ${sidebarOpen ? "show" : ""}`} onClick={() => setSidebarOpen(false)} />
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
+      <div className="chat-main" style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
 
         {/* Header */}
-        <div style={{
+        <div className="chat-header" style={{
           height: 48, display: "flex", alignItems: "center", justifyContent: "space-between",
           padding: "0 16px", borderBottom: "1px solid #2d2d2d", flexShrink: 0,
         }}>
@@ -1190,7 +1190,7 @@ function App() {
           <>
             <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0" }}>
               {messages.length === 0 ? (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 40 }}>
+                <div className="chat-welcome" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: 40 }}>
                   <div style={{ width: 64, height: 64, borderRadius: 12, background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 24 }}>S</div>
                   <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{t.welcomeTitle}</h1>
                   <p style={{ margin: 0, fontSize: 16, color: "#8e8ea0" }}>{t.welcomeSubtitle}</p>
@@ -1201,13 +1201,13 @@ function App() {
                     background: msg.role === "user" ? "transparent" : "#171717",
                     borderBottom: msg.role === "assistant" ? "1px solid #2d2d2d" : "none",
                   }}>
-                    <div style={{ maxWidth: 768, margin: "0 auto", padding: "20px 24px", display: "flex", gap: 16, direction: isRTL ? "rtl" : "ltr" }}>
-                      <div style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#fff",
+                    <div className="chat-msg-content" style={{ maxWidth: 768, margin: "0 auto", padding: "20px 24px", display: "flex", gap: 16, direction: isRTL ? "rtl" : "ltr" }}>
+                      <div className="chat-avatar" style={{ width: 28, height: 28, borderRadius: "50%", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#fff",
                         background: msg.role === "user" ? profile.avatar_color : "#10a37f",
                       }}>
                         {msg.role === "user" ? (profile.display_name || "U")[0].toUpperCase() : "S"}
                       </div>
-                      <div style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: 15, lineHeight: 1.7, direction: "auto" }}>
+                      <div className="chat-msg-text" style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: 15, lineHeight: 1.7, direction: "auto" }}>
                         {msg.role === "user" ? (
                           <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
                         ) : (
@@ -1258,7 +1258,7 @@ function App() {
             </div>
 
             {/* Input Area */}
-            <div style={{ padding: "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
+            <div className="chat-input-area" style={{ padding: "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
               <div style={{ maxWidth: 768, margin: "0 auto", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ position: "relative" }}>
                   {/* Uploaded Files Preview */}
@@ -1290,7 +1290,7 @@ function App() {
                     placeholder={t.placeholder}
                     rows={1}
                     style={{
-                      width: "100%", padding: "14px 96px 14px 16px", borderRadius: 16,
+                      width: "100%", padding: "14px 110px 14px 16px", borderRadius: 16,
                       border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec",
                       fontSize: 15, outline: "none", resize: "none", overflow: "hidden",
                       minHeight: 52, maxHeight: 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
@@ -1518,7 +1518,7 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
               <div style={{ color: "#8e8ea0", textAlign: "center", padding: 40 }}>Loading...</div>
             ) : (
               <>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+                <div className="admin-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
                   {[
                     { label: "Users", value: adminUsers.length, icon: "👥" },
                     { label: "Messages", value: adminUsers.reduce((a, u) => a + (parseInt(u.total_messages) || 0), 0), icon: "💬" },
