@@ -1226,13 +1226,14 @@ function App() {
                 </div>
               )}
             </div>
-            {["chat", "image", "profile", "api"].map(tab => (
+            {/* Desktop tabs - inline */}
+            {!isMobile && ["chat", "image", "profile", "api"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
                 {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : "🔌"}
               </button>
             ))}
-            {session?.user?.email === ADMIN_EMAIL && (
+            {!isMobile && session?.user?.email === ADMIN_EMAIL && (
               <button onClick={() => { setActiveTab("admin"); loadAdminData(); }}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === "admin" ? "#404040" : "transparent", color: activeTab === "admin" ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
                 ⚙️
@@ -1240,6 +1241,28 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* Mobile Tabs Row */}
+        {isMobile && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "4px 8px", borderBottom: "1px solid #2d2d2d",
+            overflowX: "auto", flexShrink: 0,
+          }}>
+            {["chat", "image", "profile", "api"].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+                {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : "🔌 API"}
+              </button>
+            ))}
+            {session?.user?.email === ADMIN_EMAIL && (
+              <button onClick={() => { setActiveTab("admin"); loadAdminData(); }}
+                style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === "admin" ? "#404040" : "transparent", color: activeTab === "admin" ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+                ⚙️ Admin
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Chat / Image / Admin */}
         {activeTab === "chat" ? (
