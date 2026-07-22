@@ -1057,7 +1057,7 @@ function App() {
 
   async function handleSend(e) {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() && uploadedFiles.length === 0) return;
     if (!session) { alert("Please login first."); return; }
     let messageContent = input.trim();
 
@@ -1080,62 +1080,117 @@ function App() {
     setMessages(newMessages);
     setInput("");
     setChatLoading(true);
+
+    let reply = "";
+
     try {
       const currentMode = AI_MODES.find(m => m.id === aiMode);
 
+      console.log("Sending request to edge function...", {
+        url: EDGE_FUNCTION_URL,
+        model: selectedModel,
+        streaming: streamingEnabled,
+        messageCount: newMessages.length
+      });
+
+      const response = await fetch(EDGE_FUNCTION_URL, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json", 
+          "Authorization": `Bearer ${session.access_token}` 
+        },
+        body: JSON.stringify({
+          messages: newMessages, 
+          language: modelLang, 
+          system_prompt: currentMode?.prompt,
+          web_search: webSearch, 
+          search_provider: searchProvider, 
+          model: selectedModel,
+          stream: streamingEnabled,
+        }),
+      });
+
+      console.log("Response received:", response.status, response.statusText);
+
+      // CRITICAL FIX: Check if response is OK before parsing
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Edge function error:", response.status, errorText);
+        throw new Error(`Server error ${response.status}: ${errorText.slice(0, 200)}`);
+      }
+
       if (streamingEnabled) {
         // Streaming mode
-        const response = await fetch(EDGE_FUNCTION_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
-          body: JSON.stringify({
-            messages: newMessages, language: modelLang, system_prompt: currentMode?.prompt,
-            web_search: webSearch, search_provider: searchProvider, model: selectedModel,
-            stream: true,
-          }),
-        });
-
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
         let fullReply = "";
 
+        if (!reader) {
+          throw new Error("Response body is not readable");
+        }
+
+        // Add empty assistant message for streaming
         setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
-        while (reader) {
+        while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split("\n");
+
           for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
+            const trimmedLine = line.trim();
+            if (!trimmedLine) continue;
+
+            // Handle SSE format: "data: {...}"
+            if (trimmedLine.startsWith("data: ")) {
+              const data = trimmedLine.slice(6);
               if (data === "[DONE]") continue;
               try {
                 const parsed = JSON.parse(data);
                 const delta = parsed.choices?.[0]?.delta?.content || "";
-                fullReply += delta;
-                setMessages(prev => {
-                  const newMsgs = [...prev];
-                  newMsgs[newMsgs.length - 1] = { role: "assistant", content: fullReply };
-                  return newMsgs;
-                });
-              } catch (e) {}
+                if (delta) {
+                  fullReply += delta;
+                  setMessages(prev => {
+                    const newMsgs = [...prev];
+                    newMsgs[newMsgs.length - 1] = { role: "assistant", content: fullReply };
+                    return newMsgs;
+                  });
+                }
+              } catch (e) {
+                console.log("Failed to parse SSE data:", data);
+              }
+            } 
+            // Handle plain text chunks (non-SSE format)
+            else {
+              fullReply += trimmedLine + "\n";
+              setMessages(prev => {
+                const newMsgs = [...prev];
+                newMsgs[newMsgs.length - 1] = { role: "assistant", content: fullReply };
+                return newMsgs;
+              });
             }
           }
         }
-        var reply = fullReply || "No response";
+
+        reply = fullReply || "No response";
+
       } else {
         // Non-streaming mode
-        const response = await fetch(EDGE_FUNCTION_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
-          body: JSON.stringify({
-            messages: newMessages, language: modelLang, system_prompt: currentMode?.prompt,
-            web_search: webSearch, search_provider: searchProvider, model: selectedModel,
-          }),
-        });
-        const data = await response.json();
-        var reply = data.reply || "No response";
+        const contentType = response.headers.get("content-type");
+        console.log("Response content-type:", contentType);
+
+        if (contentType && contentType.includes("application/json")) {
+          const data = await response.json();
+          console.log("Response data:", data);
+          reply = data.reply || data.response || data.message || data.content || JSON.stringify(data);
+        } else {
+          // Handle plain text response
+          reply = await response.text();
+          console.log("Response text:", reply.slice(0, 200));
+        }
+
         setMessages(prev => [...prev, { role: "assistant", content: reply }]);
       }
 
@@ -1145,13 +1200,20 @@ function App() {
         const { data: newConvo } = await supabase.from("conversations").insert({ user_id: session.user.id, title }).select().single();
         if (newConvo) { convoId = newConvo.id; setActiveConvoId(convoId); setConversations(prev => [newConvo, ...prev]); }
       }
-      await saveMessage(session.user.id, "user", userMsg.content, convoId);
-      await saveMessage(session.user.id, "assistant", reply, convoId);
-    } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Error connecting to AI." }]);
+
+      if (convoId) {
+        await saveMessage(session.user.id, "user", userMsg.content, convoId);
+        await saveMessage(session.user.id, "assistant", reply, convoId);
+      }
+
+    } catch (err) {
+      console.error("Chat error details:", err);
+      const errorMsg = err.message || "Unknown error occurred";
+      setMessages(prev => [...prev, { role: "assistant", content: "⚠️ Error: " + errorMsg }]);
+    } finally {
+      setUploadedFiles([]);
+      setChatLoading(false);
     }
-    setUploadedFiles([]);
-    setChatLoading(false);
   }
 
   // ── Welcome Page ──
