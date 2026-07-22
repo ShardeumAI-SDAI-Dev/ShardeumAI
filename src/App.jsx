@@ -206,7 +206,12 @@ const translations = {
     share: "اشتراک‌گذاری", export: "خروجی", copy: "کپی", copied: "کپی شد!",
     model: "مدل", language: "زبان", webSearch: "جستجوی وب",
     welcomePageTitle: "به ShardeumAI خوش آمدید", welcomePageSubtitle: "یک پلتفرم هوش مصنوعی چندزبانه", start: "شروع",
-  },
+      smartNotificationTitle: "سلام! 👋",
+    smartNotificationMessage: "یک سوال جدید بپرس — من اینجام که کمکت کنم!",
+    smartNotificationDismiss: "بستن",
+    smartNotificationDays: "روز",
+    smartNotificationAgo: "از آخرین بازدید",
+},
   en: {
     title: "ShardeumAI", subtitle: "Your Intelligent Assistant",
     placeholder: "Message ShardeumAI...", send: "Send",
@@ -221,7 +226,12 @@ const translations = {
     streaming: "Streaming", analytics: "Analytics", notifications: "Notifications", customTheme: "Custom Theme", shortcuts: "Shortcuts", feedback: "Feedback", sendFeedback: "Send Feedback", feedbackPlaceholder: "Your feedback...", feedbackSent: "Feedback sent! Thank you!",
     totalMessages: "Total Messages", totalChats: "Total Chats", avgResponseTime: "Avg Response", charactersTyped: "Characters Typed", today: "Today", thisWeek: "This Week", thisMonth: "This Month",
     shortcutSend: "Send Message", shortcutNewChat: "New Chat", shortcutSearch: "Toggle Search", shortcutFocus: "Focus Input", shortcutTheme: "Toggle Theme",
-  },
+      smartNotificationTitle: "Hey there! 👋",
+    smartNotificationMessage: "Ask a new question — I'm here to help!",
+    smartNotificationDismiss: "Dismiss",
+    smartNotificationDays: "days",
+    smartNotificationAgo: "since last visit",
+},
   es: {
     title: "ShardeumAI", subtitle: "Tu Asistente Inteligente",
     placeholder: "Escribe tu mensaje...", send: "Enviar",
@@ -236,7 +246,12 @@ const translations = {
     streaming: "Transmision", analytics: "Analiticas", notifications: "Notificaciones", customTheme: "Tema Personalizado", shortcuts: "Atajos", feedback: "Comentarios", sendFeedback: "Enviar Comentarios", feedbackPlaceholder: "Tus comentarios...", feedbackSent: "Comentarios enviados! Gracias!",
     totalMessages: "Mensajes Totales", totalChats: "Chats Totales", avgResponseTime: "Tiempo Promedio", charactersTyped: "Caracteres", today: "Hoy", thisWeek: "Esta Semana", thisMonth: "Este Mes",
     shortcutSend: "Enviar Mensaje", shortcutNewChat: "Nuevo Chat", shortcutSearch: "Busqueda", shortcutFocus: "Enfocar Input", shortcutTheme: "Cambiar Tema",
-  },
+      smartNotificationTitle: "¡Hola! 👋",
+    smartNotificationMessage: "Haz una nueva pregunta — ¡estoy aquí para ayudarte!",
+    smartNotificationDismiss: "Cerrar",
+    smartNotificationDays: "días",
+    smartNotificationAgo: "desde la última visita",
+},
   fr: {
     title: "ShardeumAI", subtitle: "Votre Assistant Intelligent",
     placeholder: "Tapez votre message...", send: "Envoyer",
@@ -251,7 +266,12 @@ const translations = {
     streaming: "Diffusion", analytics: "Analyses", notifications: "Notifications", customTheme: "Theme Personnalise", shortcuts: "Raccourcis", feedback: "Retour", sendFeedback: "Envoyer Retour", feedbackPlaceholder: "Vos commentaires...", feedbackSent: "Retour envoye! Merci!",
     totalMessages: "Messages Totaux", totalChats: "Chats Totaux", avgResponseTime: "Temps Moyen", charactersTyped: "Caracteres", today: "Aujourd'hui", thisWeek: "Cette Semaine", thisMonth: "Ce Mois",
     shortcutSend: "Envoyer Message", shortcutNewChat: "Nouveau Chat", shortcutSearch: "Recherche", shortcutFocus: "Focus Input", shortcutTheme: "Changer Theme",
-  },
+      smartNotificationTitle: "Salut! 👋",
+    smartNotificationMessage: "Pose une nouvelle question — je suis là pour t'aider!",
+    smartNotificationDismiss: "Fermer",
+    smartNotificationDays: "jours",
+    smartNotificationAgo: "depuis la dernière visite",
+},
   de: {
     title: "ShardeumAI", subtitle: "Ihr Intelligenter Assistent",
     placeholder: "Nachricht eingeben...", send: "Senden",
@@ -266,7 +286,12 @@ const translations = {
     streaming: "Streaming", analytics: "Analysen", notifications: "Benachrichtigungen", customTheme: "Benutzerdefiniertes Theme", shortcuts: "Tastenkombinationen", feedback: "Feedback", sendFeedback: "Feedback Senden", feedbackPlaceholder: "Ihr Feedback...", feedbackSent: "Feedback gesendet! Danke!",
     totalMessages: "Nachrichten Gesamt", totalChats: "Chats Gesamt", avgResponseTime: "Durchschnittszeit", charactersTyped: "Zeichen", today: "Heute", thisWeek: "Diese Woche", thisMonth: "Dieser Monat",
     shortcutSend: "Nachricht Senden", shortcutNewChat: "Neuer Chat", shortcutSearch: "Suche", shortcutFocus: "Input Fokus", shortcutTheme: "Theme Wechseln",
-  },
+      smartNotificationTitle: "Hallo! 👋",
+    smartNotificationMessage: "Stell eine neue Frage — ich bin hier, um zu helfen!",
+    smartNotificationDismiss: "Schließen",
+    smartNotificationDays: "Tage",
+    smartNotificationAgo: "seit dem letzten Besuch",
+},
   ru: {
     title: "ShardeumAI", subtitle: "Vash Intellektualnyy Pomoshchnik",
     placeholder: "Vvedite soobshenie...", send: "Otpravit'",
@@ -281,7 +306,12 @@ const translations = {
     streaming: "Translyatsiya", analytics: "Analitika", notifications: "Uvedomleniya", customTheme: "Pol'zovatel'skaya Tema", shortcuts: "Goryachie Klavishi", feedback: "Otziv", sendFeedback: "Otpravit' Otziv", feedbackPlaceholder: "Vash otziv...", feedbackSent: "Otziv otpravlen! Spasibo!",
     totalMessages: "Vsego Soobshcheniy", totalChats: "Vsego Chatov", avgResponseTime: "Srednee Vremya", charactersTyped: "Simvolov", today: "Segodnya", thisWeek: "Etu Nedelyu", thisMonth: "Etot Mesyats",
     shortcutSend: "Otpravit' Soobshchenie", shortcutNewChat: "Novyy Chat", shortcutSearch: "Poisk", shortcutFocus: "Fokus Inputa", shortcutTheme: "Smene Temy",
-  },
+      smartNotificationTitle: "Привет! 👋",
+    smartNotificationMessage: "Задай новый вопрос — я здесь, чтобы помочь!",
+    smartNotificationDismiss: "Закрыть",
+    smartNotificationDays: "дней",
+    smartNotificationAgo: "с последнего визита",
+},
   ar: {
     title: "ShardeumAI", subtitle: "Musa'iduka al-Thakiy",
     placeholder: "Uktub risalatak...", send: "Irsal",
@@ -296,7 +326,12 @@ const translations = {
     streaming: "Bath Mubashar", analytics: "Tahlilat", notifications: "Tanzimat", customTheme: "Mawzu' Mukassas", shortcuts: "Iqtirahat", feedback: "Raja'", sendFeedback: "Irsal Raja'", feedbackPlaceholder: "Tafqidak...", feedbackSent: "Raja' Irsal! Shukran!",
     totalMessages: "Ijmal al-Rasail", totalChats: "Ijmal al-Muhadathat", avgResponseTime: "Zaman al-Ijaba", charactersTyped: "Huruf", today: "Al-Yawm", thisWeek: "Hadha al-Usbua'", thisMonth: "Hadha al-Shahr",
     shortcutSend: "Irsal Risala", shortcutNewChat: "Muhadatha Jadida", shortcutSearch: "Bahth", shortcutFocus: "Turkiz Input", shortcutTheme: "Taghyir al-Mawzu'",
-  },
+      smartNotificationTitle: "مرحباً! 👋",
+    smartNotificationMessage: "اسأل سؤالاً جديداً — أنا هنا للمساعدة!",
+    smartNotificationDismiss: "إغلاق",
+    smartNotificationDays: "أيام",
+    smartNotificationAgo: "منذ آخر زيارة",
+},
 };
 
 // ── Syntax Highlighting ──
@@ -741,6 +776,14 @@ function App() {
   const inputRef = useRef(null);
   const responseTimeRef = useRef(null);
 
+  // ── Smart Notification States ──
+  const [showSmartNotification, setShowSmartNotification] = useState(false);
+  const [daysSinceLastVisit, setDaysSinceLastVisit] = useState(0);
+  const [smartNotifDismissed, setSmartNotifDismissed] = useState(() => {
+    return localStorage.getItem("shardeumai-smart-notif-dismissed") === "true";
+  });
+  const responseTimeRef = useRef(null);
+
   const t = translations[uiLang] || translations.en;
   const isRTL = uiLang === "fa" || uiLang === "ar";
   const currentModel = MODELS.find(m => m.id === selectedModel);
@@ -790,6 +833,32 @@ function App() {
       try { recognitionRef.current.stop(); } catch(e) {}
     }
   }, [uiLang]);
+
+  // ── Smart Notification ──
+  useEffect(() => {
+    const lastVisit = localStorage.getItem("shardeumai-last-visit");
+    const now = new Date().toISOString();
+
+    if (lastVisit && !smartNotifDismissed && session) {
+      const lastVisitDate = new Date(lastVisit);
+      const currentDate = new Date();
+      const diffTime = Math.abs(currentDate - lastVisitDate);
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays >= 2) {
+        setDaysSinceLastVisit(diffDays);
+        setShowSmartNotification(true);
+      }
+    }
+
+    localStorage.setItem("shardeumai-last-visit", now);
+  }, [session, smartNotifDismissed]);
+
+  function dismissSmartNotification() {
+    setShowSmartNotification(false);
+    setSmartNotifDismissed(true);
+    localStorage.setItem("shardeumai-smart-notif-dismissed", "true");
+  }
 
   // ── Data Loading ──
   async function loadHistory(userId) {
@@ -1507,6 +1576,58 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* Smart Notification Banner */}
+        {showSmartNotification && activeTab === "chat" && (
+          <div style={{
+            padding: "12px 16px",
+            background: "#10a37f22",
+            borderBottom: "1px solid #10a37f44",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexShrink: 0,
+            animation: "welcomeFadeIn 0.5s ease-out",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+              <span style={{ fontSize: 24 }}>👋</span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#10a37f" }}>
+                  {t.smartNotificationTitle}
+                </div>
+                <div style={{ fontSize: 12, color: "#8e8ea0", marginTop: 2 }}>
+                  {t.smartNotificationMessage}
+                  <span style={{ color: "#10a37f", marginRight: 4, marginLeft: 4 }}>
+                    ({daysSinceLastVisit} {t.smartNotificationDays} {t.smartNotificationAgo})
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={dismissSmartNotification}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 8,
+                border: "1px solid #10a37f44",
+                background: "transparent",
+                color: "#10a37f",
+                fontSize: 12,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "#10a37f22";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              {t.smartNotificationDismiss}
+            </button>
+          </div>
+        )}
 
         {/* Mobile Tabs Row */}
         {isMobile && (
