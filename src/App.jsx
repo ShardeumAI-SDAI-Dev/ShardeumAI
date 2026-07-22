@@ -782,8 +782,7 @@ function App() {
   const [smartNotifDismissed, setSmartNotifDismissed] = useState(() => {
     return localStorage.getItem("shardeumai-smart-notif-dismissed") === "true";
   });
-  const responseTimeRef = useRef(null);
-
+  
   const t = translations[uiLang] || translations.en;
   const isRTL = uiLang === "fa" || uiLang === "ar";
   const currentModel = MODELS.find(m => m.id === selectedModel);
