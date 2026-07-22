@@ -211,6 +211,33 @@ const translations = {
     smartNotificationDismiss: "بستن",
     smartNotificationDays: "روز",
     smartNotificationAgo: "از آخرین بازدید",
+    landingTitle: "ShardeumAI — آینده هوش مصنوعی چندزبانه",
+    landingSubtitle: "دستیار هوشمند شما برای گفتگو، تولید تصویر و جستجوی وب به ۷ زبان زنده دنیا",
+    landingCTA: "شروع کنید",
+    landingFeatures: "ویژگی‌ها",
+    landingFeature1Title: "🤖 گفتگوی هوشمند",
+    landingFeature1Desc: "با پیشرفته‌ترین مدل‌های زبانی مثل Llama 3.3 و Qwen 32B گفتگو کنید",
+    landingFeature2Title: "🎨 تولید تصویر",
+    landingFeature2Desc: "تصاویر منحصربه‌فرد با هوش مصنوعی تولید کنید",
+    landingFeature3Title: "🌐 ۷ زبان زنده",
+    landingFeature3Desc: "فارسی، انگلیسی، عربی، روسی، فرانسوی، آلمانی و اسپانیایی",
+    landingFeature4Title: "⚡ سریع و امن",
+    landingFeature4Desc: "پاسخ‌های لحظه‌ای با رمزنگاری end-to-end",
+    landingStats: "آمار",
+    landingStatsUsers: "کاربر فعال",
+    landingStatsMessages: "پیام روزانه",
+    landingStatsModels: "مدل هوشمند",
+    landingStatsLanguages: "زبان پشتیبانی",
+    landingHowItWorks: "چطور کار می‌کند؟",
+    landingStep1: "۱. ثبت نام",
+    landingStep1Desc: "در چند ثانیه حساب بسازید",
+    landingStep2: "۲. انتخاب مدل",
+    landingStep2Desc: "مدل مناسب خودتان را انتخاب کنید",
+    landingStep3: "۳. شروع گفتگو",
+    landingStep3Desc: "سوال بپرسید و پاسخ هوشمند بگیرید",
+    landingFooter: "ShardeumAI 2026 — تمامی حقوق محفوظ است",
+    landingSkip: "رد کردن →",
+
 },
   en: {
     title: "ShardeumAI", subtitle: "Your Intelligent Assistant",
@@ -231,6 +258,33 @@ const translations = {
     smartNotificationDismiss: "Dismiss",
     smartNotificationDays: "days",
     smartNotificationAgo: "since last visit",
+    landingTitle: "ShardeumAI — The Future of Multilingual AI",
+    landingSubtitle: "Your intelligent assistant for chat, image generation, and web search in 7 languages",
+    landingCTA: "Get Started",
+    landingFeatures: "Features",
+    landingFeature1Title: "🤖 AI Chat",
+    landingFeature1Desc: "Chat with advanced language models like Llama 3.3 and Qwen 32B",
+    landingFeature2Title: "🎨 Image Generation",
+    landingFeature2Desc: "Create unique images with AI-powered generation",
+    landingFeature3Title: "🌐 7 Languages",
+    landingFeature3Desc: "Persian, English, Arabic, Russian, French, German, and Spanish",
+    landingFeature4Title: "⚡ Fast & Secure",
+    landingFeature4Desc: "Instant responses with end-to-end encryption",
+    landingStats: "Stats",
+    landingStatsUsers: "Active Users",
+    landingStatsMessages: "Daily Messages",
+    landingStatsModels: "AI Models",
+    landingStatsLanguages: "Languages",
+    landingHowItWorks: "How It Works",
+    landingStep1: "1. Sign Up",
+    landingStep1Desc: "Create your account in seconds",
+    landingStep2: "2. Choose Model",
+    landingStep2Desc: "Pick the AI model that fits your needs",
+    landingStep3: "3. Start Chatting",
+    landingStep3Desc: "Ask questions and get intelligent answers",
+    landingFooter: "ShardeumAI 2026 — All rights reserved",
+    landingSkip: "Skip →",
+
 },
   es: {
     title: "ShardeumAI", subtitle: "Tu Asistente Inteligente",
@@ -251,6 +305,33 @@ const translations = {
     smartNotificationDismiss: "Cerrar",
     smartNotificationDays: "días",
     smartNotificationAgo: "desde la última visita",
+    landingTitle: "ShardeumAI — El Futuro de la IA Multilingüe",
+    landingSubtitle: "Tu asistente inteligente para chat, generación de imágenes y búsqueda web en 7 idiomas",
+    landingCTA: "Comenzar",
+    landingFeatures: "Características",
+    landingFeature1Title: "🤖 Chat IA",
+    landingFeature1Desc: "Chatea con modelos avanzados como Llama 3.3 y Qwen 32B",
+    landingFeature2Title: "🎨 Generación de Imágenes",
+    landingFeature2Desc: "Crea imágenes únicas con generación impulsada por IA",
+    landingFeature3Title: "🌐 7 Idiomas",
+    landingFeature3Desc: "Persa, Inglés, Árabe, Ruso, Francés, Alemán y Español",
+    landingFeature4Title: "⚡ Rápido y Seguro",
+    landingFeature4Desc: "Respuestas instantáneas con cifrado de extremo a extremo",
+    landingStats: "Estadísticas",
+    landingStatsUsers: "Usuarios Activos",
+    landingStatsMessages: "Mensajes Diarios",
+    landingStatsModels: "Modelos IA",
+    landingStatsLanguages: "Idiomas",
+    landingHowItWorks: "Cómo Funciona",
+    landingStep1: "1. Registrarse",
+    landingStep1Desc: "Crea tu cuenta en segundos",
+    landingStep2: "2. Elegir Modelo",
+    landingStep2Desc: "Elige el modelo de IA que necesitas",
+    landingStep3: "3. Empezar Chat",
+    landingStep3Desc: "Haz preguntas y recibe respuestas inteligentes",
+    landingFooter: "ShardeumAI 2026 — Todos los derechos reservados",
+    landingSkip: "Saltar →",
+
 },
   fr: {
     title: "ShardeumAI", subtitle: "Votre Assistant Intelligent",
@@ -271,6 +352,33 @@ const translations = {
     smartNotificationDismiss: "Fermer",
     smartNotificationDays: "jours",
     smartNotificationAgo: "depuis la dernière visite",
+    landingTitle: "ShardeumAI — L'Avenir de l'IA Multilingue",
+    landingSubtitle: "Votre assistant intelligent pour le chat, la génération d'images et la recherche web en 7 langues",
+    landingCTA: "Commencer",
+    landingFeatures: "Fonctionnalités",
+    landingFeature1Title: "🤖 Chat IA",
+    landingFeature1Desc: "Discutez avec des modèles avancés comme Llama 3.3 et Qwen 32B",
+    landingFeature2Title: "🎨 Génération d'Images",
+    landingFeature2Desc: "Créez des images uniques avec la génération IA",
+    landingFeature3Title: "🌐 7 Langues",
+    landingFeature3Desc: "Persan, Anglais, Arabe, Russe, Français, Allemand et Espagnol",
+    landingFeature4Title: "⚡ Rapide et Sécurisé",
+    landingFeature4Desc: "Réponses instantanées avec chiffrement de bout en bout",
+    landingStats: "Statistiques",
+    landingStatsUsers: "Utilisateurs Actifs",
+    landingStatsMessages: "Messages Quotidiens",
+    landingStatsModels: "Modèles IA",
+    landingStatsLanguages: "Langues",
+    landingHowItWorks: "Comment Ça Marche",
+    landingStep1: "1. S'inscrire",
+    landingStep1Desc: "Créez votre compte en quelques secondes",
+    landingStep2: "2. Choisir le Modèle",
+    landingStep2Desc: "Choisissez le modèle d'IA qui vous convient",
+    landingStep3: "3. Commencer le Chat",
+    landingStep3Desc: "Posez des questions et obtenez des réponses intelligentes",
+    landingFooter: "ShardeumAI 2026 — Tous droits réservés",
+    landingSkip: "Passer →",
+
 },
   de: {
     title: "ShardeumAI", subtitle: "Ihr Intelligenter Assistent",
@@ -291,6 +399,33 @@ const translations = {
     smartNotificationDismiss: "Schließen",
     smartNotificationDays: "Tage",
     smartNotificationAgo: "seit dem letzten Besuch",
+    landingTitle: "ShardeumAI — Die Zukunft der Mehrsprachigen KI",
+    landingSubtitle: "Ihr intelligenter Assistent für Chat, Bildgenerierung und Websuche in 7 Sprachen",
+    landingCTA: "Starten",
+    landingFeatures: "Funktionen",
+    landingFeature1Title: "🤖 KI-Chat",
+    landingFeature1Desc: "Chatten Sie mit fortschrittlichen Modellen wie Llama 3.3 und Qwen 32B",
+    landingFeature2Title: "🎨 Bildgenerierung",
+    landingFeature2Desc: "Erstellen Sie einzigartige Bilder mit KI-gestützter Generierung",
+    landingFeature3Title: "🌐 7 Sprachen",
+    landingFeature3Desc: "Persisch, Englisch, Arabisch, Russisch, Französisch, Deutsch und Spanisch",
+    landingFeature4Title: "⚡ Schnell und Sicher",
+    landingFeature4Desc: "Sofortige Antworten mit Ende-zu-Ende-Verschlüsselung",
+    landingStats: "Statistiken",
+    landingStatsUsers: "Aktive Nutzer",
+    landingStatsMessages: "Tägliche Nachrichten",
+    landingStatsModels: "KI-Modelle",
+    landingStatsLanguages: "Sprachen",
+    landingHowItWorks: "Wie Es Funktioniert",
+    landingStep1: "1. Anmelden",
+    landingStep1Desc: "Erstellen Sie Ihr Konto in Sekunden",
+    landingStep2: "2. Modell Wählen",
+    landingStep2Desc: "Wählen Sie das passende KI-Modell",
+    landingStep3: "3. Chat Starten",
+    landingStep3Desc: "Stellen Sie Fragen und erhalten Sie intelligente Antworten",
+    landingFooter: "ShardeumAI 2026 — Alle Rechte vorbehalten",
+    landingSkip: "Überspringen →",
+
 },
   ru: {
     title: "ShardeumAI", subtitle: "Vash Intellektualnyy Pomoshchnik",
@@ -311,6 +446,33 @@ const translations = {
     smartNotificationDismiss: "Закрыть",
     smartNotificationDays: "дней",
     smartNotificationAgo: "с последнего визита",
+    landingTitle: "ShardeumAI — Будущее Многоязычного ИИ",
+    landingSubtitle: "Ваш интеллектуальный помощник для чата, генерации изображений и веб-поиска на 7 языках",
+    landingCTA: "Начать",
+    landingFeatures: "Возможности",
+    landingFeature1Title: "🤖 ИИ-Чат",
+    landingFeature1Desc: "Общайтесь с продвинутыми моделями вроде Llama 3.3 и Qwen 32B",
+    landingFeature2Title: "🎨 Генерация Изображений",
+    landingFeature2Desc: "Создавайте уникальные изображения с помощью ИИ",
+    landingFeature3Title: "🌐 7 Языков",
+    landingFeature3Desc: "Персидский, Английский, Арабский, Русский, Французский, Немецкий и Испанский",
+    landingFeature4Title: "⚡ Быстро и Безопасно",
+    landingFeature4Desc: "Мгновенные ответы с сквозным шифрованием",
+    landingStats: "Статистика",
+    landingStatsUsers: "Активных Пользователей",
+    landingStatsMessages: "Сообщений в День",
+    landingStatsModels: "ИИ-Моделей",
+    landingStatsLanguages: "Языков",
+    landingHowItWorks: "Как Это Работает",
+    landingStep1: "1. Регистрация",
+    landingStep1Desc: "Создайте аккаунт за секунды",
+    landingStep2: "2. Выбор Модели",
+    landingStep2Desc: "Выберите подходящую ИИ-модель",
+    landingStep3: "3. Начать Чат",
+    landingStep3Desc: "Задавайте вопросы и получайте умные ответы",
+    landingFooter: "ShardeumAI 2026 — Все права защищены",
+    landingSkip: "Пропустить →",
+
 },
   ar: {
     title: "ShardeumAI", subtitle: "Musa'iduka al-Thakiy",
@@ -331,6 +493,33 @@ const translations = {
     smartNotificationDismiss: "إغلاق",
     smartNotificationDays: "أيام",
     smartNotificationAgo: "منذ آخر زيارة",
+    landingTitle: "ShardeumAI — مستقبل الذكاء الاصطناعي متعدد اللغات",
+    landingSubtitle: "مساعدك الذكي للدردشة وتوليد الصور والبحث الويب بـ 7 لغات",
+    landingCTA: "ابدأ الآن",
+    landingFeatures: "المميزات",
+    landingFeature1Title: "🤖 دردشة ذكية",
+    landingFeature1Desc: "تحدث مع نماذج لغوية متقدمة مثل Llama 3.3 و Qwen 32B",
+    landingFeature2Title: "🎨 توليد الصور",
+    landingFeature2Desc: "أنشئ صور فريدة بالذكاء الاصطناعي",
+    landingFeature3Title: "🌐 7 لغات",
+    landingFeature3Desc: "الفارسية والإنجليزية والعربية والروسية والفرنسية والألمانية والإسبانية",
+    landingFeature4Title: "⚡ سريع وآمن",
+    landingFeature4Desc: "ردود فورية مع تشفير من طرف إلى طرف",
+    landingStats: "الإحصائيات",
+    landingStatsUsers: "مستخدم نشط",
+    landingStatsMessages: "رسالة يومية",
+    landingStatsModels: "نموذج ذكي",
+    landingStatsLanguages: "لغة مدعومة",
+    landingHowItWorks: "كيف يعمل؟",
+    landingStep1: "١. التسجيل",
+    landingStep1Desc: "أنشئ حسابك في ثوانٍ",
+    landingStep2: "٢. اختيار النموذج",
+    landingStep2Desc: "اختر نموذج الذكاء الاصطناعي المناسب",
+    landingStep3: "٣. بدء الدردشة",
+    landingStep3Desc: "اطرح أسئلتك واحصل على إجابات ذكية",
+    landingFooter: "ShardeumAI 2026 — جميع الحقوق محفوظة",
+    landingSkip: "تخطي →",
+
 },
 };
 
@@ -577,6 +766,380 @@ function ImageGenerator({ t, isRTL }) {
 // ═══ WELCOME PAGE ═══
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// ═══ LANDING PAGE ═══
+// ═══════════════════════════════════════════════════════════════
+
+function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
+  const isRTL = uiLang === "fa" || uiLang === "ar";
+  const [animatedStats, setAnimatedStats] = useState({ users: 0, messages: 0, models: 0, languages: 0 });
+
+  useEffect(() => {
+    const duration = 2000;
+    const steps = 60;
+    const interval = duration / steps;
+    let step = 0;
+
+    const targets = { users: 12500, messages: 89000, models: 3, languages: 7 };
+
+    const timer = setInterval(() => {
+      step++;
+      const progress = step / steps;
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+
+      setAnimatedStats({
+        users: Math.floor(targets.users * easeOut),
+        messages: Math.floor(targets.messages * easeOut),
+        models: Math.floor(targets.models * easeOut),
+        languages: Math.floor(targets.languages * easeOut),
+      });
+
+      if (step >= steps) clearInterval(timer);
+    }, interval);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const features = [
+    { icon: "🤖", title: t.landingFeature1Title, desc: t.landingFeature1Desc },
+    { icon: "🎨", title: t.landingFeature2Title, desc: t.landingFeature2Desc },
+    { icon: "🌐", title: t.landingFeature3Title, desc: t.landingFeature3Desc },
+    { icon: "⚡", title: t.landingFeature4Title, desc: t.landingFeature4Desc },
+  ];
+
+  const steps = [
+    { num: "1", title: t.landingStep1, desc: t.landingStep1Desc },
+    { num: "2", title: t.landingStep2, desc: t.landingStep2Desc },
+    { num: "3", title: t.landingStep3, desc: t.landingStep3Desc },
+  ];
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: th.bg,
+      color: th.text,
+      direction: isRTL ? "rtl" : "ltr",
+      overflowY: "auto",
+      overflowX: "hidden",
+    }}>
+      {/* Hero Section */}
+      <div style={{
+        minHeight: isMobile ? "auto" : "90vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: isMobile ? "60px 20px" : "80px 40px",
+        position: "relative",
+        textAlign: "center",
+      }}>
+        {/* Background glow effects */}
+        <div style={{
+          position: "absolute", top: "20%", left: "10%", width: 300, height: 300,
+          borderRadius: "50%", background: th.primary, opacity: 0.05, filter: "blur(100px)",
+        }} />
+        <div style={{
+          position: "absolute", bottom: "10%", right: "10%", width: 400, height: 400,
+          borderRadius: "50%", background: "#3b82f6", opacity: 0.03, filter: "blur(120px)",
+        }} />
+
+        {/* Language selector */}
+        <div style={{
+          position: "absolute", top: 24, right: 24,
+          display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end",
+          zIndex: 10,
+        }}>
+          {UI_LANGUAGES.map(lang => (
+            <button key={lang.code} onClick={() => setUiLang(lang.code)}
+              style={{
+                padding: "4px 10px", borderRadius: 6,
+                border: `1px solid ${uiLang === lang.code ? th.primary : th.border}`,
+                background: uiLang === lang.code ? th.primaryLight : "transparent",
+                color: uiLang === lang.code ? th.primary : th.textSecondary,
+                fontSize: 12, cursor: "pointer", transition: "all 0.2s",
+              }}>
+              {lang.flag} {lang.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Skip button */}
+        <button
+          onClick={onStart}
+          style={{
+            position: "absolute", top: 24, left: 24,
+            padding: "6px 14px", borderRadius: 8,
+            border: `1px solid ${th.border}`,
+            background: "transparent", color: th.textMuted,
+            fontSize: 13, cursor: "pointer", zIndex: 10,
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = th.text; e.currentTarget.style.borderColor = th.primary; }}
+          onMouseLeave={e => { e.currentTarget.style.color = th.textMuted; e.currentTarget.style.borderColor = th.border; }}
+        >
+          {t.landingSkip}
+        </button>
+
+        {/* Logo */}
+        <div className="welcome-logo welcome-float" style={{
+          width: isMobile ? 80 : 120, height: isMobile ? 80 : 120, borderRadius: 28,
+          background: th.gradient,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: isMobile ? 40 : 56, fontWeight: 800, color: "#fff",
+          marginBottom: 32,
+          boxShadow: `0 20px 60px ${th.primary}33`,
+        }}>
+          S
+        </div>
+
+        {/* Title */}
+        <h1 style={{
+          margin: 0, fontSize: isMobile ? 28 : 48, fontWeight: 800,
+          color: th.text, lineHeight: 1.2,
+          letterSpacing: "-0.02em", maxWidth: 800,
+        }}>
+          {t.landingTitle}
+        </h1>
+
+        {/* Subtitle */}
+        <p style={{
+          margin: "20px 0 0", fontSize: isMobile ? 15 : 20,
+          color: th.textSecondary, fontWeight: 400,
+          maxWidth: 600, lineHeight: 1.6,
+        }}>
+          {t.landingSubtitle}
+        </p>
+
+        {/* CTA Button */}
+        <button onClick={onStart}
+          style={{
+            marginTop: 40,
+            padding: isMobile ? "14px 36px" : "18px 48px", borderRadius: 16,
+            border: "none", background: th.gradient,
+            color: "#fff", fontSize: isMobile ? 16 : 20, fontWeight: 700,
+            cursor: "pointer", letterSpacing: "0.5px",
+            boxShadow: `0 8px 32px ${th.primary}44`,
+            transition: "all 0.3s ease",
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
+            e.currentTarget.style.boxShadow = `0 16px 48px ${th.primary}66`;
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = "translateY(0) scale(1)";
+            e.currentTarget.style.boxShadow = `0 8px 32px ${th.primary}44`;
+          }}
+        >
+          {t.landingCTA} →
+        </button>
+
+        {/* Scroll indicator */}
+        <div style={{
+          position: "absolute", bottom: 30,
+          display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+          animation: "welcomeFadeIn 1s ease-out 2s both",
+        }}>
+          <span style={{ fontSize: 11, color: th.textMuted }}>Scroll</span>
+          <div style={{
+            width: 20, height: 30, borderRadius: 10,
+            border: `2px solid ${th.border}`,
+            display: "flex", justifyContent: "center", paddingTop: 6,
+          }}>
+            <div style={{
+              width: 4, height: 8, borderRadius: 2,
+              background: th.primary,
+              animation: "float 2s ease-in-out infinite",
+            }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div style={{
+        padding: isMobile ? "40px 20px" : "60px 40px",
+        background: th.bgSecondary,
+        borderTop: `1px solid ${th.border}`,
+        borderBottom: `1px solid ${th.border}`,
+      }}>
+        <div style={{
+          maxWidth: 900, margin: "0 auto",
+          display: "grid",
+          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+          gap: isMobile ? 20 : 40,
+        }}>
+          {[
+            { value: animatedStats.users.toLocaleString(), label: t.landingStatsUsers, icon: "👥" },
+            { value: animatedStats.messages.toLocaleString(), label: t.landingStatsMessages, icon: "💬" },
+            { value: animatedStats.models, label: t.landingStatsModels, icon: "🤖" },
+            { value: animatedStats.languages, label: t.landingStatsLanguages, icon: "🌍" },
+          ].map((stat, i) => (
+            <div key={i} style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>{stat.icon}</div>
+              <div style={{ fontSize: isMobile ? 24 : 32, fontWeight: 800, color: th.primary }}>
+                {stat.value}+
+              </div>
+              <div style={{ fontSize: 12, color: th.textSecondary, marginTop: 4 }}>
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div style={{ padding: isMobile ? "60px 20px" : "80px 40px", maxWidth: 1000, margin: "0 auto" }}>
+        <h2 style={{
+          textAlign: "center", fontSize: isMobile ? 24 : 32, fontWeight: 700,
+          color: th.text, marginBottom: isMobile ? 40 : 60,
+        }}>
+          {t.landingFeatures}
+        </h2>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+          gap: isMobile ? 16 : 24,
+        }}>
+          {features.map((f, i) => (
+            <div key={i} style={{
+              padding: isMobile ? "24px" : "32px", borderRadius: 20,
+              background: th.bgSecondary,
+              border: `1px solid ${th.border}`,
+              transition: "all 0.3s ease",
+              cursor: "default",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = "translateY(-4px)";
+              e.currentTarget.style.boxShadow = th.shadow;
+              e.currentTarget.style.borderColor = th.primary + "44";
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "none";
+              e.currentTarget.style.borderColor = th.border;
+            }}
+            >
+              <div style={{ fontSize: isMobile ? 32 : 40, marginBottom: 16 }}>{f.icon}</div>
+              <h3 style={{ fontSize: 18, fontWeight: 600, color: th.text, margin: "0 0 8px" }}>
+                {f.title}
+              </h3>
+              <p style={{ fontSize: 14, color: th.textSecondary, lineHeight: 1.6, margin: 0 }}>
+                {f.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div style={{
+        padding: isMobile ? "60px 20px" : "80px 40px",
+        background: th.bgSecondary,
+        borderTop: `1px solid ${th.border}`,
+      }}>
+        <div style={{ maxWidth: 800, margin: "0 auto" }}>
+          <h2 style={{
+            textAlign: "center", fontSize: isMobile ? 24 : 32, fontWeight: 700,
+            color: th.text, marginBottom: isMobile ? 40 : 60,
+          }}>
+            {t.landingHowItWorks}
+          </h2>
+          <div style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            gap: isMobile ? 24 : 32,
+            alignItems: "stretch",
+          }}>
+            {steps.map((s, i) => (
+              <div key={i} style={{
+                flex: 1,
+                padding: isMobile ? "24px" : "32px", borderRadius: 16,
+                background: th.bg,
+                border: `1px solid ${th.border}`,
+                textAlign: "center",
+                position: "relative",
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: "50%",
+                  background: th.gradient,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 20, fontWeight: 700, color: "#fff",
+                  margin: "0 auto 16px",
+                }}>
+                  {s.num}
+                </div>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: th.text, margin: "0 0 8px" }}>
+                  {s.title}
+                </h3>
+                <p style={{ fontSize: 13, color: th.textSecondary, lineHeight: 1.6, margin: 0 }}>
+                  {s.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div style={{
+        padding: isMobile ? "60px 20px" : "100px 40px",
+        textAlign: "center",
+        position: "relative",
+      }}>
+        <div style={{
+          position: "absolute", inset: 0,
+          background: th.gradient, opacity: 0.05,
+        }} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <h2 style={{
+            fontSize: isMobile ? 24 : 36, fontWeight: 800,
+            color: th.text, margin: "0 0 16px",
+          }}>
+            {t.welcomePageTitle}
+          </h2>
+          <p style={{
+            fontSize: isMobile ? 14 : 18, color: th.textSecondary,
+            margin: "0 0 32px", maxWidth: 500, marginLeft: "auto", marginRight: "auto",
+          }}>
+            {t.welcomePageSubtitle}
+          </p>
+          <button onClick={onStart}
+            style={{
+              padding: isMobile ? "14px 36px" : "18px 48px", borderRadius: 16,
+              border: "none", background: th.gradient,
+              color: "#fff", fontSize: isMobile ? 16 : 20, fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: `0 8px 32px ${th.primary}44`,
+              transition: "all 0.3s ease",
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = "translateY(-3px) scale(1.02)";
+              e.currentTarget.style.boxShadow = `0 16px 48px ${th.primary}66`;
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = "translateY(0) scale(1)";
+              e.currentTarget.style.boxShadow = `0 8px 32px ${th.primary}44`;
+            }}
+          >
+            {t.landingCTA} →
+          </button>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        padding: "24px 20px",
+        borderTop: `1px solid ${th.border}`,
+        textAlign: "center",
+        background: th.bgSecondary,
+      }}>
+        <p style={{ fontSize: 12, color: th.textMuted, margin: 0 }}>
+          {t.landingFooter}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart, isMobile }) {
   const isRTL = uiLang === "fa" || uiLang === "ar";
 
@@ -729,6 +1292,10 @@ function App() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const th = THEMES[resolvedTheme];
   const isMobile = useMobile();
+    const [showLanding, setShowLanding] = useState(() => {
+    return !localStorage.getItem("shardeumai-landing-v1");
+  });
+
   const [showWelcome, setShowWelcome] = useState(() => {
     return !localStorage.getItem("shardeumai-welcome-v2");
   });
@@ -1282,6 +1849,24 @@ function App() {
       setUploadedFiles([]);
       setChatLoading(false);
     }
+  }
+
+  // ── Welcome Page ──
+  // ── Landing Page ──
+  if (showLanding) {
+    return (
+      <LandingPage
+        t={t}
+        th={th}
+        uiLang={uiLang}
+        setUiLang={setUiLang}
+        isMobile={isMobile}
+        onStart={() => {
+          localStorage.setItem("shardeumai-landing-v1", "true");
+          setShowLanding(false);
+        }}
+      />
+    );
   }
 
   // ── Welcome Page ──
