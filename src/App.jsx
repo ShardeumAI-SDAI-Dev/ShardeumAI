@@ -705,6 +705,7 @@ function App() {
   const [chatLoading, setChatLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("chat");
+  const [ratings, setRatings] = useState({});
   const [selectedModel, setSelectedModel] = useState("llama-3.1-8b-instant");
   const [aiMode, setAiMode] = useState("general");
   const [webSearch, setWebSearch] = useState(false);
@@ -810,6 +811,25 @@ function App() {
   async function loadProfile(userId) {
     const { data } = await supabase.from("user_profiles").select("display_name, bio, avatar_color").eq("id", userId).single();
     if (data) setProfile({ display_name: data.display_name || "", bio: data.bio || "", avatar_color: data.avatar_color || "#10a37f" });
+  }
+
+  async function rateMessage(idx, rating) {
+    if (!session) return;
+    const msg = messages[idx];
+    if (!msg || msg.role !== "assistant") return;
+    const key = String(idx);
+    const prev = ratings[key];
+    if (prev === rating) {
+      setRatings(r => { const n = {...r}; delete n[key]; return n; });
+      return;
+    }
+    setRatings(r => ({ ...r, [key]: rating }));
+    await supabase.from("message_ratings").insert({
+      user_id: session.user.id,
+      conversation_id: activeConvoId,
+      message_content: msg.content.slice(0, 500),
+      rating,
+    });
   }
 
   async function loadAdminData() {
@@ -1616,6 +1636,22 @@ function App() {
                           >
                             {msg.content}
                           </ReactMarkdown>
+                        )}
+                        {msg.role === "assistant" && msg.content && (
+                          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                            <button
+                              onClick={() => rateMessage(idx, "up")}
+                              title="Good response"
+                              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, opacity: ratings[String(idx)] === "up" ? 1 : 0.4, color: ratings[String(idx)] === "up" ? "#10a37f" : "#8e8ea0", padding: "2px 4px", borderRadius: 4, transition: "all 0.15s" }}>
+                              👍
+                            </button>
+                            <button
+                              onClick={() => rateMessage(idx, "down")}
+                              title="Bad response"
+                              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, opacity: ratings[String(idx)] === "down" ? 1 : 0.4, color: ratings[String(idx)] === "down" ? "#ef4444" : "#8e8ea0", padding: "2px 4px", borderRadius: 4, transition: "all 0.15s" }}>
+                              👎
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
