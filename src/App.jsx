@@ -1576,58 +1576,6 @@ function App() {
           </div>
         </div>
 
-        {/* Smart Notification Banner */}
-        {showSmartNotification && activeTab === "chat" && (
-          <div style={{
-            padding: "12px 16px",
-            background: "#10a37f22",
-            borderBottom: "1px solid #10a37f44",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            flexShrink: 0,
-            animation: "welcomeFadeIn 0.5s ease-out",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
-              <span style={{ fontSize: 24 }}>👋</span>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#10a37f" }}>
-                  {t.smartNotificationTitle}
-                </div>
-                <div style={{ fontSize: 12, color: "#8e8ea0", marginTop: 2 }}>
-                  {t.smartNotificationMessage}
-                  <span style={{ color: "#10a37f", marginRight: 4, marginLeft: 4 }}>
-                    ({daysSinceLastVisit} {t.smartNotificationDays} {t.smartNotificationAgo})
-                  </span>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={dismissSmartNotification}
-              style={{
-                padding: "6px 14px",
-                borderRadius: 8,
-                border: "1px solid #10a37f44",
-                background: "transparent",
-                color: "#10a37f",
-                fontSize: 12,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = "#10a37f22";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              {t.smartNotificationDismiss}
-            </button>
-          </div>
-        )}
-
         {/* Mobile Tabs Row */}
         {isMobile && (
           <div style={{ flexShrink: 0, borderBottom: "1px solid #2d2d2d" }}>
@@ -1768,6 +1716,60 @@ function App() {
         {activeTab === "chat" ? (
           <>
             <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0" }}>
+{/* Smart Notification Banner */}
+        {showSmartNotification && activeTab === "chat" && (
+          <div style={{
+            padding: "12px 16px",
+            background: "#10a37f22",
+            borderBottom: "1px solid #10a37f44", borderRadius: 12, margin: "0 16px 16px", maxWidth: 768,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+            flexShrink: 0, marginBottom: 8,
+            animation: "welcomeFadeIn 0.5s ease-out",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+              <span style={{ fontSize: 24 }}>👋</span>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#10a37f" }}>
+                  {t.smartNotificationTitle}
+                </div>
+                <div style={{ fontSize: 12, color: "#8e8ea0", marginTop: 2 }}>
+                  {t.smartNotificationMessage}
+                  <span style={{ color: "#10a37f", marginRight: 4, marginLeft: 4 }}>
+                    ({daysSinceLastVisit} {t.smartNotificationDays} {t.smartNotificationAgo})
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={dismissSmartNotification}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 8,
+                border: "1px solid #10a37f44",
+                background: "transparent",
+                color: "#10a37f",
+                fontSize: 12,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "#10a37f22";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
+              {t.smartNotificationDismiss}
+            </button>
+          </div>
+        )}
+
+        
+
               {messages.length === 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: isMobile ? 20 : 40 }}>
                   <div style={{ width: 64, height: 64, borderRadius: 12, background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 24 }}>S</div>
