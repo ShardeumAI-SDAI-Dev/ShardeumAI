@@ -1428,56 +1428,57 @@ function App() {
 
         {/* Mobile Tabs Row */}
         {isMobile && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: 6,
-            padding: "4px 8px", borderBottom: "1px solid #2d2d2d",
-            overflowX: "auto", flexShrink: 0,
-          }}>
-            {["chat", "image", "profile", "api"].map(tab => (
-              <button key={tab} onClick={() => setActiveTab(tab)}
-                style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-                {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : "🔌 API"}
+          <div style={{ flexShrink: 0, borderBottom: "1px solid #2d2d2d" }}>
+            {/* Tab buttons */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", overflowX: "auto" }}>
+              {["chat", "image", "profile", "api"].map(tab => (
+                <button key={tab} onClick={() => setActiveTab(tab)}
+                  style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : "🔌 API"}
+                </button>
+              ))}
+              {session?.user?.email === ADMIN_EMAIL && (
+                <button onClick={() => { setActiveTab("admin"); loadAdminData(); }}
+                  style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === "admin" ? "#404040" : "transparent", color: activeTab === "admin" ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  ⚙️ Admin
+                </button>
+              )}
+            </div>
+            {/* Feature buttons - second row */}
+            <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px 6px", overflowX: "auto" }}>
+              <button onClick={() => { setStreamingEnabled(!streamingEnabled); }}
+                title={t.streaming}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                🔄 {t.streaming}
               </button>
-            ))}
-            {session?.user?.email === ADMIN_EMAIL && (
-              <button onClick={() => { setActiveTab("admin"); loadAdminData(); }}
-                style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === "admin" ? "#404040" : "transparent", color: activeTab === "admin" ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-                ⚙️ Admin
+              <button onClick={() => { calculateAnalytics(); setShowAnalytics(!showAnalytics); }}
+                title={t.analytics}
+                style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showAnalytics ? "#404040" : "transparent", color: showAnalytics ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                📊 {t.analytics}
               </button>
-            )}
-            {/* Mobile Feature Buttons */}
-            <button onClick={() => { setStreamingEnabled(!streamingEnabled); localStorage.setItem("shardeumai-streaming", !streamingEnabled); }}
-              title={t.streaming}
-              style={{ padding: "6px 10px", borderRadius: 8, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-              🔄
-            </button>
-            <button onClick={() => { calculateAnalytics(); setShowAnalytics(!showAnalytics); }}
-              title={t.analytics}
-              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showAnalytics ? "#404040" : "transparent", color: showAnalytics ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-              📊
-            </button>
-            <button onClick={() => setShowShortcuts(!showShortcuts)}
-              title={t.shortcuts}
-              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showShortcuts ? "#404040" : "transparent", color: showShortcuts ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-              ⌨️
-            </button>
-            <button onClick={() => setShowFeedback(!showFeedback)}
-              title={t.feedback}
-              style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showFeedback ? "#404040" : "transparent", color: showFeedback ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-              💬
-            </button>
-            <div style={{ position: "relative", display: "inline-block" }}>
-              <button title={t.customTheme}
-                style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: customAccentColor, display: "inline-block" }}></span>
-                🎨
+              <button onClick={() => setShowShortcuts(!showShortcuts)}
+                title={t.shortcuts}
+                style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showShortcuts ? "#404040" : "transparent", color: showShortcuts ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                ⌨️ {t.shortcuts}
               </button>
-              <input
-                type="color"
-                value={customAccentColor}
-                onChange={(e) => { setCustomAccentColor(e.target.value); localStorage.setItem("shardeumai-accent", e.target.value); }}
-                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
-              />
+              <button onClick={() => setShowFeedback(!showFeedback)}
+                title={t.feedback}
+                style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showFeedback ? "#404040" : "transparent", color: showFeedback ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                💬 {t.feedback}
+              </button>
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <button title={t.customTheme}
+                  style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", background: customAccentColor, display: "inline-block" }}></span>
+                  🎨 {t.customTheme}
+                </button>
+                <input
+                  type="color"
+                  value={customAccentColor}
+                  onChange={(e) => { setCustomAccentColor(e.target.value); }}
+                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
+                />
+              </div>
             </div>
           </div>
         )}
