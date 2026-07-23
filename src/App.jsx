@@ -2829,17 +2829,7 @@ function App() {
   }
 
 
-    // ── Viewport Height Fix for Mobile ──
-  useEffect(() => {
-    function setVH() {
-      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
-    }
-    setVH();
-    window.addEventListener('resize', setVH);
-    return () => window.removeEventListener('resize', setVH);
-  }, []);
-
-// ── Render ──
+  // ── Render ──
   if (showLanding) {
     return (
       <LandingPage
@@ -2946,7 +2936,7 @@ function App() {
 
   // ── Main ChatGPT-Style Layout ──
   return (
-    <div style={{ display: "flex", height: "calc(var(--vh, 1vh) * 100)", background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden" }}>
+    <div style={{ display: "flex", position: "fixed", inset: 0, background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden" }}>
 
       {/* SIDEBAR */}
       <div style={{
@@ -3593,7 +3583,7 @@ function App() {
             )}
 
             {/* Input Area */}
-            <div style={{ padding: isMobile ? "8px 8px 16px" : "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
+            <div style={{ padding: isMobile ? "8px 8px max(16px, env(safe-area-inset-bottom))" : "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
               <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {/* Uploaded Files Preview */}
@@ -3629,7 +3619,7 @@ function App() {
                         flex: 1, padding: "14px 16px", borderRadius: 16,
                         border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec",
                         fontSize: 15, outline: "none", resize: "none", overflow: "hidden",
-                        minHeight: 52, maxHeight: 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
+                        minHeight: 52, maxHeight: isMobile ? 120 : 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
                       }}
                       disabled={chatLoading || isListening}
                     />
