@@ -445,16 +445,6 @@ const translations = {
     referralCount: "تعداد دعوت",
     referralReward: "پاداش",
     imageError: "خطا در تولید تصویر",
-    walletConnect: "اتصال ولت",
-    walletConnected: "ولت متصل شد",
-    walletDisconnect: "قطع اتصال",
-    walletAddress: "آدرس ولت",
-    walletBalance: "موجودی",
-    walletNoWallet: "ولتی متصل نیست",
-    walletDetails: "جزئیات",
-    walletHide: "مخفی کردن",
-    walletAddShardeum: "اضافه کردن شبکه Shardeum",
-    walletMetaMaskNotFound: "افزونه MetaMask یافت نشد",
   },
   en: {
     title: "ShardeumAI", subtitle: "Your Intelligent Assistant",
@@ -547,16 +537,6 @@ const translations = {
     referralCount: "Invites",
     referralReward: "Reward",
     imageError: "Error generating image",
-    walletConnect: "Connect Wallet",
-    walletConnected: "Wallet Connected",
-    walletDisconnect: "Disconnect",
-    walletAddress: "Wallet Address",
-    walletBalance: "Balance",
-    walletNoWallet: "No wallet connected",
-    walletDetails: "Details",
-    walletHide: "Hide",
-    walletAddShardeum: "Add Shardeum Network",
-    walletMetaMaskNotFound: "MetaMask extension not detected",
   },
   es: {
     title: "ShardeumAI", subtitle: "Tu Asistente Inteligente",
@@ -648,16 +628,6 @@ const translations = {
     referralCopy: "Copiar Enlace",
     referralCount: "Invitaciones",
     referralReward: "Recompensa",
-    walletConnect: "Conectar Wallet",
-    walletConnected: "Wallet Conectada",
-    walletDisconnect: "Desconectar",
-    walletAddress: "Dirección de Wallet",
-    walletBalance: "Balance",
-    walletNoWallet: "Ninguna wallet conectada",
-    walletDetails: "Detalles",
-    walletHide: "Ocultar",
-    walletAddShardeum: "Agregar Red Shardeum",
-    walletMetaMaskNotFound: "Extensión MetaMask no detectada",
     imageError: "Error al generar imagen",
   },
 
@@ -752,16 +722,6 @@ const translations = {
     referralCopy: "Copier le Lien",
     referralCount: "Parrainages",
     referralReward: "Récompense",
-    walletConnect: "Connecter Wallet",
-    walletConnected: "Wallet Connectée",
-    walletDisconnect: "Déconnecter",
-    walletAddress: "Adresse Wallet",
-    walletBalance: "Solde",
-    walletNoWallet: "Aucune wallet connectée",
-    walletDetails: "Détails",
-    walletHide: "Masquer",
-    walletAddShardeum: "Ajouter Réseau Shardeum",
-    walletMetaMaskNotFound: "Extension MetaMask non détectée",
     imageError: "Erreur de génération d'image",
   },
   de: {
@@ -854,16 +814,6 @@ const translations = {
     referralCopy: "Link Kopieren",
     referralCount: "Einladungen",
     referralReward: "Belohnung",
-    walletConnect: "Wallet Verbinden",
-    walletConnected: "Wallet Verbunden",
-    walletDisconnect: "Trennen",
-    walletAddress: "Wallet Adresse",
-    walletBalance: "Guthaben",
-    walletNoWallet: "Keine Wallet verbunden",
-    walletDetails: "Details",
-    walletHide: "Ausblenden",
-    walletAddShardeum: "Shardeum Netzwerk Hinzufügen",
-    walletMetaMaskNotFound: "MetaMask Erweiterung nicht erkannt",
     imageError: "Fehler bei der Bildgenerierung",
   },
   ru: {
@@ -956,16 +906,6 @@ const translations = {
     referralCopy: "Копировать Ссылку",
     referralCount: "Приглашения",
     referralReward: "Награда",
-    walletConnect: "Подключить Кошелек",
-    walletConnected: "Кошелек Подключен",
-    walletDisconnect: "Отключить",
-    walletAddress: "Адрес Кошелька",
-    walletBalance: "Баланс",
-    walletNoWallet: "Кошелек не подключен",
-    walletDetails: "Детали",
-    walletHide: "Скрыть",
-    walletAddShardeum: "Добавить Сеть Shardeum",
-    walletMetaMaskNotFound: "Расширение MetaMask не обнаружено",
     imageError: "Ошибка генерации изображения",
   },
   ar: {
@@ -1058,16 +998,6 @@ const translations = {
     referralCopy: "نسخ الرابط",
     referralCount: "الدعوات",
     referralReward: "المكافأة",
-    walletConnect: "ربط المحفظة",
-    walletConnected: "المحفظة متصلة",
-    walletDisconnect: "فصل الاتصال",
-    walletAddress: "عنوان المحفظة",
-    walletBalance: "الرصيد",
-    walletNoWallet: "لا توجد محفظة متصلة",
-    walletDetails: "التفاصيل",
-    walletHide: "إخفاء",
-    walletAddShardeum: "إضافة شبكة Shardeum",
-    walletMetaMaskNotFound: "لم يتم العثور على إضافة MetaMask",
     imageError: "خطأ في توليد الصورة",
   },
 };
@@ -2300,76 +2230,6 @@ function App() {
   const [showSmartNotification, setShowSmartNotification] = useState(false);
   const [daysSinceLastVisit, setDaysSinceLastVisit] = useState(0);
   const [smartNotifDismissed, setSmartNotifDismissed] = useState(() => {
-  const [walletAddress, setWalletAddress] = useState("");
-  const [walletBalance, setWalletBalance] = useState("0");
-  const [walletChainId, setWalletChainId] = useState("");
-  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
-  const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
-  const [showWalletInfo, setShowWalletInfo] = useState(false);
-
-  function formatAddress(addr) {
-    if (!addr) return "";
-    return addr.slice(0, 6) + "..." + addr.slice(-4);
-  }
-
-  async function connectMetaMask() {
-    if (!window.ethereum) {
-      alert(t.walletMetaMaskNotFound);
-      return;
-    }
-    setIsConnectingWallet(true);
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (accounts && accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-        await updateWalletInfo(accounts[0]);
-      }
-    } catch (e) {
-      console.log("MetaMask connect error:", e);
-    }
-    setIsConnectingWallet(false);
-  }
-
-  async function disconnectWallet() {
-    setWalletAddress("");
-    setWalletBalance("0");
-    setWalletChainId("");
-    clearWalletAuth();
-  }
-
-  async function addShardeumNetwork() {
-    if (!window.ethereum) return;
-    try {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [{
-          chainId: "0x1FB6",
-          chainName: "Shardeum Mainnet",
-          nativeCurrency: { name: "Shardeum", symbol: "SHM", decimals: 18 },
-          rpcUrls: ["https://mainnet.shardeum.org"],
-          blockExplorerUrls: ["https://explorer.shardeum.org"],
-        }],
-      });
-    } catch (e) {
-      console.log("Add network error:", e);
-    }
-  }
-
-  async function updateWalletInfo(address) {
-    if (!address || !window.ethereum) return;
-    try {
-      const balance = await window.ethereum.request({
-        method: "eth_getBalance",
-        params: [address, "latest"],
-      });
-      const balanceInEth = parseInt(balance, 16) / 1e18;
-      setWalletBalance(balanceInEth.toFixed(4));
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      setWalletChainId(chainId);
-    } catch (e) {
-      console.log("Wallet info error:", e);
-    }
-  }
     return localStorage.getItem("shardeumai-smart-notif-dismissed") === "true";
   });
 
@@ -2446,59 +2306,7 @@ function App() {
     localStorage.setItem("shardeumai-smart-notif-dismissed", "true");
   }
 
-  
-  // ── MetaMask Sign Message (SIWE) ──
-  async function signMessageForAuth() {
-    if (!walletAddress || !window.ethereum) {
-      alert("Please connect MetaMask first!");
-      return null;
-    }
-    try {
-      const message = `ShardeumAI Authentication
-
-Address: ${walletAddress}
-Timestamp: ${Date.now()}
-Nonce: ${Math.random().toString(36).substring(2, 15)}`;
-
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
-
-      // Store auth data
-      const authData = {
-        address: walletAddress,
-        signature: signature,
-        message: message,
-        timestamp: Date.now()
-      };
-      localStorage.setItem("shardeumai-wallet-auth", JSON.stringify(authData));
-
-      return authData;
-    } catch (error) {
-      console.log("Sign message error:", error);
-      alert("Failed to sign message: " + (error.message || "User rejected"));
-      return null;
-    }
-  }
-
-  function isWalletAuthenticated() {
-    const auth = localStorage.getItem("shardeumai-wallet-auth");
-    if (!auth) return false;
-    try {
-      const data = JSON.parse(auth);
-      // Check if auth is not expired (24 hours)
-      return (Date.now() - data.timestamp) < 24 * 60 * 60 * 1000;
-    } catch {
-      return false;
-    }
-  }
-
-  function clearWalletAuth() {
-    localStorage.removeItem("shardeumai-wallet-auth");
-  }
-
-// ── Plan Management ──
+  // ── Plan Management ──
   function handleSelectPlan(planId) {
     setCurrentPlan(planId);
     localStorage.setItem("shardeumai-plan", planId);
@@ -3982,67 +3790,6 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 style={{ padding: "11px 0", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${profile.avatar_color}, #22c55e)`, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                 Save Profile
               </button>
-            {/* Wallet Info */}
-            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-                <span>🦊</span> Wallet
-              </div>
-
-              {walletAddress ? (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#f6851b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🦊</div>
-                    <div>
-                      <div style={{ fontSize: 13, color: "#ececec", fontWeight: 600 }}>{formatAddress(walletAddress)}</div>
-                      <div style={{ fontSize: 11, color: "#8e8ea0" }}>{walletBalance} SHM</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button onClick={() => setShowWalletInfo(!showWalletInfo)}
-                      style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                      {showWalletInfo ? "Hide" : "Details"}
-                    </button>
-                    <button onClick={disconnectWallet}
-                      style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "#ef444422", color: "#ef4444", fontSize: 12, cursor: "pointer" }}>
-                      Disconnect
-                    </button>
-                  </div>
-
-                  {showWalletInfo && (
-                    <div style={{ marginTop: 12, padding: 10, background: "#0d0d0d", borderRadius: 8, fontSize: 12 }}>
-                      <div style={{ color: "#8e8ea0", marginBottom: 4 }}>Full Address:</div>
-                      <div style={{ color: "#ececec", wordBreak: "break-all", fontFamily: "monospace", fontSize: 11 }}>{walletAddress}</div>
-                      <div style={{ color: "#8e8ea0", marginTop: 8, marginBottom: 4 }}>Network:</div>
-                      <div style={{ color: "#ececec", fontSize: 11 }}>
-                        {walletChainId === '0x1FB6' ? '✅ Shardeum Mainnet' : walletChainId ? `Chain ID: ${walletChainId}` : 'Unknown'}
-                      </div>
-                      {walletChainId !== '0x1e0' && (
-                        <button onClick={addShardeumNetwork}
-                          style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#10a37f", color: "#fff", fontSize: 11, cursor: "pointer" }}>
-                          Add Shardeum Network
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🦊</div>
-                  <div style={{ fontSize: 13, color: "#8e8ea0", marginBottom: 12 }}>No wallet connected</div>
-                  <button onClick={connectMetaMask} disabled={isConnectingWallet}
-                    style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "#f6851b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                    {isConnectingWallet ? "Connecting..." : "Connect MetaMask"}
-                  </button>
-                  {!isMetaMaskInstalled && (
-                    <div style={{ fontSize: 11, color: "#ef4444", marginTop: 8 }}>
-                      MetaMask extension not detected
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
             </div>
             {/* Plan Info Card */}
             <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
