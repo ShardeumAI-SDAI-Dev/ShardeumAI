@@ -2936,7 +2936,7 @@ function App() {
 
   // ── Main ChatGPT-Style Layout ──
   return (
-    <div style={{ display: "flex", position: "fixed", inset: 0, background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100dvh", height: "100vh", background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden", maxWidth: "100vw" }}>
 
       {/* SIDEBAR */}
       <div style={{
@@ -3049,7 +3049,7 @@ function App() {
       )}
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", minHeight: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", minHeight: 0, overflow: "hidden", maxWidth: "100%" }}>
 
         {/* Header */}
         <div style={{
@@ -3282,7 +3282,7 @@ function App() {
         {/* Chat / Image / Admin */}
         {activeTab === "chat" ? (
           <>
-            <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0", minHeight: 0 }}>
+            <div ref={chatRef} style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "20px 0", minHeight: 0 }}>
               {/* Smart Notification Banner */}
               {showSmartNotification && (
                 <div style={{
@@ -3583,7 +3583,7 @@ function App() {
             )}
 
             {/* Input Area */}
-            <div style={{ padding: isMobile ? "8px 8px max(16px, env(safe-area-inset-bottom))" : "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
+            <div style={{ padding: isMobile ? "8px 8px 16px" : "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
               <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {/* Uploaded Files Preview */}
@@ -3619,7 +3619,7 @@ function App() {
                         flex: 1, padding: "14px 16px", borderRadius: 16,
                         border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec",
                         fontSize: 15, outline: "none", resize: "none", overflow: "hidden",
-                        minHeight: 52, maxHeight: isMobile ? 120 : 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
+                        minHeight: 52, maxHeight: 200, lineHeight: 1.5, direction: isRTL ? "rtl" : "ltr",
                       }}
                       disabled={chatLoading || isListening}
                     />
