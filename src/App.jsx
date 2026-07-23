@@ -2829,7 +2829,17 @@ function App() {
   }
 
 
-  // ── Render ──
+    // ── Viewport Height Fix for Mobile ──
+  useEffect(() => {
+    function setVH() {
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    }
+    setVH();
+    window.addEventListener('resize', setVH);
+    return () => window.removeEventListener('resize', setVH);
+  }, []);
+
+// ── Render ──
   if (showLanding) {
     return (
       <LandingPage
@@ -2936,7 +2946,7 @@ function App() {
 
   // ── Main ChatGPT-Style Layout ──
   return (
-    <div style={{ display: "flex", height: "100vh", background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "calc(var(--vh, 1vh) * 100)", background: "#000", color: "#ececec", direction: isRTL ? "rtl" : "ltr", overflow: "hidden" }}>
 
       {/* SIDEBAR */}
       <div style={{
@@ -3049,7 +3059,7 @@ function App() {
       )}
 
       {/* MAIN CONTENT */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", position: "relative", minHeight: 0 }}>
 
         {/* Header */}
         <div style={{
@@ -3282,7 +3292,7 @@ function App() {
         {/* Chat / Image / Admin */}
         {activeTab === "chat" ? (
           <>
-            <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0" }}>
+            <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0", minHeight: 0 }}>
               {/* Smart Notification Banner */}
               {showSmartNotification && (
                 <div style={{
@@ -3334,108 +3344,108 @@ function App() {
                   </button>
                 </div>
               )}
-      {/* Usage Bar */}
-              {activeTab === "chat" && <UsageBar t={t} th={th} usageTracking={usageTracking} isMobile={isMobile} />}
+              {/* Usage Bar */}
+                      {activeTab === "chat" && <UsageBar t={t} th={th} usageTracking={usageTracking} isMobile={isMobile} />}
 
-              {/* Custom Instructions Panel */}
-              {showCustomInstructions && activeTab === "chat" && (
-                <CustomInstructionsPanel
-                  t={t}
-                  th={th}
-                  customInstructions={customInstructions}
-                  setCustomInstructions={setCustomInstructions}
-                  onSave={(instructions) => {
-                    setCustomInstructions(instructions);
-                    localStorage.setItem("shardeumai-custom-instructions", instructions);
-                    setShowCustomInstructions(false);
-                  }}
-                  isMobile={isMobile}
-                />
-              )}
-
-              {/* Referral Panel */}
-              {showReferral && activeTab === "chat" && (
-                <ReferralPanel t={t} th={th} session={session} isMobile={isMobile} />
-              )}
-
-              {/* Analytics Panel */}
-              {showAnalytics && (
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
-                  <div style={{ maxWidth: 768, margin: "0 auto", display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-                    {[
-                      { label: t.totalMessages, value: analyticsData.totalMessages, icon: "💬" },
-                      { label: t.totalChats, value: analyticsData.totalChats, icon: "📁" },
-                      { label: t.charactersTyped, value: analyticsData.charactersTyped, icon: "📝" },
-                      { label: t.today, value: analyticsData.messagesToday, icon: "📅" },
-                      { label: t.thisWeek, value: analyticsData.messagesThisWeek, icon: "📆" },
-                      { label: t.thisMonth, value: analyticsData.messagesThisMonth, icon: "🗓️" },
-                    ].map(stat => (
-                      <div key={stat.label} style={{ textAlign: "center", padding: "8px 16px", borderRadius: 10, background: "#2d2d2d", border: "1px solid #3d3d3d", minWidth: 100 }}>
-                        <div style={{ fontSize: 20, marginBottom: 4 }}>{stat.icon}</div>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: "#10a37f" }}>{stat.value}</div>
-                        <div style={{ fontSize: 10, color: "#8e8ea0" }}>{stat.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Shortcuts Panel */}
-              {showShortcuts && (
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
-                  <div style={{ maxWidth: 768, margin: "0 auto" }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 10 }}>⌨️ {t.shortcuts}</div>
-                    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 8 }}>
-                      {[
-                        { key: "Ctrl + Enter / ⌘ + Enter", action: t.shortcutSend },
-                        { key: "Ctrl + N / ⌘ + N", action: t.shortcutNewChat },
-                        { key: "Ctrl + K / ⌘ + K", action: t.shortcutSearch },
-                        { key: "/", action: t.shortcutFocus },
-                        { key: "Ctrl + T / ⌘ + T", action: t.shortcutTheme },
-                        { key: "Ctrl + ? / ⌘ + ?", action: t.shortcuts },
-                      ].map(s => (
-                        <div key={s.action} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", background: "#2d2d2d", borderRadius: 6, fontSize: 12 }}>
-                          <span style={{ color: "#8e8ea0" }}>{s.action}</span>
-                          <kbd style={{ background: "#404040", padding: "2px 6px", borderRadius: 4, fontSize: 11, color: "#ececec", fontFamily: "monospace" }}>{s.key}</kbd>
-                        </div>
-                      ))}
-                    </div>
-                    <button onClick={() => setShowShortcuts(false)} style={{ marginTop: 8, padding: "4px 12px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>Close</button>
-                  </div>
-                </div>
-              )}
-
-              {/* Feedback Panel */}
-              {showFeedback && (
-                <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
-                  <div style={{ maxWidth: 768, margin: "0 auto" }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 10 }}>💬 {t.feedback}</div>
-                    {feedbackSent ? (
-                      <div style={{ color: "#10a37f", fontSize: 14, padding: "10px 0" }}>✅ {t.feedbackSent}</div>
-                    ) : (
-                      <>
-                        <textarea
-                          value={feedbackText}
-                          onChange={(e) => setFeedbackText(e.target.value)}
-                          placeholder={t.feedbackPlaceholder}
-                          rows={3}
-                          style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 13, outline: "none", resize: "vertical", marginBottom: 8 }}
+                      {/* Custom Instructions Panel */}
+                      {showCustomInstructions && activeTab === "chat" && (
+                        <CustomInstructionsPanel
+                          t={t}
+                          th={th}
+                          customInstructions={customInstructions}
+                          setCustomInstructions={setCustomInstructions}
+                          onSave={(instructions) => {
+                            setCustomInstructions(instructions);
+                            localStorage.setItem("shardeumai-custom-instructions", instructions);
+                            setShowCustomInstructions(false);
+                          }}
+                          isMobile={isMobile}
                         />
-                        <div style={{ display: "flex", gap: 8 }}>
-                          <button onClick={sendFeedback} disabled={!feedbackText.trim()}
-                            style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#10a37f", color: "#fff", fontSize: 13, cursor: feedbackText.trim() ? "pointer" : "default", opacity: feedbackText.trim() ? 1 : 0.5 }}>
-                            {t.sendFeedback}
-                          </button>
-                          <button onClick={() => setShowFeedback(false)}
-                            style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 13, cursor: "pointer" }}>
-                            Cancel
-                          </button>
+                      )}
+
+                      {/* Referral Panel */}
+                      {showReferral && activeTab === "chat" && (
+                        <ReferralPanel t={t} th={th} session={session} isMobile={isMobile} />
+                      )}
+
+                      {/* Analytics Panel */}
+                      {showAnalytics && (
+                        <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
+                          <div style={{ maxWidth: 768, margin: "0 auto", display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+                            {[
+                              { label: t.totalMessages, value: analyticsData.totalMessages, icon: "💬" },
+                              { label: t.totalChats, value: analyticsData.totalChats, icon: "📁" },
+                              { label: t.charactersTyped, value: analyticsData.charactersTyped, icon: "📝" },
+                              { label: t.today, value: analyticsData.messagesToday, icon: "📅" },
+                              { label: t.thisWeek, value: analyticsData.messagesThisWeek, icon: "📆" },
+                              { label: t.thisMonth, value: analyticsData.messagesThisMonth, icon: "🗓️" },
+                            ].map(stat => (
+                              <div key={stat.label} style={{ textAlign: "center", padding: "8px 16px", borderRadius: 10, background: "#2d2d2d", border: "1px solid #3d3d3d", minWidth: 100 }}>
+                                <div style={{ fontSize: 20, marginBottom: 4 }}>{stat.icon}</div>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: "#10a37f" }}>{stat.value}</div>
+                                <div style={{ fontSize: 10, color: "#8e8ea0" }}>{stat.label}</div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
+                      )}
+
+                      {/* Shortcuts Panel */}
+                      {showShortcuts && (
+                        <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
+                          <div style={{ maxWidth: 768, margin: "0 auto" }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 10 }}>⌨️ {t.shortcuts}</div>
+                            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 8 }}>
+                              {[
+                                { key: "Ctrl + Enter / ⌘ + Enter", action: t.shortcutSend },
+                                { key: "Ctrl + N / ⌘ + N", action: t.shortcutNewChat },
+                                { key: "Ctrl + K / ⌘ + K", action: t.shortcutSearch },
+                                { key: "/", action: t.shortcutFocus },
+                                { key: "Ctrl + T / ⌘ + T", action: t.shortcutTheme },
+                                { key: "Ctrl + ? / ⌘ + ?", action: t.shortcuts },
+                              ].map(s => (
+                                <div key={s.action} style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", background: "#2d2d2d", borderRadius: 6, fontSize: 12 }}>
+                                  <span style={{ color: "#8e8ea0" }}>{s.action}</span>
+                                  <kbd style={{ background: "#404040", padding: "2px 6px", borderRadius: 4, fontSize: 11, color: "#ececec", fontFamily: "monospace" }}>{s.key}</kbd>
+                                </div>
+                              ))}
+                            </div>
+                            <button onClick={() => setShowShortcuts(false)} style={{ marginTop: 8, padding: "4px 12px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>Close</button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Feedback Panel */}
+                      {showFeedback && (
+                        <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
+                          <div style={{ maxWidth: 768, margin: "0 auto" }}>
+                            <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 10 }}>💬 {t.feedback}</div>
+                            {feedbackSent ? (
+                              <div style={{ color: "#10a37f", fontSize: 14, padding: "10px 0" }}>✅ {t.feedbackSent}</div>
+                            ) : (
+                              <>
+                                <textarea
+                                  value={feedbackText}
+                                  onChange={(e) => setFeedbackText(e.target.value)}
+                                  placeholder={t.feedbackPlaceholder}
+                                  rows={3}
+                                  style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 13, outline: "none", resize: "vertical", marginBottom: 8 }}
+                                />
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  <button onClick={sendFeedback} disabled={!feedbackText.trim()}
+                                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: "#10a37f", color: "#fff", fontSize: 13, cursor: feedbackText.trim() ? "pointer" : "default", opacity: feedbackText.trim() ? 1 : 0.5 }}>
+                                    {t.sendFeedback}
+                                  </button>
+                                  <button onClick={() => setShowFeedback(false)}
+                                    style={{ padding: "8px 16px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 13, cursor: "pointer" }}>
+                                    Cancel
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
 
               {messages.length === 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: isMobile ? 20 : 40 }}>
