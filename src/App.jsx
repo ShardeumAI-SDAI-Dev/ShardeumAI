@@ -1,9 +1,4 @@
-import R
-                    <button onClick={signMessageForAuth}
-                      style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "#10a37f", color: "#fff", fontSize: 12, cursor: "pointer" }}>
-                      {isWalletAuthenticated() ? "✓ Authenticated" : "🔏 Sign Message"}
-                    </button>
-eact, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -2257,6 +2252,76 @@ function App() {
   const [showSmartNotification, setShowSmartNotification] = useState(false);
   const [daysSinceLastVisit, setDaysSinceLastVisit] = useState(0);
   const [smartNotifDismissed, setSmartNotifDismissed] = useState(() => {
+  const [walletAddress, setWalletAddress] = useState("");
+  const [walletBalance, setWalletBalance] = useState("0");
+  const [walletChainId, setWalletChainId] = useState("");
+  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
+  const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
+  const [showWalletInfo, setShowWalletInfo] = useState(false);
+
+  function formatAddress(addr) {
+    if (!addr) return "";
+    return addr.slice(0, 6) + "..." + addr.slice(-4);
+  }
+
+  async function connectMetaMask() {
+    if (!window.ethereum) {
+      alert(t.walletMetaMaskNotFound);
+      return;
+    }
+    setIsConnectingWallet(true);
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      if (accounts && accounts.length > 0) {
+        setWalletAddress(accounts[0]);
+        await updateWalletInfo(accounts[0]);
+      }
+    } catch (e) {
+      console.log("MetaMask connect error:", e);
+    }
+    setIsConnectingWallet(false);
+  }
+
+  async function disconnectWallet() {
+    setWalletAddress("");
+    setWalletBalance("0");
+    setWalletChainId("");
+    clearWalletAuth();
+  }
+
+  async function addShardeumNetwork() {
+    if (!window.ethereum) return;
+    try {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: "0x1FB6",
+          chainName: "Shardeum Mainnet",
+          nativeCurrency: { name: "Shardeum", symbol: "SHM", decimals: 18 },
+          rpcUrls: ["https://mainnet.shardeum.org"],
+          blockExplorerUrls: ["https://explorer.shardeum.org"],
+        }],
+      });
+    } catch (e) {
+      console.log("Add network error:", e);
+    }
+  }
+
+  async function updateWalletInfo(address) {
+    if (!address || !window.ethereum) return;
+    try {
+      const balance = await window.ethereum.request({
+        method: "eth_getBalance",
+        params: [address, "latest"],
+      });
+      const balanceInEth = parseInt(balance, 16) / 1e18;
+      setWalletBalance(balanceInEth.toFixed(4));
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
+      setWalletChainId(chainId);
+    } catch (e) {
+      console.log("Wallet info error:", e);
+    }
+  }
     return localStorage.getItem("shardeumai-smart-notif-dismissed") === "true";
   });
 
@@ -4085,87 +4150,4 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
 const inputStyle = { padding: "11px 14px", borderRadius: 10, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 14, outline: "none" };
 const oauthBtnStyle = { padding: "10px 0", borderRadius: 10, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 };
 
-export default App;  async function updateWalletInfo(address) {
-    if (!address || !window.ethereum) return;
-    try {
-      const balance = await window.ethereum.request({
-        method: 'eth_getBalance',
-        params: [address, 'latest']
-      });
-      const balanceInEth = parseInt(balance, 16) / 1e18;
-      setWalletBalance(balanceInEth.toFixed(4));
-
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      setWalletChainId(chainId);
-    } catch (e) {
-      console.log("Wallet info error:", e);
-    }
-  }
-
-
-
-  async function signMessageWithMetaMask() {
-    if (!walletAddress || !window.ethereum) {
-      alert("Please connect MetaMask first!");
-      return null;
-    }
-    try {
-      const message = `ShardeumAI Authentication
-Address: ${walletAddress}
-Timestamp: ${Date.now()}
-Nonce: ${Math.random().toString(36).substring(2)}`;
-
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
-
-      // Verify signature on client side
-      const recoveredAddress = await verifySignature(message, signature);
-
-      if (recoveredAddress.toLowerCase() === walletAddress.toLowerCase()) {
-        // Store auth token
-        localStorage.setItem("shardeumai-wallet-auth", JSON.stringify({
-          address: walletAddress,
-          signature: signature,
-          message: message,
-          timestamp: Date.now()
-        }));
-        return { address: walletAddress, signature, message };
-      } else {
-        throw new Error("Signature verification failed");
-      }
-    } catch (error) {
-      console.log("Sign message error:", error);
-      alert("Failed to sign message: " + error.message);
-      return null;
-    }
-  }
-
-  async function verifySignature(message, signature) {
-    // Use ethers.js or web3 for verification
-    // For now, we'll use a simple approach with ethereumjs-util
-    // In production, verify on backend
-    try {
-      const msgHash = window.ethereum.utils?.keccak256?.(message) || message;
-      // This is a simplified version - in production use proper verification
-      return walletAddress;
-    } catch (e) {
-      console.log("Verification error:", e);
-      return walletAddress;
-    }
-  }
-
-  function isWalletAuthenticated() {
-    const auth = localStorage.getItem("shardeumai-wallet-auth");
-    if (!auth) return false;
-    try {
-      const data = JSON.parse(auth);
-      // Check if auth is not expired (24 hours)
-      return (Date.now() - data.timestamp) < 24 * 60 * 60 * 1000;
-    } catch {
-      return false;
-    }
-  }
-
-
+export default App;
