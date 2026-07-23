@@ -105,6 +105,7 @@ if (typeof document !== "undefined" && !document.getElementById("app-responsive"
       .chat-avatar { width: 24px !important; height: 24px !important; font-size: 10px !important; }
       .chat-msg-text { font-size: 14px !important; }
       .admin-grid { grid-template-columns: 1fr !important; }
+      .pricing-cards { grid-template-columns: 1fr !important; }
     }
     @media (max-width: 480px) {
       .chat-header { flex-wrap: wrap; gap: 4px !important; height: auto !important; padding: 6px 8px !important; }
@@ -142,12 +143,25 @@ if (typeof document !== "undefined" && !document.getElementById("app-animations"
       0%, 100% { transform: translateY(0px); }
       50% { transform: translateY(-10px); }
     }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes progressFill {
+      from { width: 0%; }
+      to { width: var(--progress-width); }
+    }
     .welcome-anim-1 { animation: welcomeFadeIn 0.8s ease-out 0.2s both; }
     .welcome-anim-2 { animation: welcomeFadeIn 0.8s ease-out 0.5s both; }
     .welcome-anim-3 { animation: welcomeFadeIn 0.8s ease-out 0.8s both; }
     .welcome-anim-4 { animation: welcomeSlideUp 0.8s ease-out 1.1s both; }
     .welcome-logo { animation: welcomeScale 0.6s ease-out 0.1s both, welcomeGlow 3s ease-in-out 1s infinite; }
     .welcome-float { animation: float 3s ease-in-out infinite; }
+    .shimmer-bg {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      background-size: 200% 100%;
+      animation: shimmer 2s infinite;
+    }
   `;
   document.head.appendChild(animStyle);
 }
@@ -194,6 +208,154 @@ const MODELS = [
   { id: "qwen-32b", label: "Qwen 32B", desc: "Multilingual" },
 ];
 
+// ═══════════════════════════════════════════════════════════════
+// ═══ SUBSCRIPTION PLANS ═══
+// ═══════════════════════════════════════════════════════════════
+
+const SUBSCRIPTION_PLANS = {
+  free: {
+    id: "free",
+    name: { fa: "رایگان", en: "Free", es: "Gratis", fr: "Gratuit", de: "Kostenlos", ru: "Бесплатно", ar: "مجاني" },
+    price: { monthly: 0, yearly: 0 },
+    features: {
+      messagesPerDay: 20,
+      imagesPerDay: 3,
+      models: ["llama-3.1-8b-instant"],
+      webSearch: false,
+      fileUpload: true,
+      maxFileSize: 2 * 1024 * 1024,
+      voiceInput: true,
+      chatHistory: true,
+      export: ["txt", "md"],
+      analytics: false,
+      priority: false,
+      apiAccess: false,
+    },
+    color: "#8e8ea0",
+  },
+  pro: {
+    id: "pro",
+    name: { fa: "حرفه‌ای", en: "Pro", es: "Pro", fr: "Pro", de: "Pro", ru: "Про", ar: "احترافي" },
+    price: { monthly: 9.99, yearly: 99.99 },
+    features: {
+      messagesPerDay: 200,
+      imagesPerDay: 50,
+      models: ["llama-3.1-8b-instant", "llama-3.3-70b", "qwen-32b"],
+      webSearch: true,
+      fileUpload: true,
+      maxFileSize: 10 * 1024 * 1024,
+      voiceInput: true,
+      chatHistory: true,
+      export: ["txt", "md", "html", "pdf"],
+      analytics: true,
+      priority: true,
+      apiAccess: true,
+    },
+    color: "#3b82f6",
+    popular: true,
+  },
+  enterprise: {
+    id: "enterprise",
+    name: { fa: "سازمانی", en: "Enterprise", es: "Empresarial", fr: "Entreprise", de: "Unternehmen", ru: "Корпоративный", ar: "مؤسسي" },
+    price: { monthly: 49.99, yearly: 499.99 },
+    features: {
+      messagesPerDay: Infinity,
+      imagesPerDay: Infinity,
+      models: ["llama-3.1-8b-instant", "llama-3.3-70b", "qwen-32b"],
+      webSearch: true,
+      fileUpload: true,
+      maxFileSize: 50 * 1024 * 1024,
+      voiceInput: true,
+      chatHistory: true,
+      export: ["txt", "md", "html", "pdf"],
+      analytics: true,
+      priority: true,
+      apiAccess: true,
+      customModel: true,
+      dedicatedSupport: true,
+    },
+    color: "#a855f7",
+  },
+};
+
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ USAGE TRACKING HOOK ═══
+// ═══════════════════════════════════════════════════════════════
+
+function useUsageTracking(userId, planId) {
+  const [usage, setUsage] = useState(() => {
+    const saved = localStorage.getItem(`shardeumai-usage-${userId}`);
+    if (saved) return JSON.parse(saved);
+    return {
+      messagesToday: 0,
+      imagesToday: 0,
+      lastResetDate: new Date().toDateString(),
+      totalMessages: 0,
+      totalImages: 0,
+      streakDays: 0,
+      lastActiveDate: null,
+    };
+  });
+
+  const plan = SUBSCRIPTION_PLANS[planId] || SUBSCRIPTION_PLANS.free;
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const today = new Date().toDateString();
+    if (usage.lastResetDate !== today) {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const newStreak = usage.lastActiveDate === yesterday.toDateString() 
+        ? usage.streakDays + 1 
+        : 1;
+
+      const resetUsage = {
+        messagesToday: 0,
+        imagesToday: 0,
+        lastResetDate: today,
+        totalMessages: usage.totalMessages,
+        totalImages: usage.totalImages,
+        streakDays: newStreak,
+        lastActiveDate: today,
+      };
+      setUsage(resetUsage);
+      localStorage.setItem(`shardeumai-usage-${userId}`, JSON.stringify(resetUsage));
+    }
+  }, [userId]);
+
+  const incrementUsage = (type) => {
+    const newUsage = {
+      ...usage,
+      [type === "message" ? "messagesToday" : "imagesToday"]: usage[type === "message" ? "messagesToday" : "imagesToday"] + 1,
+      totalMessages: type === "message" ? usage.totalMessages + 1 : usage.totalMessages,
+      totalImages: type === "image" ? usage.totalImages + 1 : usage.totalImages,
+      lastActiveDate: new Date().toDateString(),
+    };
+    setUsage(newUsage);
+    localStorage.setItem(`shardeumai-usage-${userId}`, JSON.stringify(newUsage));
+    return newUsage;
+  };
+
+  const canSendMessage = () => {
+    return usage.messagesToday < plan.features.messagesPerDay;
+  };
+
+  const canGenerateImage = () => {
+    return usage.imagesToday < plan.features.imagesPerDay;
+  };
+
+  const getRemaining = () => ({
+    messages: Math.max(0, plan.features.messagesPerDay - usage.messagesToday),
+    images: Math.max(0, plan.features.imagesPerDay - usage.imagesToday),
+    messagesPercent: Math.min(100, (usage.messagesToday / plan.features.messagesPerDay) * 100),
+    imagesPercent: Math.min(100, (usage.imagesToday / plan.features.imagesPerDay) * 100),
+  });
+
+  return { usage, incrementUsage, canSendMessage, canGenerateImage, getRemaining, plan };
+}
+
 const translations = {
   fa: {
     title: "ShardeumAI", subtitle: "دستیار هوشمند چندزبانه",
@@ -206,7 +368,7 @@ const translations = {
     share: "اشتراک‌گذاری", export: "خروجی", copy: "کپی", copied: "کپی شد!",
     model: "مدل", language: "زبان", webSearch: "جستجوی وب",
     welcomePageTitle: "به ShardeumAI خوش آمدید", welcomePageSubtitle: "یک پلتفرم هوش مصنوعی چندزبانه", start: "شروع",
-      smartNotificationTitle: "سلام! 👋",
+    smartNotificationTitle: "سلام! 👋",
     smartNotificationMessage: "یک سوال جدید بپرس — من اینجام که کمکت کنم!",
     smartNotificationDismiss: "بستن",
     smartNotificationDays: "روز",
@@ -237,8 +399,53 @@ const translations = {
     landingStep3Desc: "سوال بپرسید و پاسخ هوشمند بگیرید",
     landingFooter: "ShardeumAI 2026 — تمامی حقوق محفوظ است",
     landingSkip: "رد کردن →",
-
-},
+    pricingTitle: "پلن‌های اشتراک",
+    pricingSubtitle: "پلن مناسب خود را انتخاب کنید",
+    pricingMonthly: "ماهانه",
+    pricingYearly: "سالانه",
+    pricingSave: "صرفه‌جویی",
+    pricingPopular: "محبوب",
+    pricingCurrent: "فعلی",
+    pricingUpgrade: "ارتقا",
+    pricingFeatureMessages: "پیام در روز",
+    pricingFeatureImages: "تصویر در روز",
+    pricingFeatureModels: "مدل‌های AI",
+    pricingFeatureWebSearch: "جستجوی وب",
+    pricingFeatureFileUpload: "آپلود فایل",
+    pricingFeatureExport: "خروجی",
+    pricingFeatureAnalytics: "آنالیتیکس",
+    pricingFeaturePriority: "اولویت پاسخ",
+    pricingFeatureAPI: "دسترسی API",
+    pricingFree: "رایگان",
+    pricingPro: "حرفه‌ای",
+    pricingEnterprise: "سازمانی",
+    usageTitle: "مصرف امروز",
+    usageMessages: "پیام",
+    usageImages: "تصویر",
+    usageRemaining: "باقیمانده",
+    usageLimitReached: "محدودیت روزانه به پایان رسیده",
+    usageUpgradePrompt: "برای استفاده بیشتر پلن خود را ارتقا دهید",
+    messageEdit: "ویرایش",
+    messageDelete: "حذف",
+    messageCopy: "کپی",
+    messageRegenerate: "تولید مجدد",
+    messageReply: "پاسخ",
+    chatSearch: "جستجو در چت‌ها...",
+    chatFolder: "پوشه",
+    chatFolderNew: "پوشه جدید",
+    chatFolderRename: "تغییر نام",
+    chatFolderDelete: "حذف پوشه",
+    customInstructions: "دستورات سفارشی",
+    customInstructionsPlaceholder: "دستورات سفارشی خود را وارد کنید...",
+    customInstructionsSave: "ذخیره دستورات",
+    referralTitle: "دعوت دوستان",
+    referralSubtitle: "با دعوت دوستان، هر دو ۵ پیام رایگان دریافت کنید",
+    referralLink: "لینک دعوت",
+    referralCopy: "کپی لینک",
+    referralCount: "تعداد دعوت",
+    referralReward: "پاداش",
+    imageError: "خطا در تولید تصویر",
+  },
   en: {
     title: "ShardeumAI", subtitle: "Your Intelligent Assistant",
     placeholder: "Message ShardeumAI...", send: "Send",
@@ -253,7 +460,7 @@ const translations = {
     streaming: "Streaming", analytics: "Analytics", notifications: "Notifications", customTheme: "Custom Theme", shortcuts: "Shortcuts", feedback: "Feedback", sendFeedback: "Send Feedback", feedbackPlaceholder: "Your feedback...", feedbackSent: "Feedback sent! Thank you!",
     totalMessages: "Total Messages", totalChats: "Total Chats", avgResponseTime: "Avg Response", charactersTyped: "Characters Typed", today: "Today", thisWeek: "This Week", thisMonth: "This Month",
     shortcutSend: "Send Message", shortcutNewChat: "New Chat", shortcutSearch: "Toggle Search", shortcutFocus: "Focus Input", shortcutTheme: "Toggle Theme",
-      smartNotificationTitle: "Hey there! 👋",
+    smartNotificationTitle: "Hey there! 👋",
     smartNotificationMessage: "Ask a new question — I'm here to help!",
     smartNotificationDismiss: "Dismiss",
     smartNotificationDays: "days",
@@ -284,8 +491,53 @@ const translations = {
     landingStep3Desc: "Ask questions and get intelligent answers",
     landingFooter: "ShardeumAI 2026 — All rights reserved",
     landingSkip: "Skip →",
-
-},
+    pricingTitle: "Subscription Plans",
+    pricingSubtitle: "Choose the plan that fits your needs",
+    pricingMonthly: "Monthly",
+    pricingYearly: "Yearly",
+    pricingSave: "Save",
+    pricingPopular: "Popular",
+    pricingCurrent: "Current",
+    pricingUpgrade: "Upgrade",
+    pricingFeatureMessages: "Messages per day",
+    pricingFeatureImages: "Images per day",
+    pricingFeatureModels: "AI Models",
+    pricingFeatureWebSearch: "Web Search",
+    pricingFeatureFileUpload: "File Upload",
+    pricingFeatureExport: "Export",
+    pricingFeatureAnalytics: "Analytics",
+    pricingFeaturePriority: "Priority Response",
+    pricingFeatureAPI: "API Access",
+    pricingFree: "Free",
+    pricingPro: "Pro",
+    pricingEnterprise: "Enterprise",
+    usageTitle: "Today's Usage",
+    usageMessages: "Messages",
+    usageImages: "Images",
+    usageRemaining: "Remaining",
+    usageLimitReached: "Daily limit reached",
+    usageUpgradePrompt: "Upgrade your plan for more usage",
+    messageEdit: "Edit",
+    messageDelete: "Delete",
+    messageCopy: "Copy",
+    messageRegenerate: "Regenerate",
+    messageReply: "Reply",
+    chatSearch: "Search chats...",
+    chatFolder: "Folder",
+    chatFolderNew: "New Folder",
+    chatFolderRename: "Rename",
+    chatFolderDelete: "Delete Folder",
+    customInstructions: "Custom Instructions",
+    customInstructionsPlaceholder: "Enter your custom instructions...",
+    customInstructionsSave: "Save Instructions",
+    referralTitle: "Refer Friends",
+    referralSubtitle: "Invite friends and both get 5 free messages",
+    referralLink: "Referral Link",
+    referralCopy: "Copy Link",
+    referralCount: "Invites",
+    referralReward: "Reward",
+    imageError: "Error generating image",
+  },
   es: {
     title: "ShardeumAI", subtitle: "Tu Asistente Inteligente",
     placeholder: "Escribe tu mensaje...", send: "Enviar",
@@ -300,7 +552,7 @@ const translations = {
     streaming: "Transmision", analytics: "Analiticas", notifications: "Notificaciones", customTheme: "Tema Personalizado", shortcuts: "Atajos", feedback: "Comentarios", sendFeedback: "Enviar Comentarios", feedbackPlaceholder: "Tus comentarios...", feedbackSent: "Comentarios enviados! Gracias!",
     totalMessages: "Mensajes Totales", totalChats: "Chats Totales", avgResponseTime: "Tiempo Promedio", charactersTyped: "Caracteres", today: "Hoy", thisWeek: "Esta Semana", thisMonth: "Este Mes",
     shortcutSend: "Enviar Mensaje", shortcutNewChat: "Nuevo Chat", shortcutSearch: "Busqueda", shortcutFocus: "Enfocar Input", shortcutTheme: "Cambiar Tema",
-      smartNotificationTitle: "¡Hola! 👋",
+    smartNotificationTitle: "¡Hola! 👋",
     smartNotificationMessage: "Haz una nueva pregunta — ¡estoy aquí para ayudarte!",
     smartNotificationDismiss: "Cerrar",
     smartNotificationDays: "días",
@@ -331,8 +583,55 @@ const translations = {
     landingStep3Desc: "Haz preguntas y recibe respuestas inteligentes",
     landingFooter: "ShardeumAI 2026 — Todos los derechos reservados",
     landingSkip: "Saltar →",
+    pricingTitle: "Planes de Suscripción",
+    pricingSubtitle: "Elige el plan que se adapte a tus necesidades",
+    pricingMonthly: "Mensual",
+    pricingYearly: "Anual",
+    pricingSave: "Ahorra",
+    pricingPopular: "Popular",
+    pricingCurrent: "Actual",
+    pricingUpgrade: "Actualizar",
+    pricingFeatureMessages: "Mensajes por día",
+    pricingFeatureImages: "Imágenes por día",
+    pricingFeatureModels: "Modelos IA",
+    pricingFeatureWebSearch: "Búsqueda Web",
+    pricingFeatureFileUpload: "Subir Archivos",
+    pricingFeatureExport: "Exportar",
+    pricingFeatureAnalytics: "Analíticas",
+    pricingFeaturePriority: "Respuesta Prioritaria",
+    pricingFeatureAPI: "Acceso API",
+    pricingFree: "Gratis",
+    pricingPro: "Pro",
+    pricingEnterprise: "Empresarial",
+    usageTitle: "Uso de Hoy",
+    usageMessages: "Mensajes",
+    usageImages: "Imágenes",
+    usageRemaining: "Restante",
+    usageLimitReached: "Límite diario alcanzado",
+    usageUpgradePrompt: "Actualiza tu plan para más uso",
+    messageEdit: "Editar",
+    messageDelete: "Eliminar",
+    messageCopy: "Copiar",
+    messageRegenerate: "Regenerar",
+    messageReply: "Responder",
+    chatSearch: "Buscar chats...",
+    chatFolder: "Carpeta",
+    chatFolderNew: "Nueva Carpeta",
+    chatFolderRename: "Renombrar",
+    chatFolderDelete: "Eliminar Carpeta",
+    customInstructions: "Instrucciones Personalizadas",
+    customInstructionsPlaceholder: "Ingresa tus instrucciones personalizadas...",
+    customInstructionsSave: "Guardar Instrucciones",
+    referralTitle: "Invitar Amigos",
+    referralSubtitle: "Invita amigos y ambos obtienen 5 mensajes gratis",
+    referralLink: "Enlace de Invitación",
+    referralCopy: "Copiar Enlace",
+    referralCount: "Invitaciones",
+    referralReward: "Recompensa",
+    imageError: "Error al generar imagen",
+  },
 
-},
+
   fr: {
     title: "ShardeumAI", subtitle: "Votre Assistant Intelligent",
     placeholder: "Tapez votre message...", send: "Envoyer",
@@ -347,7 +646,7 @@ const translations = {
     streaming: "Diffusion", analytics: "Analyses", notifications: "Notifications", customTheme: "Theme Personnalise", shortcuts: "Raccourcis", feedback: "Retour", sendFeedback: "Envoyer Retour", feedbackPlaceholder: "Vos commentaires...", feedbackSent: "Retour envoye! Merci!",
     totalMessages: "Messages Totaux", totalChats: "Chats Totaux", avgResponseTime: "Temps Moyen", charactersTyped: "Caracteres", today: "Aujourd'hui", thisWeek: "Cette Semaine", thisMonth: "Ce Mois",
     shortcutSend: "Envoyer Message", shortcutNewChat: "Nouveau Chat", shortcutSearch: "Recherche", shortcutFocus: "Focus Input", shortcutTheme: "Changer Theme",
-      smartNotificationTitle: "Salut! 👋",
+    smartNotificationTitle: "Salut! 👋",
     smartNotificationMessage: "Pose une nouvelle question — je suis là pour t'aider!",
     smartNotificationDismiss: "Fermer",
     smartNotificationDays: "jours",
@@ -378,8 +677,53 @@ const translations = {
     landingStep3Desc: "Posez des questions et obtenez des réponses intelligentes",
     landingFooter: "ShardeumAI 2026 — Tous droits réservés",
     landingSkip: "Passer →",
-
-},
+    pricingTitle: "Plans d'Abonnement",
+    pricingSubtitle: "Choisissez le plan qui vous convient",
+    pricingMonthly: "Mensuel",
+    pricingYearly: "Annuel",
+    pricingSave: "Économisez",
+    pricingPopular: "Populaire",
+    pricingCurrent: "Actuel",
+    pricingUpgrade: "Mettre à Niveau",
+    pricingFeatureMessages: "Messages par jour",
+    pricingFeatureImages: "Images par jour",
+    pricingFeatureModels: "Modèles IA",
+    pricingFeatureWebSearch: "Recherche Web",
+    pricingFeatureFileUpload: "Télécharger Fichiers",
+    pricingFeatureExport: "Exporter",
+    pricingFeatureAnalytics: "Analyses",
+    pricingFeaturePriority: "Réponse Prioritaire",
+    pricingFeatureAPI: "Accès API",
+    pricingFree: "Gratuit",
+    pricingPro: "Pro",
+    pricingEnterprise: "Entreprise",
+    usageTitle: "Utilisation Aujourd'hui",
+    usageMessages: "Messages",
+    usageImages: "Images",
+    usageRemaining: "Restant",
+    usageLimitReached: "Limite quotidienne atteinte",
+    usageUpgradePrompt: "Mettez à niveau votre plan pour plus d'utilisation",
+    messageEdit: "Modifier",
+    messageDelete: "Supprimer",
+    messageCopy: "Copier",
+    messageRegenerate: "Régénérer",
+    messageReply: "Répondre",
+    chatSearch: "Rechercher chats...",
+    chatFolder: "Dossier",
+    chatFolderNew: "Nouveau Dossier",
+    chatFolderRename: "Renommer",
+    chatFolderDelete: "Supprimer Dossier",
+    customInstructions: "Instructions Personnalisées",
+    customInstructionsPlaceholder: "Entrez vos instructions personnalisées...",
+    customInstructionsSave: "Sauvegarder Instructions",
+    referralTitle: "Parrainer des Amis",
+    referralSubtitle: "Parrainez des amis et recevez 5 messages gratuits chacun",
+    referralLink: "Lien de Parrainage",
+    referralCopy: "Copier le Lien",
+    referralCount: "Parrainages",
+    referralReward: "Récompense",
+    imageError: "Erreur de génération d'image",
+  },
   de: {
     title: "ShardeumAI", subtitle: "Ihr Intelligenter Assistent",
     placeholder: "Nachricht eingeben...", send: "Senden",
@@ -394,7 +738,7 @@ const translations = {
     streaming: "Streaming", analytics: "Analysen", notifications: "Benachrichtigungen", customTheme: "Benutzerdefiniertes Theme", shortcuts: "Tastenkombinationen", feedback: "Feedback", sendFeedback: "Feedback Senden", feedbackPlaceholder: "Ihr Feedback...", feedbackSent: "Feedback gesendet! Danke!",
     totalMessages: "Nachrichten Gesamt", totalChats: "Chats Gesamt", avgResponseTime: "Durchschnittszeit", charactersTyped: "Zeichen", today: "Heute", thisWeek: "Diese Woche", thisMonth: "Dieser Monat",
     shortcutSend: "Nachricht Senden", shortcutNewChat: "Neuer Chat", shortcutSearch: "Suche", shortcutFocus: "Input Fokus", shortcutTheme: "Theme Wechseln",
-      smartNotificationTitle: "Hallo! 👋",
+    smartNotificationTitle: "Hallo! 👋",
     smartNotificationMessage: "Stell eine neue Frage — ich bin hier, um zu helfen!",
     smartNotificationDismiss: "Schließen",
     smartNotificationDays: "Tage",
@@ -425,8 +769,53 @@ const translations = {
     landingStep3Desc: "Stellen Sie Fragen und erhalten Sie intelligente Antworten",
     landingFooter: "ShardeumAI 2026 — Alle Rechte vorbehalten",
     landingSkip: "Überspringen →",
-
-},
+    pricingTitle: "Abonnementpläne",
+    pricingSubtitle: "Wählen Sie den passenden Plan",
+    pricingMonthly: "Monatlich",
+    pricingYearly: "Jährlich",
+    pricingSave: "Sparen",
+    pricingPopular: "Beliebt",
+    pricingCurrent: "Aktuell",
+    pricingUpgrade: "Upgrade",
+    pricingFeatureMessages: "Nachrichten pro Tag",
+    pricingFeatureImages: "Bilder pro Tag",
+    pricingFeatureModels: "KI-Modelle",
+    pricingFeatureWebSearch: "Websuche",
+    pricingFeatureFileUpload: "Datei-Upload",
+    pricingFeatureExport: "Export",
+    pricingFeatureAnalytics: "Analysen",
+    pricingFeaturePriority: "Prioritätsantwort",
+    pricingFeatureAPI: "API-Zugriff",
+    pricingFree: "Kostenlos",
+    pricingPro: "Pro",
+    pricingEnterprise: "Unternehmen",
+    usageTitle: "Heutige Nutzung",
+    usageMessages: "Nachrichten",
+    usageImages: "Bilder",
+    usageRemaining: "Verbleibend",
+    usageLimitReached: "Tageslimit erreicht",
+    usageUpgradePrompt: "Upgraden Sie für mehr Nutzung",
+    messageEdit: "Bearbeiten",
+    messageDelete: "Löschen",
+    messageCopy: "Kopieren",
+    messageRegenerate: "Neu generieren",
+    messageReply: "Antworten",
+    chatSearch: "Chats durchsuchen...",
+    chatFolder: "Ordner",
+    chatFolderNew: "Neuer Ordner",
+    chatFolderRename: "Umbenennen",
+    chatFolderDelete: "Ordner Löschen",
+    customInstructions: "Benutzerdefinierte Anweisungen",
+    customInstructionsPlaceholder: "Geben Sie Ihre Anweisungen ein...",
+    customInstructionsSave: "Anweisungen Speichern",
+    referralTitle: "Freunde Einladen",
+    referralSubtitle: "Laden Sie Freunde ein und erhalten Sie beide 5 kostenlose Nachrichten",
+    referralLink: "Empfehlungslink",
+    referralCopy: "Link Kopieren",
+    referralCount: "Einladungen",
+    referralReward: "Belohnung",
+    imageError: "Fehler bei der Bildgenerierung",
+  },
   ru: {
     title: "ShardeumAI", subtitle: "Vash Intellektualnyy Pomoshchnik",
     placeholder: "Vvedite soobshenie...", send: "Otpravit'",
@@ -441,7 +830,7 @@ const translations = {
     streaming: "Translyatsiya", analytics: "Analitika", notifications: "Uvedomleniya", customTheme: "Pol'zovatel'skaya Tema", shortcuts: "Goryachie Klavishi", feedback: "Otziv", sendFeedback: "Otpravit' Otziv", feedbackPlaceholder: "Vash otziv...", feedbackSent: "Otziv otpravlen! Spasibo!",
     totalMessages: "Vsego Soobshcheniy", totalChats: "Vsego Chatov", avgResponseTime: "Srednee Vremya", charactersTyped: "Simvolov", today: "Segodnya", thisWeek: "Etu Nedelyu", thisMonth: "Etot Mesyats",
     shortcutSend: "Otpravit' Soobshchenie", shortcutNewChat: "Novyy Chat", shortcutSearch: "Poisk", shortcutFocus: "Fokus Inputa", shortcutTheme: "Smene Temy",
-      smartNotificationTitle: "Привет! 👋",
+    smartNotificationTitle: "Привет! 👋",
     smartNotificationMessage: "Задай новый вопрос — я здесь, чтобы помочь!",
     smartNotificationDismiss: "Закрыть",
     smartNotificationDays: "дней",
@@ -472,8 +861,53 @@ const translations = {
     landingStep3Desc: "Задавайте вопросы и получайте умные ответы",
     landingFooter: "ShardeumAI 2026 — Все права защищены",
     landingSkip: "Пропустить →",
-
-},
+    pricingTitle: "Планы Подписки",
+    pricingSubtitle: "Выберите подходящий план",
+    pricingMonthly: "Ежемесячно",
+    pricingYearly: "Ежегодно",
+    pricingSave: "Экономия",
+    pricingPopular: "Популярный",
+    pricingCurrent: "Текущий",
+    pricingUpgrade: "Обновить",
+    pricingFeatureMessages: "Сообщений в день",
+    pricingFeatureImages: "Изображений в день",
+    pricingFeatureModels: "ИИ-Модели",
+    pricingFeatureWebSearch: "Веб-Поиск",
+    pricingFeatureFileUpload: "Загрузка Файлов",
+    pricingFeatureExport: "Экспорт",
+    pricingFeatureAnalytics: "Аналитика",
+    pricingFeaturePriority: "Приоритетный Ответ",
+    pricingFeatureAPI: "API Доступ",
+    pricingFree: "Бесплатно",
+    pricingPro: "Про",
+    pricingEnterprise: "Корпоративный",
+    usageTitle: "Использование Сегодня",
+    usageMessages: "Сообщения",
+    usageImages: "Изображения",
+    usageRemaining: "Осталось",
+    usageLimitReached: "Дневной лимит достигнут",
+    usageUpgradePrompt: "Обновите план для большего использования",
+    messageEdit: "Редактировать",
+    messageDelete: "Удалить",
+    messageCopy: "Копировать",
+    messageRegenerate: "Перегенерировать",
+    messageReply: "Ответить",
+    chatSearch: "Поиск чатов...",
+    chatFolder: "Папка",
+    chatFolderNew: "Новая Папка",
+    chatFolderRename: "Переименовать",
+    chatFolderDelete: "Удалить Папку",
+    customInstructions: "Пользовательские Инструкции",
+    customInstructionsPlaceholder: "Введите ваши инструкции...",
+    customInstructionsSave: "Сохранить Инструкции",
+    referralTitle: "Пригласить Друзей",
+    referralSubtitle: "Пригласите друзей и получите по 5 бесплатных сообщений",
+    referralLink: "Реферальная Ссылка",
+    referralCopy: "Копировать Ссылку",
+    referralCount: "Приглашения",
+    referralReward: "Награда",
+    imageError: "Ошибка генерации изображения",
+  },
   ar: {
     title: "ShardeumAI", subtitle: "Musa'iduka al-Thakiy",
     placeholder: "Uktub risalatak...", send: "Irsal",
@@ -488,7 +922,7 @@ const translations = {
     streaming: "Bath Mubashar", analytics: "Tahlilat", notifications: "Tanzimat", customTheme: "Mawzu' Mukassas", shortcuts: "Iqtirahat", feedback: "Raja'", sendFeedback: "Irsal Raja'", feedbackPlaceholder: "Tafqidak...", feedbackSent: "Raja' Irsal! Shukran!",
     totalMessages: "Ijmal al-Rasail", totalChats: "Ijmal al-Muhadathat", avgResponseTime: "Zaman al-Ijaba", charactersTyped: "Huruf", today: "Al-Yawm", thisWeek: "Hadha al-Usbua'", thisMonth: "Hadha al-Shahr",
     shortcutSend: "Irsal Risala", shortcutNewChat: "Muhadatha Jadida", shortcutSearch: "Bahth", shortcutFocus: "Turkiz Input", shortcutTheme: "Taghyir al-Mawzu'",
-      smartNotificationTitle: "مرحباً! 👋",
+    smartNotificationTitle: "مرحباً! 👋",
     smartNotificationMessage: "اسأل سؤالاً جديداً — أنا هنا للمساعدة!",
     smartNotificationDismiss: "إغلاق",
     smartNotificationDays: "أيام",
@@ -519,9 +953,55 @@ const translations = {
     landingStep3Desc: "اطرح أسئلتك واحصل على إجابات ذكية",
     landingFooter: "ShardeumAI 2026 — جميع الحقوق محفوظة",
     landingSkip: "تخطي →",
-
-},
+    pricingTitle: "خطط الاشتراك",
+    pricingSubtitle: "اختر الخطة المناسبة لك",
+    pricingMonthly: "شهري",
+    pricingYearly: "سنوي",
+    pricingSave: "وفر",
+    pricingPopular: "الأكثر شعبية",
+    pricingCurrent: "الحالي",
+    pricingUpgrade: "ترقية",
+    pricingFeatureMessages: "رسالة في اليوم",
+    pricingFeatureImages: "صورة في اليوم",
+    pricingFeatureModels: "نماذج الذكاء الاصطناعي",
+    pricingFeatureWebSearch: "البحث في الويب",
+    pricingFeatureFileUpload: "رفع الملفات",
+    pricingFeatureExport: "تصدير",
+    pricingFeatureAnalytics: "التحليلات",
+    pricingFeaturePriority: "أولوية الرد",
+    pricingFeatureAPI: "وصول API",
+    pricingFree: "مجاني",
+    pricingPro: "احترافي",
+    pricingEnterprise: "مؤسسي",
+    usageTitle: "استخدام اليوم",
+    usageMessages: "رسائل",
+    usageImages: "صور",
+    usageRemaining: "متبقي",
+    usageLimitReached: "تم الوصول للحد اليومي",
+    usageUpgradePrompt: "قم بترقية خطتك للمزيد من الاستخدام",
+    messageEdit: "تعديل",
+    messageDelete: "حذف",
+    messageCopy: "نسخ",
+    messageRegenerate: "إعادة التوليد",
+    messageReply: "رد",
+    chatSearch: "البحث في المحادثات...",
+    chatFolder: "مجلد",
+    chatFolderNew: "مجلد جديد",
+    chatFolderRename: "إعادة تسمية",
+    chatFolderDelete: "حذف المجلد",
+    customInstructions: "تعليمات مخصصة",
+    customInstructionsPlaceholder: "أدخل تعليماتك المخصصة...",
+    customInstructionsSave: "حفظ التعليمات",
+    referralTitle: "دعوة الأصدقاء",
+    referralSubtitle: "ادعُ أصدقاء واحصل على 5 رسائل مجانية لكل منكما",
+    referralLink: "رابط الدعوة",
+    referralCopy: "نسخ الرابط",
+    referralCount: "الدعوات",
+    referralReward: "المكافأة",
+    imageError: "خطأ في توليد الصورة",
+  },
 };
+
 
 // ── Syntax Highlighting ──
 const KC = { kw:"#c678dd", str:"#98c379", cmt:"#5c6370", num:"#d19a66", tag:"#e06c75", attr:"#d19a66" };
@@ -531,7 +1011,7 @@ function esc(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 function applyKw(text, kws, color) {
   let r = text;
   kws.forEach(kw => {
-    r = r.split(new RegExp("(\\b" + kw + "\\b)")).map((p,i) => i%2===1 ? sp(color,p) : p).join("");
+    r = r.split(new RegExp("(\b" + kw + "\b)")).map((p,i) => i%2===1 ? sp(color,p) : p).join("");
   });
   return r;
 }
@@ -703,7 +1183,7 @@ function exportChat(messages, format) {
   }
 }
 
-function ImageGenerator({ t, isRTL }) {
+function ImageGenerator({ t, isRTL, usageTracking }) {
   const [prompt, setPrompt] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -712,6 +1192,12 @@ function ImageGenerator({ t, isRTL }) {
   async function handleGenerate(e) {
     e.preventDefault();
     if (!prompt.trim()) return;
+
+    if (!usageTracking.canGenerateImage()) {
+      setError(t.usageLimitReached + " — " + t.usageUpgradePrompt);
+      return;
+    }
+
     setLoading(true); setError(""); setImageUrl("");
     try {
       const encoded = encodeURIComponent(prompt.trim());
@@ -721,6 +1207,7 @@ function ImageGenerator({ t, isRTL }) {
       if (!res.ok) throw new Error("error");
       const blob = await res.blob();
       setImageUrl(URL.createObjectURL(blob));
+      usageTracking.incrementUsage("image");
     } catch { setError(t.imageError || "Error"); }
     finally { setLoading(false); }
   }
@@ -762,12 +1249,394 @@ function ImageGenerator({ t, isRTL }) {
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ═══ WELCOME PAGE ═══
-// ═══════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
-// ═══ LANDING PAGE ═══
+// ═══ PRICING PAGE COMPONENT ═══
+// ═══════════════════════════════════════════════════════════════
+
+function PricingPage({ t, th, uiLang, currentPlan, onSelectPlan, onBack, isMobile }) {
+  const [billingCycle, setBillingCycle] = useState("monthly");
+  const isRTL = uiLang === "fa" || uiLang === "ar";
+
+  const plans = [SUBSCRIPTION_PLANS.free, SUBSCRIPTION_PLANS.pro, SUBSCRIPTION_PLANS.enterprise];
+
+  const featureLabels = [
+    { key: "messagesPerDay", label: t.pricingFeatureMessages },
+    { key: "imagesPerDay", label: t.pricingFeatureImages },
+    { key: "models", label: t.pricingFeatureModels },
+    { key: "webSearch", label: t.pricingFeatureWebSearch },
+    { key: "fileUpload", label: t.pricingFeatureFileUpload },
+    { key: "export", label: t.pricingFeatureExport },
+    { key: "analytics", label: t.pricingFeatureAnalytics },
+    { key: "priority", label: t.pricingFeaturePriority },
+    { key: "apiAccess", label: t.pricingFeatureAPI },
+  ];
+
+  function formatFeatureValue(plan, key) {
+    const val = plan.features[key];
+    if (key === "messagesPerDay" || key === "imagesPerDay") {
+      return val === Infinity ? "∞" : val;
+    }
+    if (key === "models") return val.length + " models";
+    if (key === "export") return val.length + " formats";
+    if (key === "maxFileSize") return (val / (1024 * 1024)) + "MB";
+    if (typeof val === "boolean") return val ? "✓" : "—";
+    return val;
+  }
+
+  return (
+    <div style={{
+      minHeight: "100vh",
+      background: th.bg,
+      color: th.text,
+      direction: isRTL ? "rtl" : "ltr",
+      overflowY: "auto",
+      overflowX: "hidden",
+      padding: isMobile ? "20px" : "40px",
+    }}>
+      <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+        <button onClick={onBack}
+          style={{
+            padding: "8px 16px", borderRadius: 8, border: `1px solid ${th.border}`,
+            background: "transparent", color: th.textSecondary, fontSize: 14,
+            cursor: "pointer", marginBottom: 24,
+          }}>
+          ← Back
+        </button>
+
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <h1 style={{ margin: 0, fontSize: isMobile ? 28 : 40, fontWeight: 800, color: th.text }}>
+            {t.pricingTitle}
+          </h1>
+          <p style={{ margin: "12px 0 0", fontSize: 16, color: th.textSecondary }}>
+            {t.pricingSubtitle}
+          </p>
+        </div>
+
+        {/* Billing Toggle */}
+        <div style={{
+          display: "flex", justifyContent: "center", gap: 4,
+          background: th.bgSecondary, borderRadius: 12, padding: 4,
+          maxWidth: 280, margin: "0 auto 40px",
+        }}>
+          <button onClick={() => setBillingCycle("monthly")}
+            style={{
+              flex: 1, padding: "10px 20px", borderRadius: 10,
+              border: "none", background: billingCycle === "monthly" ? th.primary : "transparent",
+              color: billingCycle === "monthly" ? "#fff" : th.textSecondary,
+              fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+            }}>
+            {t.pricingMonthly}
+          </button>
+          <button onClick={() => setBillingCycle("yearly")}
+            style={{
+              flex: 1, padding: "10px 20px", borderRadius: 10,
+              border: "none", background: billingCycle === "yearly" ? th.primary : "transparent",
+              color: billingCycle === "yearly" ? "#fff" : th.textSecondary,
+              fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+              position: "relative",
+            }}>
+            {t.pricingYearly}
+            <span style={{
+              position: "absolute", top: -8, right: -8,
+              background: "#22c55e", color: "#fff", fontSize: 10,
+              padding: "2px 6px", borderRadius: 999, fontWeight: 700,
+            }}>
+              {t.pricingSave} 20%
+            </span>
+          </button>
+        </div>
+
+        {/* Pricing Cards */}
+        <div className="pricing-cards" style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
+          gap: 24,
+        }}>
+          {plans.map(plan => {
+            const isCurrent = currentPlan === plan.id;
+            const price = billingCycle === "monthly" ? plan.price.monthly : plan.price.yearly;
+
+            return (
+              <div key={plan.id} style={{
+                background: th.bgSecondary,
+                border: `2px solid ${isCurrent ? plan.color : th.border}`,
+                borderRadius: 20,
+                padding: isMobile ? 24 : 32,
+                position: "relative",
+                transition: "all 0.3s ease",
+                transform: isCurrent ? "scale(1.02)" : "scale(1)",
+              }}>
+                {plan.popular && (
+                  <div style={{
+                    position: "absolute", top: -12, left: "50%", transform: "translateX(-50%)",
+                    background: plan.color, color: "#fff", fontSize: 12, fontWeight: 700,
+                    padding: "4px 16px", borderRadius: 999,
+                  }}>
+                    {t.pricingPopular}
+                  </div>
+                )}
+                {isCurrent && (
+                  <div style={{
+                    position: "absolute", top: 12, right: 12,
+                    background: plan.color + "22", color: plan.color,
+                    fontSize: 11, fontWeight: 600,
+                    padding: "4px 10px", borderRadius: 6,
+                  }}>
+                    {t.pricingCurrent}
+                  </div>
+                )}
+
+                <div style={{ textAlign: "center", marginBottom: 24 }}>
+                  <h3 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: plan.color }}>
+                    {plan.name[uiLang] || plan.name.en}
+                  </h3>
+                  <div style={{ marginTop: 12 }}>
+                    <span style={{ fontSize: 36, fontWeight: 800, color: th.text }}>
+                      ${price}
+                    </span>
+                    <span style={{ fontSize: 14, color: th.textMuted }}>
+                      /{billingCycle === "monthly" ? "mo" : "yr"}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 24 }}>
+                  {featureLabels.map(feat => (
+                    <div key={feat.key} style={{
+                      display: "flex", justifyContent: "space-between",
+                      alignItems: "center", padding: "6px 0",
+                      borderBottom: `1px solid ${th.border}`,
+                    }}>
+                      <span style={{ fontSize: 13, color: th.textSecondary }}>{feat.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: th.text }}>
+                        {formatFeatureValue(plan, feat.key)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => onSelectPlan(plan.id)}
+                  disabled={isCurrent}
+                  style={{
+                    width: "100%", padding: "12px 0", borderRadius: 12,
+                    border: "none",
+                    background: isCurrent ? th.border : plan.color,
+                    color: isCurrent ? th.textMuted : "#fff",
+                    fontSize: 15, fontWeight: 700, cursor: isCurrent ? "default" : "pointer",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {isCurrent ? t.pricingCurrent : t.pricingUpgrade}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ USAGE BAR COMPONENT ═══
+// ═══════════════════════════════════════════════════════════════
+
+function UsageBar({ t, th, usageTracking, isMobile }) {
+  const remaining = usageTracking.getRemaining();
+  const isRTL = t.title === "ShardeumAI" && (t.landingTitle && t.landingTitle.includes("آینده"));
+
+  return (
+    <div style={{
+      padding: "8px 16px",
+      background: th.bgSecondary,
+      borderBottom: `1px solid ${th.border}`,
+      display: "flex",
+      gap: isMobile ? 8 : 16,
+      alignItems: "center",
+      flexWrap: "wrap",
+      direction: isRTL ? "rtl" : "ltr",
+    }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color: th.textSecondary, whiteSpace: "nowrap" }}>
+        {t.usageTitle}
+      </span>
+
+      {/* Messages Progress */}
+      <div style={{ flex: 1, minWidth: 120, display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 10, color: th.textMuted, whiteSpace: "nowrap" }}>
+          {t.usageMessages}
+        </span>
+        <div style={{
+          flex: 1, height: 6, borderRadius: 3,
+          background: th.border, overflow: "hidden",
+        }}>
+          <div style={{
+            width: `${remaining.messagesPercent}%`,
+            height: "100%",
+            background: remaining.messagesPercent > 80 ? "#ef4444" : remaining.messagesPercent > 50 ? "#f59e0b" : "#10a37f",
+            borderRadius: 3,
+            transition: "width 0.3s ease",
+          }} />
+        </div>
+        <span style={{ fontSize: 10, color: th.textMuted, whiteSpace: "nowrap" }}>
+          {remaining.messages} {t.usageRemaining}
+        </span>
+      </div>
+
+      {/* Images Progress */}
+      <div style={{ flex: 1, minWidth: 120, display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 10, color: th.textMuted, whiteSpace: "nowrap" }}>
+          {t.usageImages}
+        </span>
+        <div style={{
+          flex: 1, height: 6, borderRadius: 3,
+          background: th.border, overflow: "hidden",
+        }}>
+          <div style={{
+            width: `${remaining.imagesPercent}%`,
+            height: "100%",
+            background: remaining.imagesPercent > 80 ? "#ef4444" : remaining.imagesPercent > 50 ? "#f59e0b" : "#10a37f",
+            borderRadius: 3,
+            transition: "width 0.3s ease",
+          }} />
+        </div>
+        <span style={{ fontSize: 10, color: th.textMuted, whiteSpace: "nowrap" }}>
+          {remaining.images} {t.usageRemaining}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ CUSTOM INSTRUCTIONS COMPONENT ═══
+// ═══════════════════════════════════════════════════════════════
+
+function CustomInstructionsPanel({ t, th, customInstructions, setCustomInstructions, onSave, isMobile }) {
+  const [localInstructions, setLocalInstructions] = useState(customInstructions);
+  const isRTL = t.title === "ShardeumAI" && (t.landingTitle && t.landingTitle.includes("آینده"));
+
+  return (
+    <div style={{
+      padding: "12px 16px",
+      background: th.bgSecondary,
+      borderBottom: `1px solid ${th.border}`,
+      direction: isRTL ? "rtl" : "ltr",
+    }}>
+      <div style={{ maxWidth: 768, margin: "0 auto" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: th.text, marginBottom: 8 }}>
+          📝 {t.customInstructions}
+        </div>
+        <textarea
+          value={localInstructions}
+          onChange={(e) => setLocalInstructions(e.target.value)}
+          placeholder={t.customInstructionsPlaceholder}
+          rows={2}
+          style={{
+            width: "100%", padding: "10px 12px", borderRadius: 10,
+            border: `1px solid ${th.border}`, background: th.inputBg,
+            color: th.text, fontSize: 13, outline: "none",
+            resize: "vertical", marginBottom: 8,
+            direction: isRTL ? "rtl" : "ltr",
+          }}
+        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => { onSave(localInstructions); }}
+            style={{
+              padding: "6px 14px", borderRadius: 8, border: "none",
+              background: th.primary, color: "#fff",
+              fontSize: 12, cursor: "pointer", fontWeight: 600,
+            }}>
+            {t.customInstructionsSave}
+          </button>
+          <button onClick={() => setLocalInstructions("")}
+            style={{
+              padding: "6px 14px", borderRadius: 8,
+              border: `1px solid ${th.border}`, background: "transparent",
+              color: th.textSecondary, fontSize: 12, cursor: "pointer",
+            }}>
+            Clear
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ REFERRAL COMPONENT ═══
+// ═══════════════════════════════════════════════════════════════
+
+function ReferralPanel({ t, th, session, isMobile }) {
+  const [copied, setCopied] = useState(false);
+  const referralLink = session 
+    ? `${window.location.origin}${window.location.pathname}?ref=${session.user.id}`
+    : "";
+  const isRTL = t.title === "ShardeumAI" && (t.landingTitle && t.landingTitle.includes("آینده"));
+
+  const [referralData, setReferralData] = useState(() => {
+    const saved = localStorage.getItem(`shardeumai-referrals-${session?.user?.id}`);
+    return saved ? JSON.parse(saved) : { count: 0, reward: 0 };
+  });
+
+  function copyReferralLink() {
+    navigator.clipboard?.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div style={{
+      padding: "12px 16px",
+      background: th.bgSecondary,
+      borderBottom: `1px solid ${th.border}`,
+      direction: isRTL ? "rtl" : "ltr",
+    }}>
+      <div style={{ maxWidth: 768, margin: "0 auto" }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: th.text, marginBottom: 4 }}>
+          🎁 {t.referralTitle}
+        </div>
+        <p style={{ fontSize: 12, color: th.textSecondary, margin: "0 0 10px" }}>
+          {t.referralSubtitle}
+        </p>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <input
+            value={referralLink}
+            readOnly
+            style={{
+              flex: 1, padding: "8px 12px", borderRadius: 8,
+              border: `1px solid ${th.border}`, background: th.inputBg,
+              color: th.text, fontSize: 12, outline: "none",
+              minWidth: 200,
+            }}
+          />
+          <button onClick={copyReferralLink}
+            style={{
+              padding: "8px 16px", borderRadius: 8, border: "none",
+              background: copied ? "#22c55e" : th.primary, color: "#fff",
+              fontSize: 12, cursor: "pointer", fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}>
+            {copied ? "✓ " + t.copied : t.referralCopy}
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
+          <div style={{ fontSize: 12, color: th.textSecondary }}>
+            {t.referralCount}: <strong style={{ color: th.primary }}>{referralData.count}</strong>
+          </div>
+          <div style={{ fontSize: 12, color: th.textSecondary }}>
+            {t.referralReward}: <strong style={{ color: th.primary }}>{referralData.reward}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ WELCOME PAGE & LANDING PAGE ═══
 // ═══════════════════════════════════════════════════════════════
 
 function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
@@ -833,7 +1702,6 @@ function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
         position: "relative",
         textAlign: "center",
       }}>
-        {/* Background glow effects */}
         <div style={{
           position: "absolute", top: "20%", left: "10%", width: 300, height: 300,
           borderRadius: "50%", background: th.primary, opacity: 0.05, filter: "blur(100px)",
@@ -843,7 +1711,6 @@ function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
           borderRadius: "50%", background: "#3b82f6", opacity: 0.03, filter: "blur(120px)",
         }} />
 
-        {/* Language selector */}
         <div style={{
           position: "absolute", top: 24, right: 24,
           display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end",
@@ -863,9 +1730,7 @@ function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
           ))}
         </div>
 
-        {/* Skip button */}
-        <button
-          onClick={onStart}
+        <button onClick={onStart}
           style={{
             position: "absolute", top: 24, left: 24,
             padding: "6px 14px", borderRadius: 8,
@@ -880,7 +1745,6 @@ function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
           {t.landingSkip}
         </button>
 
-        {/* Logo */}
         <div className="welcome-logo welcome-float" style={{
           width: isMobile ? 80 : 120, height: isMobile ? 80 : 120, borderRadius: 28,
           background: th.gradient,
@@ -892,7 +1756,6 @@ function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
           S
         </div>
 
-        {/* Title */}
         <h1 style={{
           margin: 0, fontSize: isMobile ? 28 : 48, fontWeight: 800,
           color: th.text, lineHeight: 1.2,
@@ -901,7 +1764,6 @@ function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
           {t.landingTitle}
         </h1>
 
-        {/* Subtitle */}
         <p style={{
           margin: "20px 0 0", fontSize: isMobile ? 15 : 20,
           color: th.textSecondary, fontWeight: 400,
@@ -910,7 +1772,6 @@ function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
           {t.landingSubtitle}
         </p>
 
-        {/* CTA Button */}
         <button onClick={onStart}
           style={{
             marginTop: 40,
@@ -933,7 +1794,6 @@ function LandingPage({ t, th, uiLang, setUiLang, onStart, isMobile }) {
           {t.landingCTA} →
         </button>
 
-        {/* Scroll indicator */}
         <div style={{
           position: "absolute", bottom: 30,
           display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
@@ -1284,21 +2144,23 @@ function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart, isMob
   );
 }
 
+
 // ═══════════════════════════════════════════════════════════════
-// ═══ OPTION 1: ChatGPT-Style Single File (Complete Redesign) ═══
+// ═══ MAIN APP COMPONENT ═══
 // ═══════════════════════════════════════════════════════════════
 
 function App() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const th = THEMES[resolvedTheme];
   const isMobile = useMobile();
-    const [showLanding, setShowLanding] = useState(() => {
+
+  const [showLanding, setShowLanding] = useState(() => {
     return !localStorage.getItem("shardeumai-landing-v1");
   });
-
   const [showWelcome, setShowWelcome] = useState(() => {
     return !localStorage.getItem("shardeumai-welcome-v2");
   });
+
   const [uiLang, setUiLang] = useState("en");
   const [modelLang, setModelLang] = useState("auto");
   const [session, setSession] = useState(null);
@@ -1338,10 +2200,31 @@ function App() {
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [customAccentColor, setCustomAccentColor] = useState(() => localStorage.getItem("shardeumai-accent") || "#10a37f");
+
+  // ── NEW: Subscription & Usage States ──
+  const [currentPlan, setCurrentPlan] = useState(() => {
+    return localStorage.getItem("shardeumai-plan") || "free";
+  });
+  const [showPricing, setShowPricing] = useState(false);
+  const [showCustomInstructions, setShowCustomInstructions] = useState(false);
+  const [customInstructions, setCustomInstructions] = useState(() => {
+    return localStorage.getItem("shardeumai-custom-instructions") || "";
+  });
+  const [showReferral, setShowReferral] = useState(false);
+  const [chatSearchQuery, setChatSearchQuery] = useState("");
+  const [showChatSearch, setShowChatSearch] = useState(false);
+  const [editingMessageIdx, setEditingMessageIdx] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [replyingTo, setReplyingTo] = useState(null);
+
   const fileInputRef = useRef(null);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
   const responseTimeRef = useRef(null);
+  const recognitionRef = useRef(null);
+
+  // ── Usage Tracking ──
+  const usageTracking = useUsageTracking(session?.user?.id, currentPlan);
 
   // ── Smart Notification States ──
   const [showSmartNotification, setShowSmartNotification] = useState(false);
@@ -1349,7 +2232,7 @@ function App() {
   const [smartNotifDismissed, setSmartNotifDismissed] = useState(() => {
     return localStorage.getItem("shardeumai-smart-notif-dismissed") === "true";
   });
-  
+
   const t = translations[uiLang] || translations.en;
   const isRTL = uiLang === "fa" || uiLang === "ar";
   const currentModel = MODELS.find(m => m.id === selectedModel);
@@ -1360,7 +2243,11 @@ function App() {
     const found = UI_LANGUAGES.find((l) => l.code === detectLang);
     if (found) setUiLang(found.code);
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) { setSession(data.session); loadHistory(data.session.user.id); loadProfile(data.session.user.id); }
+      if (data.session) { 
+        setSession(data.session); 
+        loadHistory(data.session.user.id); 
+        loadProfile(data.session.user.id); 
+      }
     });
   }, []);
 
@@ -1384,23 +2271,17 @@ function App() {
     };
   }, []);
 
-  // ── Load Saved Chats ──
   useEffect(() => {
     setSavedChats(loadSavedChats());
   }, [showSavedChats]);
 
-  // ── Voice Recognition ──
-  const recognitionRef = useRef(null);
-
   useEffect(() => {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) return;
-    // Cleanup previous instance
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch(e) {}
     }
   }, [uiLang]);
 
-  // ── Smart Notification ──
   useEffect(() => {
     const lastVisit = localStorage.getItem("shardeumai-last-visit");
     const now = new Date().toISOString();
@@ -1416,7 +2297,6 @@ function App() {
         setShowSmartNotification(true);
       }
     }
-
     localStorage.setItem("shardeumai-last-visit", now);
   }, [session, smartNotifDismissed]);
 
@@ -1424,6 +2304,24 @@ function App() {
     setShowSmartNotification(false);
     setSmartNotifDismissed(true);
     localStorage.setItem("shardeumai-smart-notif-dismissed", "true");
+  }
+
+  // ── Plan Management ──
+  function handleSelectPlan(planId) {
+    setCurrentPlan(planId);
+    localStorage.setItem("shardeumai-plan", planId);
+    setShowPricing(false);
+    // Reset usage when plan changes
+    const newUsage = {
+      messagesToday: 0,
+      imagesToday: 0,
+      lastResetDate: new Date().toDateString(),
+      totalMessages: usageTracking.usage.totalMessages,
+      totalImages: usageTracking.usage.totalImages,
+      streakDays: usageTracking.usage.streakDays,
+      lastActiveDate: usageTracking.usage.lastActiveDate,
+    };
+    localStorage.setItem(`shardeumai-usage-${session?.user?.id}`, JSON.stringify(newUsage));
   }
 
   // ── Data Loading ──
@@ -1483,6 +2381,7 @@ function App() {
     setActiveConvoId(null);
     setShareUrl("");
     setInput("");
+    setReplyingTo(null);
     inputRef.current?.focus();
   }
 
@@ -1535,6 +2434,46 @@ function App() {
     setMessages([]);
     setConversations([]);
     setActiveConvoId(null);
+  }
+
+  // ── Message Actions ──
+  function handleEditMessage(idx) {
+    if (messages[idx].role !== "user") return;
+    setEditingMessageIdx(idx);
+    setEditText(messages[idx].content);
+  }
+
+  function saveEditMessage() {
+    if (!editText.trim()) return;
+    const newMessages = [...messages];
+    newMessages[editingMessageIdx] = { ...newMessages[editingMessageIdx], content: editText.trim() };
+    // Remove all messages after the edited one
+    setMessages(newMessages.slice(0, editingMessageIdx + 1));
+    setEditingMessageIdx(null);
+    setEditText("");
+    // Regenerate response
+    handleRegenerate(editingMessageIdx);
+  }
+
+  function handleDeleteMessage(idx) {
+    const newMessages = messages.filter((_, i) => i !== idx);
+    setMessages(newMessages);
+  }
+
+  function handleRegenerate(idx) {
+    // Remove the assistant response and regenerate
+    const userMsgIndex = idx % 2 === 0 ? idx : idx - 1;
+    const messagesUpToUser = messages.slice(0, userMsgIndex + 1);
+    setMessages(messagesUpToUser);
+    // Trigger new response
+    setTimeout(() => {
+      handleSend({ preventDefault: () => {} }, true);
+    }, 100);
+  }
+
+  function handleReplyToMessage(idx) {
+    setReplyingTo({ idx, content: messages[idx].content.slice(0, 100) });
+    inputRef.current?.focus();
   }
 
   // ── Analytics ──
@@ -1658,7 +2597,13 @@ function App() {
   // ── File Upload ──
   function handleFileSelect(e) {
     const files = Array.from(e.target.files);
+    const plan = SUBSCRIPTION_PLANS[currentPlan];
+
     files.forEach(file => {
+      if (file.size > plan.features.maxFileSize) {
+        alert(`File too large. Max size: ${(plan.features.maxFileSize / (1024 * 1024)).toFixed(0)}MB`);
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         setUploadedFiles(prev => [...prev, {
@@ -1690,11 +2635,38 @@ function App() {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   }
 
-  async function handleSend(e) {
-    e.preventDefault();
-    if (!input.trim() && uploadedFiles.length === 0) return;
+  // ── Chat Search Filter ──
+  const filteredConversations = conversations.filter(convo =>
+    convo.title.toLowerCase().includes(chatSearchQuery.toLowerCase())
+  );
+
+  // ── Main Send Handler ──
+  async function handleSend(e, isRegenerate = false) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!input.trim() && uploadedFiles.length === 0 && !isRegenerate) return;
     if (!session) { alert("Please login first."); return; }
+
+    // Check usage limit
+    if (!usageTracking.canSendMessage() && !isRegenerate) {
+      alert(t.usageLimitReached + "\n" + t.usageUpgradePrompt);
+      setShowPricing(true);
+      return;
+    }
+
+    // Check model availability for plan
+    const plan = SUBSCRIPTION_PLANS[currentPlan];
+    if (!plan.features.models.includes(selectedModel)) {
+      alert(`This model is not available on your plan. Please upgrade to access ${currentModel?.label}.`);
+      setShowPricing(true);
+      return;
+    }
+
     let messageContent = input.trim();
+
+    // Add reply context
+    if (replyingTo) {
+      messageContent = `[Replying to: "${replyingTo.content}..."]\n\n${messageContent}`;
+    }
 
     // Add uploaded files context
     if (uploadedFiles.length > 0) {
@@ -1710,10 +2682,18 @@ function App() {
       messageContent = messageContent ? messageContent + "\n\n" + fileContext : fileContext;
     }
 
+    // Add custom instructions
+    if (customInstructions.trim()) {
+      messageContent = `[Custom Instructions: ${customInstructions}]\n\n${messageContent}`;
+    }
+
     const userMsg = { role: "user", content: messageContent };
-    const newMessages = [...messages, userMsg];
-    setMessages(newMessages);
-    setInput("");
+    const newMessages = isRegenerate ? messages : [...messages, userMsg];
+    if (!isRegenerate) {
+      setMessages(newMessages);
+      setInput("");
+      setReplyingTo(null);
+    }
     setChatLoading(true);
 
     let reply = "";
@@ -1747,7 +2727,6 @@ function App() {
 
       console.log("Response received:", response.status, response.statusText);
 
-      // CRITICAL FIX: Check if response is OK before parsing
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Edge function error:", response.status, errorText);
@@ -1755,7 +2734,6 @@ function App() {
       }
 
       if (streamingEnabled) {
-        // Streaming mode
         const reader = response.body?.getReader();
         const decoder = new TextDecoder();
         let fullReply = "";
@@ -1764,7 +2742,6 @@ function App() {
           throw new Error("Response body is not readable");
         }
 
-        // Add empty assistant message for streaming
         setMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
         while (true) {
@@ -1778,7 +2755,6 @@ function App() {
             const trimmedLine = line.trim();
             if (!trimmedLine) continue;
 
-            // Handle SSE format: "data: {...}"
             if (trimmedLine.startsWith("data: ")) {
               const data = trimmedLine.slice(6);
               if (data === "[DONE]") continue;
@@ -1796,9 +2772,7 @@ function App() {
               } catch (e) {
                 console.log("Failed to parse SSE data:", data);
               }
-            } 
-            // Handle plain text chunks (non-SSE format)
-            else {
+            } else {
               fullReply += trimmedLine + "\n";
               setMessages(prev => {
                 const newMsgs = [...prev];
@@ -1812,7 +2786,6 @@ function App() {
         reply = fullReply || "No response";
 
       } else {
-        // Non-streaming mode
         const contentType = response.headers.get("content-type");
         console.log("Response content-type:", contentType);
 
@@ -1821,7 +2794,6 @@ function App() {
           console.log("Response data:", data);
           reply = data.reply || data.response || data.message || data.content || JSON.stringify(data);
         } else {
-          // Handle plain text response
           reply = await response.text();
           console.log("Response text:", reply.slice(0, 200));
         }
@@ -1841,6 +2813,11 @@ function App() {
         await saveMessage(session.user.id, "assistant", reply, convoId);
       }
 
+      // Increment usage
+      if (!isRegenerate) {
+        usageTracking.incrementUsage("message");
+      }
+
     } catch (err) {
       console.error("Chat error details:", err);
       const errorMsg = err.message || "Unknown error occurred";
@@ -1851,8 +2828,8 @@ function App() {
     }
   }
 
-  // ── Welcome Page ──
-  // ── Landing Page ──
+
+  // ── Render ──
   if (showLanding) {
     return (
       <LandingPage
@@ -1869,7 +2846,6 @@ function App() {
     );
   }
 
-  // ── Welcome Page ──
   if (showWelcome) {
     return (
       <WelcomePage
@@ -1884,6 +2860,20 @@ function App() {
           localStorage.setItem("shardeumai-welcome-v2", "true");
           setShowWelcome(false);
         }}
+      />
+    );
+  }
+
+  if (showPricing) {
+    return (
+      <PricingPage
+        t={t}
+        th={th}
+        uiLang={uiLang}
+        currentPlan={currentPlan}
+        onSelectPlan={handleSelectPlan}
+        onBack={() => setShowPricing(false)}
+        isMobile={isMobile}
       />
     );
   }
@@ -1971,12 +2961,34 @@ function App() {
           </button>
         </div>
 
+        {/* Chat Search */}
+        <div style={{ padding: "8px 10px 0" }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <button onClick={() => setShowChatSearch(!showChatSearch)}
+              style={{ background: "none", border: "none", color: "#8e8ea0", cursor: "pointer", fontSize: 14, padding: "4px" }}>
+              🔍
+            </button>
+            {showChatSearch && (
+              <input
+                value={chatSearchQuery}
+                onChange={(e) => setChatSearchQuery(e.target.value)}
+                placeholder={t.chatSearch}
+                style={{
+                  flex: 1, padding: "6px 10px", borderRadius: 8,
+                  border: "1px solid #3d3d3d", background: "#2d2d2d",
+                  color: "#ececec", fontSize: 12, outline: "none",
+                }}
+              />
+            )}
+          </div>
+        </div>
+
         <div style={{ flex: 1, overflowY: "auto", padding: "8px 10px" }}>
           <div style={{ fontSize: 11, color: "#5c5c5c", padding: "4px 6px 8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>{t.recentChats}</div>
-          {conversations.length === 0 && (
+          {(showChatSearch ? filteredConversations : conversations).length === 0 && (
             <div style={{ color: "#5c5c5c", fontSize: 12, textAlign: "center", padding: 20 }}>{t.noChats}</div>
           )}
-          {conversations.map(convo => (
+          {(showChatSearch ? filteredConversations : conversations).map(convo => (
             <div key={convo.id}
               onClick={() => loadConversationMessages(convo.id)}
               style={{
@@ -1999,6 +3011,23 @@ function App() {
               >🗑</button>
             </div>
           ))}
+        </div>
+
+        {/* Plan Badge */}
+        <div style={{ padding: "8px 14px", borderTop: "1px solid #2d2d2d" }}>
+          <button onClick={() => setShowPricing(true)}
+            style={{
+              width: "100%", padding: "8px 0", borderRadius: 8,
+              border: `1px solid ${SUBSCRIPTION_PLANS[currentPlan].color}`,
+              background: SUBSCRIPTION_PLANS[currentPlan].color + "22",
+              color: SUBSCRIPTION_PLANS[currentPlan].color,
+              fontSize: 12, cursor: "pointer", fontWeight: 600,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}>
+            <span>⭐</span>
+            {SUBSCRIPTION_PLANS[currentPlan].name[uiLang] || SUBSCRIPTION_PLANS[currentPlan].name.en}
+            {currentPlan !== "enterprise" && <span style={{ fontSize: 10, opacity: 0.7 }}>({t.pricingUpgrade})</span>}
+          </button>
         </div>
 
         <div style={{ padding: "10px 14px", borderTop: "1px solid #2d2d2d", display: "flex", alignItems: "center", gap: 10 }}>
@@ -2044,13 +3073,17 @@ function App() {
               </button>
               {showModelDropdown && (
                 <div style={{ position: "absolute", top: "calc(100% + 8px)", left: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 12, padding: 6, minWidth: 220, zIndex: 100, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
-                  {MODELS.map(m => (
-                    <button key={m.id} onClick={() => { setSelectedModel(m.id); setShowModelDropdown(false); }}
-                      style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "none", background: selectedModel === m.id ? "#404040" : "transparent", color: "#ececec", fontSize: 13, cursor: "pointer", textAlign: "left", display: "flex", flexDirection: "column", gap: 2 }}>
-                      <span style={{ fontWeight: 500 }}>{m.label}</span>
-                      <span style={{ fontSize: 11, color: "#8e8ea0" }}>{m.desc}</span>
-                    </button>
-                  ))}
+                  {MODELS.map(m => {
+                    const plan = SUBSCRIPTION_PLANS[currentPlan];
+                    const isAvailable = plan.features.models.includes(m.id);
+                    return (
+                      <button key={m.id} onClick={() => { if (isAvailable) { setSelectedModel(m.id); setShowModelDropdown(false); } }}
+                        style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "none", background: selectedModel === m.id ? "#404040" : "transparent", color: isAvailable ? "#ececec" : "#5c5c5c", fontSize: 13, cursor: isAvailable ? "pointer" : "not-allowed", textAlign: "left", display: "flex", flexDirection: "column", gap: 2, opacity: isAvailable ? 1 : 0.5 }}>
+                        <span style={{ fontWeight: 500 }}>{m.label} {!isAvailable && "🔒"}</span>
+                        <span style={{ fontSize: 11, color: "#8e8ea0" }}>{m.desc}</span>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -2108,6 +3141,16 @@ function App() {
                   style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: showFeedback ? "#404040" : "transparent", color: showFeedback ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
                   💬
                 </button>
+                <button onClick={() => setShowCustomInstructions(!showCustomInstructions)}
+                  title={t.customInstructions}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${showCustomInstructions ? "#10a37f" : "#3d3d3d"}`, background: showCustomInstructions ? "#10a37f22" : "transparent", color: showCustomInstructions ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  📝
+                </button>
+                <button onClick={() => setShowReferral(!showReferral)}
+                  title={t.referralTitle}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${showReferral ? "#10a37f" : "#3d3d3d"}`, background: showReferral ? "#10a37f22" : "transparent", color: showReferral ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  🎁
+                </button>
                 <div style={{ position: "relative" }}>
                   <button title={t.customTheme}
                     style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
@@ -2124,7 +3167,15 @@ function App() {
               </>
             )}
             <div style={{ position: "relative" }}>
-              <button onClick={() => setWebSearch(!webSearch)}
+              <button onClick={() => {
+                const plan = SUBSCRIPTION_PLANS[currentPlan];
+                if (!plan.features.webSearch) {
+                  alert("Web search is not available on your plan. Please upgrade.");
+                  setShowPricing(true);
+                  return;
+                }
+                setWebSearch(!webSearch);
+              }}
                 style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
                 🔍
               </button>
@@ -2145,7 +3196,6 @@ function App() {
                 </div>
               )}
             </div>
-            {/* Desktop tabs - inline */}
             {!isMobile && ["chat", "image", "profile", "api"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
@@ -2161,10 +3211,10 @@ function App() {
           </div>
         </div>
 
+
         {/* Mobile Tabs Row */}
         {isMobile && (
           <div style={{ flexShrink: 0, borderBottom: "1px solid #2d2d2d" }}>
-            {/* Tab buttons */}
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", overflowX: "auto" }}>
               {["chat", "image", "profile", "api"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
@@ -2179,7 +3229,6 @@ function App() {
                 </button>
               )}
             </div>
-            {/* Feature buttons - second row */}
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px 6px", overflowX: "auto" }}>
               <button onClick={() => { setStreamingEnabled(!streamingEnabled); }}
                 title={t.streaming}
@@ -2201,6 +3250,16 @@ function App() {
                 style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showFeedback ? "#404040" : "transparent", color: showFeedback ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
                 💬 {t.feedback}
               </button>
+              <button onClick={() => setShowCustomInstructions(!showCustomInstructions)}
+                title={t.customInstructions}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${showCustomInstructions ? "#10a37f" : "#3d3d3d"}`, background: showCustomInstructions ? "#10a37f22" : "transparent", color: showCustomInstructions ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                📝 {t.customInstructions}
+              </button>
+              <button onClick={() => setShowReferral(!showReferral)}
+                title={t.referralTitle}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${showReferral ? "#10a37f" : "#3d3d3d"}`, background: showReferral ? "#10a37f22" : "transparent", color: showReferral ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                🎁 {t.referralTitle}
+              </button>
               <div style={{ position: "relative", display: "inline-block" }}>
                 <button title={t.customTheme}
                   style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
@@ -2216,6 +3275,30 @@ function App() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Usage Bar */}
+        {activeTab === "chat" && <UsageBar t={t} th={th} usageTracking={usageTracking} isMobile={isMobile} />}
+
+        {/* Custom Instructions Panel */}
+        {showCustomInstructions && activeTab === "chat" && (
+          <CustomInstructionsPanel
+            t={t}
+            th={th}
+            customInstructions={customInstructions}
+            setCustomInstructions={setCustomInstructions}
+            onSave={(instructions) => {
+              setCustomInstructions(instructions);
+              localStorage.setItem("shardeumai-custom-instructions", instructions);
+              setShowCustomInstructions(false);
+            }}
+            isMobile={isMobile}
+          />
+        )}
+
+        {/* Referral Panel */}
+        {showReferral && activeTab === "chat" && (
+          <ReferralPanel t={t} th={th} session={session} isMobile={isMobile} />
         )}
 
         {/* Analytics Panel */}
@@ -2301,59 +3384,57 @@ function App() {
         {activeTab === "chat" ? (
           <>
             <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "20px 0" }}>
-{/* Smart Notification Banner */}
-        {showSmartNotification && activeTab === "chat" && (
-          <div style={{
-            padding: "12px 16px",
-            background: "#10a37f22",
-            borderBottom: "1px solid #10a37f44", borderRadius: 12, margin: "0 16px 16px", maxWidth: 768,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 12,
-            flexShrink: 0, marginBottom: 8,
-            animation: "welcomeFadeIn 0.5s ease-out",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
-              <span style={{ fontSize: 24 }}>👋</span>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "#10a37f" }}>
-                  {t.smartNotificationTitle}
+              {/* Smart Notification Banner */}
+              {showSmartNotification && (
+                <div style={{
+                  padding: "12px 16px",
+                  background: "#10a37f22",
+                  borderBottom: "1px solid #10a37f44", borderRadius: 12, margin: "0 16px 16px", maxWidth: 768,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 12,
+                  flexShrink: 0, marginBottom: 8,
+                  animation: "welcomeFadeIn 0.5s ease-out",
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                    <span style={{ fontSize: 24 }}>👋</span>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: "#10a37f" }}>
+                        {t.smartNotificationTitle}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#8e8ea0", marginTop: 2 }}>
+                        {t.smartNotificationMessage}
+                        <span style={{ color: "#10a37f", marginRight: 4, marginLeft: 4 }}>
+                          ({daysSinceLastVisit} {t.smartNotificationDays} {t.smartNotificationAgo})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={dismissSmartNotification}
+                    style={{
+                      padding: "6px 14px",
+                      borderRadius: 8,
+                      border: "1px solid #10a37f44",
+                      background: "transparent",
+                      color: "#10a37f",
+                      fontSize: 12,
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "#10a37f22";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    {t.smartNotificationDismiss}
+                  </button>
                 </div>
-                <div style={{ fontSize: 12, color: "#8e8ea0", marginTop: 2 }}>
-                  {t.smartNotificationMessage}
-                  <span style={{ color: "#10a37f", marginRight: 4, marginLeft: 4 }}>
-                    ({daysSinceLastVisit} {t.smartNotificationDays} {t.smartNotificationAgo})
-                  </span>
-                </div>
-              </div>
-            </div>
-            <button
-              onClick={dismissSmartNotification}
-              style={{
-                padding: "6px 14px",
-                borderRadius: 8,
-                border: "1px solid #10a37f44",
-                background: "transparent",
-                color: "#10a37f",
-                fontSize: 12,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = "#10a37f22";
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = "transparent";
-              }}
-            >
-              {t.smartNotificationDismiss}
-            </button>
-          </div>
-        )}
-
-        
+              )}
 
               {messages.length === 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: isMobile ? 20 : 40 }}>
@@ -2375,7 +3456,35 @@ function App() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0, color: "#ececec", fontSize: isMobile ? 14 : 15, lineHeight: 1.7, direction: "auto" }}>
                         {msg.role === "user" ? (
-                          <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
+                          <div>
+                            {editingMessageIdx === idx ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                <textarea
+                                  value={editText}
+                                  onChange={(e) => setEditText(e.target.value)}
+                                  style={{
+                                    width: "100%", padding: "10px 12px", borderRadius: 10,
+                                    border: "1px solid #3d3d3d", background: "#2d2d2d",
+                                    color: "#ececec", fontSize: 14, outline: "none",
+                                    resize: "vertical", minHeight: 60,
+                                  }}
+                                  rows={3}
+                                />
+                                <div style={{ display: "flex", gap: 8 }}>
+                                  <button onClick={saveEditMessage}
+                                    style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: "#10a37f", color: "#fff", fontSize: 12, cursor: "pointer" }}>
+                                    Save
+                                  </button>
+                                  <button onClick={() => { setEditingMessageIdx(null); setEditText(""); }}
+                                    style={{ padding: "6px 14px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{msg.content}</div>
+                            )}
+                          </div>
                         ) : (
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
@@ -2407,18 +3516,34 @@ function App() {
                           </ReactMarkdown>
                         )}
                         {msg.role === "assistant" && msg.content && (
-                          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                            <button
-                              onClick={() => rateMessage(idx, "up")}
-                              title="Good response"
+                          <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                            <button onClick={() => rateMessage(idx, "up")} title="Good response"
                               style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, opacity: ratings[String(idx)] === "up" ? 1 : 0.4, color: ratings[String(idx)] === "up" ? "#10a37f" : "#8e8ea0", padding: "2px 4px", borderRadius: 4, transition: "all 0.15s" }}>
                               👍
                             </button>
-                            <button
-                              onClick={() => rateMessage(idx, "down")}
-                              title="Bad response"
+                            <button onClick={() => rateMessage(idx, "down")} title="Bad response"
                               style={{ background: "none", border: "none", cursor: "pointer", fontSize: 15, opacity: ratings[String(idx)] === "down" ? 1 : 0.4, color: ratings[String(idx)] === "down" ? "#ef4444" : "#8e8ea0", padding: "2px 4px", borderRadius: 4, transition: "all 0.15s" }}>
                               👎
+                            </button>
+                            <button onClick={() => handleRegenerate(idx)} title={t.messageRegenerate}
+                              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8e8ea0", padding: "2px 6px", borderRadius: 4, opacity: 0.6 }}>
+                              🔄 {t.messageRegenerate}
+                            </button>
+                            <button onClick={() => handleReplyToMessage(idx)} title={t.messageReply}
+                              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8e8ea0", padding: "2px 6px", borderRadius: 4, opacity: 0.6 }}>
+                              ↩️ {t.messageReply}
+                            </button>
+                          </div>
+                        )}
+                        {msg.role === "user" && editingMessageIdx !== idx && (
+                          <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                            <button onClick={() => handleEditMessage(idx)} title={t.messageEdit}
+                              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8e8ea0", padding: "2px 6px", borderRadius: 4, opacity: 0.6 }}>
+                              ✏️ {t.messageEdit}
+                            </button>
+                            <button onClick={() => handleDeleteMessage(idx)} title={t.messageDelete}
+                              style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, color: "#8e8ea0", padding: "2px 6px", borderRadius: 4, opacity: 0.6 }}>
+                              🗑 {t.messageDelete}
                             </button>
                           </div>
                         )}
@@ -2438,6 +3563,23 @@ function App() {
                 </div>
               )}
             </div>
+
+            {/* Reply Indicator */}
+            {replyingTo && (
+              <div style={{
+                padding: "8px 16px", background: "#171717",
+                borderTop: "1px solid #2d2d2d", display: "flex",
+                alignItems: "center", gap: 8,
+              }}>
+                <span style={{ fontSize: 12, color: "#8e8ea0" }}>
+                  ↩️ Replying to: <em style={{ color: "#ececec" }}>"{replyingTo.content}..."</em>
+                </span>
+                <button onClick={() => setReplyingTo(null)}
+                  style={{ background: "none", border: "none", color: "#e0746a", cursor: "pointer", fontSize: 14 }}>
+                  ×
+                </button>
+              </div>
+            )}
 
             {/* Input Area */}
             <div style={{ padding: isMobile ? "8px 8px 16px" : "12px 16px 24px", borderTop: "1px solid #2d2d2d", flexShrink: 0 }}>
@@ -2539,21 +3681,24 @@ function App() {
                           </button>
                           {showExportMenu && (
                             <div style={{ position: "absolute", bottom: "calc(100% + 4px)", left: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, padding: 4, display: "flex", flexDirection: "column", gap: 2, zIndex: 100, minWidth: 120 }}>
-                              {[["pdf","PDF"],["md","Markdown"],["html","HTML"],["txt","TXT"]].map(([fmt, label]) => (
-                                <button key={fmt} onClick={() => { exportChat(messages, fmt); setShowExportMenu(false); }}
-                                  style={{ padding: "6px 10px", background: "none", border: "none", color: "#ececec", cursor: "pointer", fontSize: 12, textAlign: "left", borderRadius: 4 }}
-                                  onMouseEnter={e => e.target.style.background = "#404040"}
-                                  onMouseLeave={e => e.target.style.background = "none"}>
-                                  {label}
-                                </button>
-                              ))}
+                              {[["pdf","PDF"],["md","Markdown"],["html","HTML"],["txt","TXT"]].map(([fmt, label]) => {
+                                const plan = SUBSCRIPTION_PLANS[currentPlan];
+                                const isAvailable = plan.features.export.includes(fmt);
+                                return (
+                                  <button key={fmt} onClick={() => { if (isAvailable) { exportChat(messages, fmt); setShowExportMenu(false); } else { alert(`Export to ${label} requires Pro plan or higher.`); setShowPricing(true); } }}
+                                    style={{ padding: "6px 10px", background: "none", border: "none", color: isAvailable ? "#ececec" : "#5c5c5c", cursor: isAvailable ? "pointer" : "not-allowed", fontSize: 12, textAlign: "left", borderRadius: 4, opacity: isAvailable ? 1 : 0.5 }}
+                                    onMouseEnter={e => { if (isAvailable) e.target.style.background = "#404040"; }}
+                                    onMouseLeave={e => e.target.style.background = "none"}>
+                                    {label} {!isAvailable && "🔒"}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
                       </>
                     )}
                   </div>
-                  {/* Save Chat Button */}
                   {messages.length > 0 && (
                     <div style={{ position: "relative" }}>
                       <button onClick={() => {
@@ -2567,7 +3712,6 @@ function App() {
                       </button>
                     </div>
                   )}
-                  {/* Saved Chats Dropdown */}
                   {savedChats.length > 0 && (
                     <div style={{ position: "relative" }}>
                       <button onClick={() => setShowSavedChats(!showSavedChats)}
@@ -2605,7 +3749,7 @@ function App() {
           </>
         ) : activeTab === "image" ? (
           <div style={{ flex: 1, overflow: "auto", padding: "0 16px" }}>
-            <ImageGenerator t={t} isRTL={isRTL} />
+            <ImageGenerator t={t} isRTL={isRTL} usageTracking={usageTracking} />
           </div>
         ) : activeTab === "profile" ? (
           <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 480, margin: "0 auto", width: "100%" }}>
@@ -2644,6 +3788,30 @@ function App() {
               <button onClick={async () => { if (!session) return; await supabase.from("user_profiles").upsert({ id: session.user.id, display_name: profile.display_name, bio: profile.bio, avatar_color: profile.avatar_color, updated_at: new Date().toISOString() }); }}
                 style={{ padding: "11px 0", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${profile.avatar_color}, #22c55e)`, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                 Save Profile
+              </button>
+            </div>
+            {/* Plan Info Card */}
+            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 12 }}>
+                ⭐ Current Plan: {SUBSCRIPTION_PLANS[currentPlan].name[uiLang] || SUBSCRIPTION_PLANS[currentPlan].name.en}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                  <span style={{ color: "#8e8ea0" }}>{t.pricingFeatureMessages}</span>
+                  <span style={{ color: "#ececec" }}>{SUBSCRIPTION_PLANS[currentPlan].features.messagesPerDay === Infinity ? "∞" : SUBSCRIPTION_PLANS[currentPlan].features.messagesPerDay}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                  <span style={{ color: "#8e8ea0" }}>{t.pricingFeatureImages}</span>
+                  <span style={{ color: "#ececec" }}>{SUBSCRIPTION_PLANS[currentPlan].features.imagesPerDay === Infinity ? "∞" : SUBSCRIPTION_PLANS[currentPlan].features.imagesPerDay}</span>
+                </div>
+              </div>
+              <button onClick={() => setShowPricing(true)}
+                style={{
+                  width: "100%", marginTop: 12, padding: "10px 0", borderRadius: 10,
+                  border: "none", background: SUBSCRIPTION_PLANS[currentPlan].color,
+                  color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer",
+                }}>
+                {currentPlan === "enterprise" ? t.pricingCurrent : t.pricingUpgrade}
               </button>
             </div>
             <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
