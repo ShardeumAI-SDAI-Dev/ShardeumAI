@@ -36,7 +36,7 @@ const THEMES = {
 
 function useTheme() {
   const [theme, setTheme] = useState(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("shardeumai-theme") : null;
+    const saved = localStorage.getItem("shardeumai-theme");
     if (saved && ["dark", "light", "auto"].includes(saved)) return saved;
     return "auto";
   });
@@ -55,7 +55,7 @@ function useTheme() {
   }, [theme]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("shardeumai-theme", theme);
+    localStorage.setItem("shardeumai-theme", theme);
   }, [theme]);
 
   return { theme, setTheme, resolvedTheme };
@@ -285,7 +285,7 @@ const SUBSCRIPTION_PLANS = {
 
 function useUsageTracking(userId, planId) {
   const [usage, setUsage] = useState(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem(`shardeumai-usage-${userId}`) : null;
+    const saved = localStorage.getItem(`shardeumai-usage-${userId}`);
     if (saved) return JSON.parse(saved);
     return {
       messagesToday: 0,
@@ -321,7 +321,7 @@ function useUsageTracking(userId, planId) {
         lastActiveDate: today,
       };
       setUsage(resetUsage);
-      if (typeof window !== "undefined") localStorage.setItem(`shardeumai-usage-${userId}`, JSON.stringify(resetUsage));
+      localStorage.setItem(`shardeumai-usage-${userId}`, JSON.stringify(resetUsage));
     }
   }, [userId]);
 
@@ -334,7 +334,7 @@ function useUsageTracking(userId, planId) {
       lastActiveDate: new Date().toDateString(),
     };
     setUsage(newUsage);
-    if (typeof window !== "undefined") localStorage.setItem(`shardeumai-usage-${userId}`, JSON.stringify(newUsage));
+    localStorage.setItem(`shardeumai-usage-${userId}`, JSON.stringify(newUsage));
     return newUsage;
   };
 
@@ -445,16 +445,6 @@ const translations = {
     referralCount: "تعداد دعوت",
     referralReward: "پاداش",
     imageError: "خطا در تولید تصویر",
-    walletConnect: "اتصال ولت",
-    walletConnected: "ولت متصل شد",
-    walletDisconnect: "قطع اتصال",
-    walletAddress: "آدرس ولت",
-    walletBalance: "موجودی",
-    walletNoWallet: "ولتی متصل نیست",
-    walletDetails: "جزئیات",
-    walletHide: "مخفی کردن",
-    walletAddShardeum: "اضافه کردن شبکه Shardeum",
-    walletMetaMaskNotFound: "افزونه MetaMask یافت نشد",
   },
   en: {
     title: "ShardeumAI", subtitle: "Your Intelligent Assistant",
@@ -547,16 +537,6 @@ const translations = {
     referralCount: "Invites",
     referralReward: "Reward",
     imageError: "Error generating image",
-    walletConnect: "Connect Wallet",
-    walletConnected: "Wallet Connected",
-    walletDisconnect: "Disconnect",
-    walletAddress: "Wallet Address",
-    walletBalance: "Balance",
-    walletNoWallet: "No wallet connected",
-    walletDetails: "Details",
-    walletHide: "Hide",
-    walletAddShardeum: "Add Shardeum Network",
-    walletMetaMaskNotFound: "MetaMask extension not detected",
   },
   es: {
     title: "ShardeumAI", subtitle: "Tu Asistente Inteligente",
@@ -648,16 +628,6 @@ const translations = {
     referralCopy: "Copiar Enlace",
     referralCount: "Invitaciones",
     referralReward: "Recompensa",
-    walletConnect: "Conectar Wallet",
-    walletConnected: "Wallet Conectada",
-    walletDisconnect: "Desconectar",
-    walletAddress: "Dirección de Wallet",
-    walletBalance: "Balance",
-    walletNoWallet: "Ninguna wallet conectada",
-    walletDetails: "Detalles",
-    walletHide: "Ocultar",
-    walletAddShardeum: "Agregar Red Shardeum",
-    walletMetaMaskNotFound: "Extensión MetaMask no detectada",
     imageError: "Error al generar imagen",
   },
 
@@ -752,16 +722,6 @@ const translations = {
     referralCopy: "Copier le Lien",
     referralCount: "Parrainages",
     referralReward: "Récompense",
-    walletConnect: "Connecter Wallet",
-    walletConnected: "Wallet Connectée",
-    walletDisconnect: "Déconnecter",
-    walletAddress: "Adresse Wallet",
-    walletBalance: "Solde",
-    walletNoWallet: "Aucune wallet connectée",
-    walletDetails: "Détails",
-    walletHide: "Masquer",
-    walletAddShardeum: "Ajouter Réseau Shardeum",
-    walletMetaMaskNotFound: "Extension MetaMask non détectée",
     imageError: "Erreur de génération d'image",
   },
   de: {
@@ -854,16 +814,6 @@ const translations = {
     referralCopy: "Link Kopieren",
     referralCount: "Einladungen",
     referralReward: "Belohnung",
-    walletConnect: "Wallet Verbinden",
-    walletConnected: "Wallet Verbunden",
-    walletDisconnect: "Trennen",
-    walletAddress: "Wallet Adresse",
-    walletBalance: "Guthaben",
-    walletNoWallet: "Keine Wallet verbunden",
-    walletDetails: "Details",
-    walletHide: "Ausblenden",
-    walletAddShardeum: "Shardeum Netzwerk Hinzufügen",
-    walletMetaMaskNotFound: "MetaMask Erweiterung nicht erkannt",
     imageError: "Fehler bei der Bildgenerierung",
   },
   ru: {
@@ -956,16 +906,6 @@ const translations = {
     referralCopy: "Копировать Ссылку",
     referralCount: "Приглашения",
     referralReward: "Награда",
-    walletConnect: "Подключить Кошелек",
-    walletConnected: "Кошелек Подключен",
-    walletDisconnect: "Отключить",
-    walletAddress: "Адрес Кошелька",
-    walletBalance: "Баланс",
-    walletNoWallet: "Кошелек не подключен",
-    walletDetails: "Детали",
-    walletHide: "Скрыть",
-    walletAddShardeum: "Добавить Сеть Shardeum",
-    walletMetaMaskNotFound: "Расширение MetaMask не обнаружено",
     imageError: "Ошибка генерации изображения",
   },
   ar: {
@@ -1058,16 +998,6 @@ const translations = {
     referralCopy: "نسخ الرابط",
     referralCount: "الدعوات",
     referralReward: "المكافأة",
-    walletConnect: "ربط المحفظة",
-    walletConnected: "المحفظة متصلة",
-    walletDisconnect: "فصل الاتصال",
-    walletAddress: "عنوان المحفظة",
-    walletBalance: "الرصيد",
-    walletNoWallet: "لا توجد محفظة متصلة",
-    walletDetails: "التفاصيل",
-    walletHide: "إخفاء",
-    walletAddShardeum: "إضافة شبكة Shardeum",
-    walletMetaMaskNotFound: "لم يتم العثور على إضافة MetaMask",
     imageError: "خطأ في توليد الصورة",
   },
 };
@@ -1176,7 +1106,7 @@ function CodeBlock({ code, lang }) {
 
 // ── Save Chat ──
 function saveChatToLocal(messages, title) {
-  const chats = typeof window !== "undefined" ? JSON.parse(localStorage.getItem("shardeumai-saved-chats") || "[]") : [];
+  const chats = JSON.parse(localStorage.getItem("shardeumai-saved-chats") || "[]");
   const newChat = {
     id: Date.now().toString(),
     title: title || "Saved Chat",
@@ -1184,17 +1114,17 @@ function saveChatToLocal(messages, title) {
     savedAt: new Date().toISOString(),
   };
   chats.unshift(newChat);
-  if (typeof window !== "undefined") localStorage.setItem("shardeumai-saved-chats", JSON.stringify(chats.slice(0, 50)));
+  localStorage.setItem("shardeumai-saved-chats", JSON.stringify(chats.slice(0, 50)));
   return newChat.id;
 }
 
 function loadSavedChats() {
-  return typeof window !== "undefined" ? JSON.parse(localStorage.getItem("shardeumai-saved-chats") || "[]") : [];
+  return JSON.parse(localStorage.getItem("shardeumai-saved-chats") || "[]");
 }
 
 function deleteSavedChat(chatId) {
   const chats = loadSavedChats().filter(c => c.id !== chatId);
-  if (typeof window !== "undefined") localStorage.setItem("shardeumai-saved-chats", JSON.stringify(chats));
+  localStorage.setItem("shardeumai-saved-chats", JSON.stringify(chats));
 }
 
 function downloadChatJSON(messages, title) {
@@ -1646,7 +1576,7 @@ function ReferralPanel({ t, th, session, isMobile }) {
   const isRTL = t.title === "ShardeumAI" && (t.landingTitle && t.landingTitle.includes("آینده"));
 
   const [referralData, setReferralData] = useState(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem(`shardeumai-referrals-${session?.user?.id}`) : null;
+    const saved = localStorage.getItem(`shardeumai-referrals-${session?.user?.id}`);
     return saved ? JSON.parse(saved) : { count: 0, reward: 0 };
   });
 
@@ -2225,10 +2155,10 @@ function App() {
   const isMobile = useMobile();
 
   const [showLanding, setShowLanding] = useState(() => {
-    return typeof window !== "undefined" ? !localStorage.getItem("shardeumai-landing-v1") : true;
+    return !localStorage.getItem("shardeumai-landing-v1");
   });
   const [showWelcome, setShowWelcome] = useState(() => {
-    return typeof window !== "undefined" ? !localStorage.getItem("shardeumai-welcome-v2") : true;
+    return !localStorage.getItem("shardeumai-welcome-v2");
   });
 
   const [uiLang, setUiLang] = useState("en");
@@ -2262,23 +2192,23 @@ function App() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [showSavedChats, setShowSavedChats] = useState(false);
   const [savedChats, setSavedChats] = useState([]);
-  const [streamingEnabled, setStreamingEnabled] = useState(() => typeof window !== "undefined" ? localStorage.getItem("shardeumai-streaming") !== "false" : true);
+  const [streamingEnabled, setStreamingEnabled] = useState(() => localStorage.getItem("shardeumai-streaming") !== "false");
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analyticsData, setAnalyticsData] = useState({ totalMessages: 0, totalChats: 0, avgResponseTime: 0, charactersTyped: 0, messagesToday: 0, messagesThisWeek: 0, messagesThisMonth: 0 });
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
-  const [customAccentColor, setCustomAccentColor] = useState(() => typeof window !== "undefined" ? localStorage.getItem("shardeumai-accent") || "#10a37f" : "#10a37f");
+  const [customAccentColor, setCustomAccentColor] = useState(() => localStorage.getItem("shardeumai-accent") || "#10a37f");
 
   // ── NEW: Subscription & Usage States ──
   const [currentPlan, setCurrentPlan] = useState(() => {
-    return typeof window !== "undefined" ? localStorage.getItem("shardeumai-plan") || "free" : "free";
+    return localStorage.getItem("shardeumai-plan") || "free";
   });
   const [showPricing, setShowPricing] = useState(false);
   const [showCustomInstructions, setShowCustomInstructions] = useState(false);
   const [customInstructions, setCustomInstructions] = useState(() => {
-    return typeof window !== "undefined" ? localStorage.getItem("shardeumai-custom-instructions") || "" : "";
+    return localStorage.getItem("shardeumai-custom-instructions") || "";
   });
   const [showReferral, setShowReferral] = useState(false);
   const [chatSearchQuery, setChatSearchQuery] = useState("");
@@ -2300,83 +2230,7 @@ function App() {
   const [showSmartNotification, setShowSmartNotification] = useState(false);
   const [daysSinceLastVisit, setDaysSinceLastVisit] = useState(0);
   const [smartNotifDismissed, setSmartNotifDismissed] = useState(() => {
-  const [walletAddress, setWalletAddress] = useState("");
-  const [walletBalance, setWalletBalance] = useState("0");
-  const [walletChainId, setWalletChainId] = useState("");
-  const [isConnectingWallet, setIsConnectingWallet] = useState(false);
-  const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
-  const [showWalletInfo, setShowWalletInfo] = useState(false);
-
-  function formatAddress(addr) {
-    if (!addr) return "";
-    return addr.slice(0, 6) + "..." + addr.slice(-4);
-  }
-
-  async function updateWalletInfo(address) {
-    if (!address || !window.ethereum) return;
-    try {
-      const balance = await window.ethereum.request({
-        method: "eth_getBalance",
-        params: [address, "latest"],
-      });
-      const balanceInEth = parseInt(balance, 16) / 1e18;
-      setWalletBalance(balanceInEth.toFixed(4));
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      setWalletChainId(chainId);
-    } catch (e) {
-      console.log("Wallet info error:", e);
-    }
-  }
-
-  async function connectMetaMask() {
-    if (!window.ethereum) {
-      alert(t.walletMetaMaskNotFound);
-      return;
-    }
-    setIsConnectingWallet(true);
-    try {
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      if (accounts && accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-        await updateWalletInfo(accounts[0]);
-      }
-    } catch (e) {
-      console.log("MetaMask connect error:", e);
-    }
-    setIsConnectingWallet(false);
-  }
-
-  function clearWalletAuth() {
-    if (typeof window !== "undefined") localStorage.removeItem("shardeumai-wallet-auth");
-  }
-
-  async function disconnectWallet() {
-    setWalletAddress("");
-    setWalletBalance("0");
-    setWalletChainId("");
-    clearWalletAuth();
-  }
-
-  async function addShardeumNetwork() {
-    if (!window.ethereum) return;
-    try {
-      await window.ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [{
-          chainId: "0x1FB6",
-          chainName: "Shardeum Mainnet",
-          nativeCurrency: { name: "Shardeum", symbol: "SHM", decimals: 18 },
-          rpcUrls: ["https://mainnet.shardeum.org"],
-          blockExplorerUrls: ["https://explorer.shardeum.org"],
-        }],
-      });
-    } catch (e) {
-      console.log("Add network error:", e);
-    }
-  }
-
-
-    return typeof window !== "undefined" ? localStorage.getItem("shardeumai-smart-notif-dismissed") === "true" : false;
+    return localStorage.getItem("shardeumai-smart-notif-dismissed") === "true";
   });
 
   const t = translations[uiLang] || translations.en;
@@ -2429,7 +2283,7 @@ function App() {
   }, [uiLang]);
 
   useEffect(() => {
-    const lastVisit = typeof window !== "undefined" ? localStorage.getItem("shardeumai-last-visit") : null;
+    const lastVisit = localStorage.getItem("shardeumai-last-visit");
     const now = new Date().toISOString();
 
     if (lastVisit && !smartNotifDismissed && session) {
@@ -2443,69 +2297,19 @@ function App() {
         setShowSmartNotification(true);
       }
     }
-    if (typeof window !== "undefined") localStorage.setItem("shardeumai-last-visit", now);
+    localStorage.setItem("shardeumai-last-visit", now);
   }, [session, smartNotifDismissed]);
 
   function dismissSmartNotification() {
     setShowSmartNotification(false);
     setSmartNotifDismissed(true);
-    if (typeof window !== "undefined") localStorage.setItem("shardeumai-smart-notif-dismissed", "true");
+    localStorage.setItem("shardeumai-smart-notif-dismissed", "true");
   }
 
-  
-  // ── MetaMask Sign Message (SIWE) ──
-  async function signMessageForAuth() {
-    if (!walletAddress || !window.ethereum) {
-      alert("Please connect MetaMask first!");
-      return null;
-    }
-    try {
-      const message = `ShardeumAI Authentication
-
-Address: ${walletAddress}
-Timestamp: ${Date.now()}
-Nonce: ${Math.random().toString(36).substring(2, 15)}`;
-
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress]
-      });
-
-      // Store auth data
-      const authData = {
-        address: walletAddress,
-        signature: signature,
-        message: message,
-        timestamp: Date.now()
-      };
-      if (typeof window !== "undefined") localStorage.setItem("shardeumai-wallet-auth", JSON.stringify(authData));
-
-      return authData;
-    } catch (error) {
-      console.log("Sign message error:", error);
-      alert("Failed to sign message: " + (error.message || "User rejected"));
-      return null;
-    }
-  }
-
-  function isWalletAuthenticated() {
-    const auth = typeof window !== "undefined" ? localStorage.getItem("shardeumai-wallet-auth") : null;
-    if (!auth) return false;
-    try {
-      const data = JSON.parse(auth);
-      // Check if auth is not expired (24 hours)
-      return (Date.now() - data.timestamp) < 24 * 60 * 60 * 1000;
-    } catch {
-      return false;
-    }
-  }
-
-
-
-// ── Plan Management ──
+  // ── Plan Management ──
   function handleSelectPlan(planId) {
     setCurrentPlan(planId);
-    if (typeof window !== "undefined") localStorage.setItem("shardeumai-plan", planId);
+    localStorage.setItem("shardeumai-plan", planId);
     setShowPricing(false);
     // Reset usage when plan changes
     const newUsage = {
@@ -2517,7 +2321,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
       streakDays: usageTracking.usage.streakDays,
       lastActiveDate: usageTracking.usage.lastActiveDate,
     };
-    if (typeof window !== "undefined") localStorage.setItem(`shardeumai-usage-${session?.user?.id}`, JSON.stringify(newUsage));
+    localStorage.setItem(`shardeumai-usage-${session?.user?.id}`, JSON.stringify(newUsage));
   }
 
   // ── Data Loading ──
@@ -3035,7 +2839,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
         setUiLang={setUiLang}
         isMobile={isMobile}
         onStart={() => {
-          if (typeof window !== "undefined") localStorage.setItem("shardeumai-landing-v1", "true");
+          localStorage.setItem("shardeumai-landing-v1", "true");
           setShowLanding(false);
         }}
       />
@@ -3053,7 +2857,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
         setUiLang={setUiLang}
         isMobile={isMobile}
         onStart={() => {
-          if (typeof window !== "undefined") localStorage.setItem("shardeumai-welcome-v2", "true");
+          localStorage.setItem("shardeumai-welcome-v2", "true");
           setShowWelcome(false);
         }}
       />
@@ -3317,7 +3121,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
             {/* Desktop Feature Buttons */}
             {!isMobile && (
               <>
-                <button onClick={() => { setStreamingEnabled(!streamingEnabled); if (typeof window !== "undefined") localStorage.setItem("shardeumai-streaming", !streamingEnabled); }}
+                <button onClick={() => { setStreamingEnabled(!streamingEnabled); localStorage.setItem("shardeumai-streaming", !streamingEnabled); }}
                   title={t.streaming}
                   style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
                   🔄
@@ -3356,7 +3160,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                   <input
                     type="color"
                     value={customAccentColor}
-                    onChange={(e) => { setCustomAccentColor(e.target.value); if (typeof window !== "undefined") localStorage.setItem("shardeumai-accent", e.target.value); }}
+                    onChange={(e) => { setCustomAccentColor(e.target.value); localStorage.setItem("shardeumai-accent", e.target.value); }}
                     style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", opacity: 0, cursor: "pointer" }}
                   />
                 </div>
@@ -3542,7 +3346,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                           setCustomInstructions={setCustomInstructions}
                           onSave={(instructions) => {
                             setCustomInstructions(instructions);
-                            if (typeof window !== "undefined") localStorage.setItem("shardeumai-custom-instructions", instructions);
+                            localStorage.setItem("shardeumai-custom-instructions", instructions);
                             setShowCustomInstructions(false);
                           }}
                           isMobile={isMobile}
@@ -3986,67 +3790,6 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 style={{ padding: "11px 0", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${profile.avatar_color}, #22c55e)`, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                 Save Profile
               </button>
-            {/* Wallet Info */}
-            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-                <span>🦊</span> Wallet
-              </div>
-
-              {walletAddress ? (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#f6851b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🦊</div>
-                    <div>
-                      <div style={{ fontSize: 13, color: "#ececec", fontWeight: 600 }}>{formatAddress(walletAddress)}</div>
-                      <div style={{ fontSize: 11, color: "#8e8ea0" }}>{walletBalance} SHM</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button onClick={() => setShowWalletInfo(!showWalletInfo)}
-                      style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                      {showWalletInfo ? "Hide" : "Details"}
-                    </button>
-                    <button onClick={disconnectWallet}
-                      style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "#ef444422", color: "#ef4444", fontSize: 12, cursor: "pointer" }}>
-                      Disconnect
-                    </button>
-                  </div>
-
-                  {showWalletInfo && (
-                    <div style={{ marginTop: 12, padding: 10, background: "#0d0d0d", borderRadius: 8, fontSize: 12 }}>
-                      <div style={{ color: "#8e8ea0", marginBottom: 4 }}>Full Address:</div>
-                      <div style={{ color: "#ececec", wordBreak: "break-all", fontFamily: "monospace", fontSize: 11 }}>{walletAddress}</div>
-                      <div style={{ color: "#8e8ea0", marginTop: 8, marginBottom: 4 }}>Network:</div>
-                      <div style={{ color: "#ececec", fontSize: 11 }}>
-                        {walletChainId === '0x1FB6' ? '✅ Shardeum Mainnet' : walletChainId ? `Chain ID: ${walletChainId}` : 'Unknown'}
-                      </div>
-                      {walletChainId !== '0x1e0' && (
-                        <button onClick={addShardeumNetwork}
-                          style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#10a37f", color: "#fff", fontSize: 11, cursor: "pointer" }}>
-                          Add Shardeum Network
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🦊</div>
-                  <div style={{ fontSize: 13, color: "#8e8ea0", marginBottom: 12 }}>No wallet connected</div>
-                  <button onClick={connectMetaMask} disabled={isConnectingWallet}
-                    style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "#f6851b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                    {isConnectingWallet ? "Connecting..." : "Connect MetaMask"}
-                  </button>
-                  {!isMetaMaskInstalled && (
-                    <div style={{ fontSize: 11, color: "#ef4444", marginTop: 8 }}>
-                      MetaMask extension not detected
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
             </div>
             {/* Plan Info Card */}
             <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
