@@ -2272,9 +2272,22 @@ function App() {
   const [customAccentColor, setCustomAccentColor] = useState(() => typeof window !== "undefined" ? localStorage.getItem("shardeumai-accent") || "#10a37f" : "#10a37f");
 
   // ── NEW: Subscription & Usage States ──
-  const [currentPlan, setCurrentPlan] = useState(() => {
-    return typeof window !== "undefined" ? localStorage.getItem("shardeumai-plan") || "free" : "free";
-  });
+  const [currentPlan, setCurrentPlan] = useState("free");
+
+  // Load user-specific plan when session changes
+  useEffect(() => {
+    if (session?.user?.id && typeof window !== "undefined") {
+      const savedPlan = localStorage.getItem(`shardeumai-plan-${session.user.id}`);
+      if (savedPlan && SUBSCRIPTION_PLANS[savedPlan]) {
+        setCurrentPlan(savedPlan);
+      } else {
+        setCurrentPlan("free");
+        localStorage.setItem(`shardeumai-plan-${session.user.id}`, "free");
+      }
+    } else {
+      setCurrentPlan("free");
+    }
+  }, [session?.user?.id]);
   const [showPricing, setShowPricing] = useState(false);
   const [showCustomInstructions, setShowCustomInstructions] = useState(false);
   const [customInstructions, setCustomInstructions] = useState(() => {
@@ -2584,7 +2597,9 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
 // ── Plan Management ──
   function handleSelectPlan(planId) {
     setCurrentPlan(planId);
-    if (typeof window !== "undefined") localStorage.setItem("shardeumai-plan", planId);
+    if (typeof window !== "undefined" && session?.user?.id) {
+      localStorage.setItem(`shardeumai-plan-${session.user.id}`, planId);
+    }
     setShowPricing(false);
     // Reset usage when plan changes
     const newUsage = {
@@ -2596,7 +2611,9 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
       streakDays: usageTracking.usage.streakDays,
       lastActiveDate: usageTracking.usage.lastActiveDate,
     };
-    if (typeof window !== "undefined") localStorage.setItem(`shardeumai-usage-${session?.user?.id}`, JSON.stringify(newUsage));
+    if (typeof window !== "undefined" && session?.user?.id) {
+      localStorage.setItem(`shardeumai-usage-${session.user.id}`, JSON.stringify(newUsage));
+    }
   }
 
   // ── Data Loading ──
