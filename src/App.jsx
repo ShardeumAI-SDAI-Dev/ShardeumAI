@@ -2540,12 +2540,20 @@ function App() {
   });
 
   // ── Wallet States (moved out of useState callback) ──
-  const [walletAddress, setWalletAddress] = useState("");
-  const [walletBalance, setWalletBalance] = useState("0");
-  const [walletChainId, setWalletChainId] = useState("");
+  // ── Multi-Wallet System ──
+  const [wallets, setWallets] = useState(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("shardeumai-wallets") : null;
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [activeWalletIndex, setActiveWalletIndex] = useState(0);
   const [isConnectingWallet, setIsConnectingWallet] = useState(false);
   const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
   const [showWalletInfo, setShowWalletInfo] = useState(false);
+
+  // Derived: active wallet
+  const walletAddress = wallets[activeWalletIndex]?.address || "";
+  const walletBalance = wallets[activeWalletIndex]?.balance || "0";
+  const walletChainId = wallets[activeWalletIndex]?.chainId || "";
 
   // ── Wallet Functions ──
   function formatAddress(addr) {
@@ -2553,19 +2561,19 @@ function App() {
     return addr.slice(0, 6) + "..." + addr.slice(-4);
   }
 
-  async function updateWalletInfo(address) {
-    if (!address || !window.ethereum) return;
+  async function fetchWalletInfo(address) {
+    if (!address || !window.ethereum) return { balance: "0", chainId: "" };
     try {
       const balance = await window.ethereum.request({
         method: "eth_getBalance",
         params: [address, "latest"],
       });
       const balanceInEth = parseInt(balance, 16) / 1e18;
-      setWalletBalance(balanceInEth.toFixed(4));
       const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      setWalletChainId(chainId);
+      return { balance: balanceInEth.toFixed(4), chainId };
     } catch (e) {
       console.log("Wallet info error:", e);
+      return { balance: "0", chainId: "" };
     }
   }
 
@@ -2578,8 +2586,21 @@ function App() {
     try {
       const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
       if (accounts && accounts.length > 0) {
-        setWalletAddress(accounts[0]);
-        await updateWalletInfo(accounts[0]);
+        const address = accounts[0];
+        const info = await fetchWalletInfo(address);
+        const newWallet = {
+          id: Date.now().toString(),
+          name: `Wallet ${wallets.length + 1}`,
+          address,
+          balance: info.balance,
+          chainId: info.chainId,
+          provider: "MetaMask",
+          connectedAt: Date.now(),
+        };
+        const updated = [...wallets, newWallet];
+        setWallets(updated);
+        setActiveWalletIndex(updated.length - 1);
+        if (typeof window !== "undefined") localStorage.setItem("shardeumai-wallets", JSON.stringify(updated));
       }
     } catch (e) {
       console.log("MetaMask connect error:", e);
@@ -2591,11 +2612,24 @@ function App() {
     if (typeof window !== "undefined") localStorage.removeItem("shardeumai-wallet-auth");
   }
 
-  async function disconnectWallet() {
-    setWalletAddress("");
-    setWalletBalance("0");
-    setWalletChainId("");
-    clearWalletAuth();
+  async function disconnectWallet(walletId) {
+    const updated = wallets.filter(w => w.id !== walletId);
+    setWallets(updated);
+    if (typeof window !== "undefined") localStorage.setItem("shardeumai-wallets", JSON.stringify(updated));
+    if (activeWalletIndex >= updated.length) {
+      setActiveWalletIndex(Math.max(0, updated.length - 1));
+    }
+    if (updated.length === 0) clearWalletAuth();
+  }
+
+  async function refreshWalletBalance(index) {
+    const wallet = wallets[index];
+    if (!wallet || !window.ethereum) return;
+    const info = await fetchWalletInfo(wallet.address);
+    const updated = [...wallets];
+    updated[index] = { ...wallet, balance: info.balance, chainId: info.chainId };
+    setWallets(updated);
+    if (typeof window !== "undefined") localStorage.setItem("shardeumai-wallets", JSON.stringify(updated));
   }
 
   async function addShardeumNetwork() {
@@ -2653,15 +2687,23 @@ function App() {
 
     const handleAccountsChanged = (accounts) => {
       if (accounts.length === 0) {
-        disconnectWallet();
-      } else {
-        setWalletAddress(accounts[0]);
-        updateWalletInfo(accounts[0]);
+        // User disconnected from MetaMask
+        setWallets([]);
+        setActiveWalletIndex(0);
+        if (typeof window !== "undefined") localStorage.removeItem("shardeumai-wallets");
+      } else if (wallets.length > 0) {
+        // Update active wallet address if changed
+        const updated = [...wallets];
+        updated[activeWalletIndex] = { ...updated[activeWalletIndex], address: accounts[0] };
+        setWallets(updated);
+        refreshWalletBalance(activeWalletIndex);
       }
     };
 
     const handleChainChanged = () => {
-      if (walletAddress) updateWalletInfo(walletAddress);
+      if (wallets.length > 0) {
+        refreshWalletBalance(activeWalletIndex);
+      }
     };
 
     window.ethereum.on("accountsChanged", handleAccountsChanged);
@@ -2673,7 +2715,7 @@ function App() {
         window.ethereum.removeListener("chainChanged", handleChainChanged);
       }
     };
-  }, [walletAddress]);
+  }, [wallets.length, activeWalletIndex]);
 
   // ── MetaMask Sign Message (SIWE) ──
   async function signMessageForAuth() {
@@ -4509,67 +4551,121 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 style={{ padding: "11px 0", borderRadius: 10, border: "none", background: `linear-gradient(135deg, ${profile.avatar_color}, #22c55e)`, color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
                 Save Profile
               </button>
-            {/* Wallet Info */}
+            {/* Multi-Wallet Info */}
             <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-                <span>🦊</span> Wallet
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>🦊</span> Wallets ({wallets.length})
+                </div>
+                <button onClick={connectMetaMask} disabled={isConnectingWallet}
+                  style={{ padding: "6px 14px", borderRadius: 8, border: "none", background: "#f6851b", color: "#fff", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+                  {isConnectingWallet ? "..." : "+ Add Wallet"}
+                </button>
               </div>
 
-              {walletAddress ? (
-                <>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#f6851b", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>🦊</div>
-                    <div>
-                      <div style={{ fontSize: 13, color: "#ececec", fontWeight: 600 }}>{formatAddress(walletAddress)}</div>
-                      <div style={{ fontSize: 11, color: "#8e8ea0" }}>{walletBalance} SHM</div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button onClick={() => setShowWalletInfo(!showWalletInfo)}
-                      style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                      {showWalletInfo ? "Hide" : "Details"}
-                    </button>
-                    <button onClick={disconnectWallet}
-                      style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: "#ef444422", color: "#ef4444", fontSize: 12, cursor: "pointer" }}>
-                      Disconnect
-                    </button>
-                  </div>
-
-                  {showWalletInfo && (
-                    <div style={{ marginTop: 12, padding: 10, background: "#0d0d0d", borderRadius: 8, fontSize: 12 }}>
-                      <div style={{ color: "#8e8ea0", marginBottom: 4 }}>Full Address:</div>
-                      <div style={{ color: "#ececec", wordBreak: "break-all", fontFamily: "monospace", fontSize: 11 }}>{walletAddress}</div>
-                      <div style={{ color: "#8e8ea0", marginTop: 8, marginBottom: 4 }}>Network:</div>
-                      <div style={{ color: "#ececec", fontSize: 11 }}>
-                        {walletChainId === '0x1FB6' ? '✅ Shardeum Mainnet' : walletChainId ? `Chain ID: ${walletChainId}` : 'Unknown'}
+              {wallets.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {wallets.map((wallet, idx) => (
+                    <div key={wallet.id} style={{
+                      padding: 12,
+                      borderRadius: 12,
+                      border: `2px solid ${idx === activeWalletIndex ? "#10a37f" : "#2d2d2d"}`,
+                      background: idx === activeWalletIndex ? "#10a37f11" : "#0d0d0d",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }} onClick={() => setActiveWalletIndex(idx)}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{
+                            width: 36, height: 36, borderRadius: "50%",
+                            background: idx === activeWalletIndex ? "#10a37f" : "#f6851b",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 16,
+                          }}>
+                            {idx === activeWalletIndex ? "✓" : "🦊"}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 13, color: "#ececec", fontWeight: 600 }}>
+                              {wallet.name} {idx === activeWalletIndex && <span style={{ color: "#10a37f", fontSize: 11 }}>(Active)</span>}
+                            </div>
+                            <div style={{ fontSize: 11, color: "#8e8ea0" }}>
+                              {formatAddress(wallet.address)} • {wallet.provider}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ textAlign: "right" }}>
+                            <div style={{ fontSize: 13, color: "#ececec", fontWeight: 600 }}>{wallet.balance} ETH</div>
+                            <div style={{ fontSize: 10, color: "#5c5c5c" }}>
+                              {wallet.chainId === '0x1' ? 'Ethereum' : wallet.chainId === '0x38' ? 'BNB Chain' : wallet.chainId === '0x1FB6' ? 'Shardeum' : wallet.chainId}
+                            </div>
+                          </div>
+                          <button onClick={(e) => { e.stopPropagation(); refreshWalletBalance(idx); }}
+                            style={{ background: "none", border: "none", color: "#8e8ea0", cursor: "pointer", fontSize: 14, padding: 4 }}
+                            title="Refresh">
+                            🔄
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); disconnectWallet(wallet.id); }}
+                            style={{ background: "none", border: "none", color: "#e0746a", cursor: "pointer", fontSize: 14, padding: 4 }}
+                            title="Disconnect">
+                            🗑
+                          </button>
+                        </div>
                       </div>
-                      {walletChainId !== '0x1e0' && (
-                        <>
-                          <button onClick={addShardeumNetwork}
-                            style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#10a37f", color: "#fff", fontSize: 11, cursor: "pointer" }}>
-                            Add Shardeum Network
-                          </button>
-                          <button onClick={addSDAIToMetaMask}
-                            style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#f6851b", color: "#fff", fontSize: 11, cursor: "pointer", marginLeft: 8 }}>
-                            ➕ Add SDAI Token
-                          </button>
-                        </>
-                      )}
                     </div>
-                  )}
-                </>
+                  ))}
+                </div>
               ) : (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>🦊</div>
-                  <div style={{ fontSize: 13, color: "#8e8ea0", marginBottom: 12 }}>No wallet connected</div>
+                <div style={{ textAlign: "center", padding: "30px 0" }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>👛</div>
+                  <div style={{ fontSize: 14, color: "#8e8ea0", marginBottom: 16 }}>No wallets connected</div>
                   <button onClick={connectMetaMask} disabled={isConnectingWallet}
-                    style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "#f6851b", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-                    {isConnectingWallet ? "Connecting..." : "Connect MetaMask"}
+                    style={{ padding: "12px 28px", borderRadius: 10, border: "none", background: "#f6851b", color: "#fff", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+                    {isConnectingWallet ? "Connecting..." : "🔗 Connect MetaMask"}
                   </button>
                   {!isMetaMaskInstalled && (
-                    <div style={{ fontSize: 11, color: "#ef4444", marginTop: 8 }}>
+                    <div style={{ fontSize: 12, color: "#ef4444", marginTop: 10 }}>
                       MetaMask extension not detected
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Active Wallet Details */}
+              {wallets.length > 0 && (
+                <div style={{ marginTop: 16, padding: 12, background: "#0d0d0d", borderRadius: 10 }}>
+                  <div style={{ fontSize: 12, color: "#8e8ea0", marginBottom: 8, fontWeight: 600 }}>
+                    Active Wallet Details
+                  </div>
+                  <div style={{ color: "#ececec", wordBreak: "break-all", fontFamily: "monospace", fontSize: 11, marginBottom: 8 }}>
+                    {wallets[activeWalletIndex]?.address}
+                  </div>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <button onClick={() => setShowWalletInfo(!showWalletInfo)}
+                      style={{ padding: "5px 10px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>
+                      {showWalletInfo ? "Hide" : "More"}
+                    </button>
+                    {wallets[activeWalletIndex]?.chainId !== '0x1FB6' && (
+                      <>
+                        <button onClick={addShardeumNetwork}
+                          style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: "#10a37f", color: "#fff", fontSize: 11, cursor: "pointer" }}>
+                          + Shardeum
+                        </button>
+                        <button onClick={addSDAIToMetaMask}
+                          style={{ padding: "5px 10px", borderRadius: 6, border: "none", background: "#f6851b", color: "#fff", fontSize: 11, cursor: "pointer" }}>
+                          + SDAI
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {showWalletInfo && (
+                    <div style={{ marginTop: 10, padding: 10, background: "#171717", borderRadius: 8, fontSize: 11 }}>
+                      <div style={{ color: "#8e8ea0", marginBottom: 4 }}>Full Address:</div>
+                      <div style={{ color: "#ececec", wordBreak: "break-all", fontFamily: "monospace" }}>{wallets[activeWalletIndex]?.address}</div>
+                      <div style={{ color: "#8e8ea0", marginTop: 6, marginBottom: 4 }}>Network:</div>
+                      <div style={{ color: "#ececec" }}>
+                        {wallets[activeWalletIndex]?.chainId === '0x1FB6' ? '✅ Shardeum Mainnet' : wallets[activeWalletIndex]?.chainId ? `Chain ID: ${wallets[activeWalletIndex]?.chainId}` : 'Unknown'}
+                      </div>
                     </div>
                   )}
                 </div>
