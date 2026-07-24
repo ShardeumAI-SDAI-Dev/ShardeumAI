@@ -1455,7 +1455,7 @@ function ImageGenerator({ t, isRTL, usageTracking }) {
 // ═══ PRICING PAGE COMPONENT ═══
 // ═══════════════════════════════════════════════════════════════
 
-function PricingPage({ t, th, uiLang, currentPlan, onSelectPlan, onBack, isMobile, walletAddress, isPayingToken, tokenPayError, tokenPaySuccess, lastTxHash, onPayWithToken, tokenBalances, session, selectedPaymentToken, onSelectPaymentToken, billingCycle }) {
+function PricingPage({ t, th, uiLang, currentPlan, onSelectPlan, onBack, isMobile, walletAddress, isPayingToken, tokenPayError, tokenPaySuccess, lastTxHash, onPayWithToken, tokenBalances, session, selectedPaymentToken, onSelectPaymentToken }) {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const isRTL = uiLang === "fa" || uiLang === "ar";
 
@@ -4545,14 +4545,16 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                         {walletChainId === '0x1FB6' ? '✅ Shardeum Mainnet' : walletChainId ? `Chain ID: ${walletChainId}` : 'Unknown'}
                       </div>
                       {walletChainId !== '0x1e0' && (
-                        <button onClick={addShardeumNetwork}
-                          style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#10a37f", color: "#fff", fontSize: 11, cursor: "pointer" }}>
-                          Add Shardeum Network
-                        </button>
-                        <button onClick={addSDAIToMetaMask}
-                          style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#f6851b", color: "#fff", fontSize: 11, cursor: "pointer", marginLeft: 8 }}>
-                          ➕ Add SDAI Token
-                        </button>
+                        <>
+                          <button onClick={addShardeumNetwork}
+                            style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#10a37f", color: "#fff", fontSize: 11, cursor: "pointer" }}>
+                            Add Shardeum Network
+                          </button>
+                          <button onClick={addSDAIToMetaMask}
+                            style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#f6851b", color: "#fff", fontSize: 11, cursor: "pointer", marginLeft: 8 }}>
+                            ➕ Add SDAI Token
+                          </button>
+                        </>
                       )}
                     </div>
                   )}
