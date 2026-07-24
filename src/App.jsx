@@ -2300,6 +2300,10 @@ function App() {
   const [showSmartNotification, setShowSmartNotification] = useState(false);
   const [daysSinceLastVisit, setDaysSinceLastVisit] = useState(0);
   const [smartNotifDismissed, setSmartNotifDismissed] = useState(() => {
+    return typeof window !== "undefined" ? localStorage.getItem("shardeumai-smart-notif-dismissed") === "true" : false;
+  });
+
+  // ── Wallet States (moved out of useState callback) ──
   const [walletAddress, setWalletAddress] = useState("");
   const [walletBalance, setWalletBalance] = useState("0");
   const [walletChainId, setWalletChainId] = useState("");
@@ -2307,6 +2311,7 @@ function App() {
   const [isMetaMaskInstalled, setIsMetaMaskInstalled] = useState(false);
   const [showWalletInfo, setShowWalletInfo] = useState(false);
 
+  // ── Wallet Functions ──
   function formatAddress(addr) {
     if (!addr) return "";
     return addr.slice(0, 6) + "..." + addr.slice(-4);
@@ -2375,9 +2380,83 @@ function App() {
     }
   }
 
+  // ── MetaMask Event Listeners ──
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.ethereum) {
+      setIsMetaMaskInstalled(false);
+      return;
+    }
+    setIsMetaMaskInstalled(true);
 
-    return typeof window !== "undefined" ? localStorage.getItem("shardeumai-smart-notif-dismissed") === "true" : false;
-  });
+    const handleAccountsChanged = (accounts) => {
+      if (accounts.length === 0) {
+        disconnectWallet();
+      } else {
+        setWalletAddress(accounts[0]);
+        updateWalletInfo(accounts[0]);
+      }
+    };
+
+    const handleChainChanged = () => {
+      if (walletAddress) updateWalletInfo(walletAddress);
+    };
+
+    window.ethereum.on("accountsChanged", handleAccountsChanged);
+    window.ethereum.on("chainChanged", handleChainChanged);
+
+    return () => {
+      if (window.ethereum.removeListener) {
+        window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        window.ethereum.removeListener("chainChanged", handleChainChanged);
+      }
+    };
+  }, [walletAddress]);
+
+  // ── MetaMask Sign Message (SIWE) ──
+  async function signMessageForAuth() {
+    if (!walletAddress || !window.ethereum) {
+      alert("Please connect MetaMask first!");
+      return null;
+    }
+    try {
+      const message = `ShardeumAI Authentication
+
+Address: ${walletAddress}
+Timestamp: ${Date.now()}
+Nonce: ${Math.random().toString(36).substring(2, 15)}`;
+
+      const signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, walletAddress]
+      });
+
+      const authData = {
+        address: walletAddress,
+        signature: signature,
+        message: message,
+        timestamp: Date.now()
+      };
+      if (typeof window !== "undefined") localStorage.setItem("shardeumai-wallet-auth", JSON.stringify(authData));
+
+      return authData;
+    } catch (error) {
+      console.log("Sign message error:", error);
+      alert("Failed to sign message: " + (error.message || "User rejected"));
+      return null;
+    }
+  }
+
+  function isWalletAuthenticated() {
+    const auth = typeof window !== "undefined" ? localStorage.getItem("shardeumai-wallet-auth") : null;
+    if (!auth) return false;
+    try {
+      const data = JSON.parse(auth);
+      return (Date.now() - data.timestamp) < 24 * 60 * 60 * 1000;
+    } catch {
+      return false;
+    }
+  }
+
 
   const t = translations[uiLang] || translations.en;
   const isRTL = uiLang === "fa" || uiLang === "ar";
