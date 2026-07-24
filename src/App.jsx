@@ -1224,13 +1224,13 @@ function exportChat(messages, format) {
     URL.revokeObjectURL(url);
   }
   if (format === "txt") {
-    const text = messages.map(m => "[" + (m.role === "user" ? "You" : "ShardeumAI") + "]" + NL + m.content + NL).join(NL + "---" + NL + NL);
+    const text = (messages || []).map(m => "[" + (m.role === "user" ? "You" : "ShardeumAI") + "]" + NL + m.content + NL).join(NL + "---" + NL + NL);
     downloadBlob(new Blob([title + NL + date + NL + NL + text], { type: "text/plain" }), "chat.txt");
   } else if (format === "md") {
-    const md = messages.map(m => "### " + (m.role === "user" ? "You" : "ShardeumAI") + NL + NL + m.content).join(NL + NL + "---" + NL + NL);
+    const md = (messages || []).map(m => "### " + (m.role === "user" ? "You" : "ShardeumAI") + NL + NL + m.content).join(NL + NL + "---" + NL + NL);
     downloadBlob(new Blob(["# " + title + NL + "_" + date + "_" + NL + NL + md], { type: "text/markdown" }), "chat.md");
   } else if (format === "html") {
-    const rows = messages.map(m => {
+    const rows = (messages || []).map(m => {
       const isUser = m.role === "user";
       const bg = isUser ? "#3b82f6" : "#1e293b";
       const align = isUser ? "flex-end" : "flex-start";
@@ -1240,7 +1240,7 @@ function exportChat(messages, format) {
     const htmlHead = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title><style>body{background:#0b1120;font-family:system-ui,sans-serif;padding:20px;max-width:800px;margin:0 auto}h1{color:#3b82f6}p{color:#9aa4b2}</style></head><body><h1>' + title + '</h1><p>' + date + '</p>';
     downloadBlob(new Blob([htmlHead + rows + '</body></html>'], { type: "text/html" }), "chat.html");
   } else if (format === "pdf") {
-    const rows = messages.map(m => {
+    const rows = (messages || []).map(m => {
       const isUser = m.role === "user";
       const bg = isUser ? "#3b82f6" : "#1e293b";
       const align = isUser ? "right" : "left";
@@ -2652,7 +2652,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
   }
 
   function handleDeleteMessage(idx) {
-    const newMessages = messages.filter((_, i) => i !== idx);
+    const newMessages = (messages || []).filter((_, i) => i !== idx);
     setMessages(newMessages);
   }
 
@@ -2680,15 +2680,15 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
     const monthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
 
-    let totalMsgs = messages.length;
-    let charsTyped = messages.filter(m => m.role === "user").reduce((a, m) => a + m.content.length, 0);
-    let msgToday = messages.filter(m => new Date(m.created_at || Date.now()).toDateString() === today).length;
-    let msgWeek = messages.filter(m => new Date(m.created_at || Date.now()) > weekAgo).length;
-    let msgMonth = messages.filter(m => new Date(m.created_at || Date.now()) > monthAgo).length;
+    let totalMsgs = (messages || []).length;
+    let charsTyped = (messages || []).filter(m => m.role === "user").reduce((a, m) => a + m.content.length, 0);
+    let msgToday = (messages || []).filter(m => new Date(m.created_at || Date.now()).toDateString() === today).length;
+    let msgWeek = (messages || []).filter(m => new Date(m.created_at || Date.now()) > weekAgo).length;
+    let msgMonth = (messages || []).filter(m => new Date(m.created_at || Date.now()) > monthAgo).length;
 
     setAnalyticsData({
       totalMessages: totalMsgs,
-      totalChats: allChats.length + (activeConvoId ? 1 : 0),
+      totalChats: (allChats || []).length + (activeConvoId ? 1 : 0),
       avgResponseTime: 0,
       charactersTyped: charsTyped,
       messagesToday: msgToday,
@@ -2832,14 +2832,14 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
   }
 
   // ── Chat Search Filter ──
-  const filteredConversations = conversations.filter(convo =>
+  const filteredConversations = (conversations || []).filter(convo =>
     convo.title.toLowerCase().includes(chatSearchQuery.toLowerCase())
   );
 
   // ── Main Send Handler ──
   async function handleSend(e, isRegenerate = false) {
     if (e && e.preventDefault) e.preventDefault();
-    if (!input.trim() && uploadedFiles.length === 0 && !isRegenerate) return;
+    if (!input.trim() && (!uploadedFiles || uploadedFiles.length === 0) && !isRegenerate) return;
     if (!session) { alert("Please login first."); return; }
 
     // Check usage limit
@@ -2865,8 +2865,8 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     }
 
     // Add uploaded files context
-    if (uploadedFiles.length > 0) {
-      const fileContext = uploadedFiles.map(f => {
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      const fileContext = (uploadedFiles || []).map(f => {
         if (f.type.startsWith("image/")) {
           return `[Uploaded Image: ${f.name}]`;
         } else if (f.content && f.content.length < 5000) {
@@ -3181,10 +3181,10 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
 
         <div style={{ flex: 1, overflowY: "auto", padding: "8px 10px" }}>
           <div style={{ fontSize: 11, color: "#5c5c5c", padding: "4px 6px 8px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.5px" }}>{t.recentChats}</div>
-          {(showChatSearch ? filteredConversations : conversations).length === 0 && (
+          {((showChatSearch ? filteredConversations : conversations) || []).length === 0 && (
             <div style={{ color: "#5c5c5c", fontSize: 12, textAlign: "center", padding: 20 }}>{t.noChats}</div>
           )}
-          {(showChatSearch ? filteredConversations : conversations).map(convo => (
+          {((showChatSearch ? filteredConversations : conversations) || []).map(convo => (
             <div key={convo.id}
               onClick={() => loadConversationMessages(convo.id)}
               style={{
@@ -3633,14 +3633,14 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                         </div>
                       )}
 
-              {messages.length === 0 ? (
+              {(!messages || messages.length === 0) ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: isMobile ? 20 : 40 }}>
                   <div style={{ width: 64, height: 64, borderRadius: 12, background: "#10a37f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 24 }}>S</div>
                   <h1 style={{ margin: 0, fontSize: 32, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{t.welcomeTitle}</h1>
                   <p style={{ margin: 0, fontSize: 16, color: "#8e8ea0" }}>{t.welcomeSubtitle}</p>
                 </div>
               ) : (
-                messages.map((msg, idx) => (
+                (messages || []).map((msg, idx) => (
                   <div key={idx} style={{
                     background: msg.role === "user" ? "transparent" : "#171717",
                     borderBottom: msg.role === "assistant" ? "1px solid #2d2d2d" : "none",
@@ -3783,7 +3783,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
               <div style={{ maxWidth: 768, margin: "0 auto", width: "100%", position: "relative" }}>
                 <form onSubmit={handleSend} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {/* Uploaded Files Preview */}
-                  {uploadedFiles.length > 0 && (
+                  {(uploadedFiles && uploadedFiles.length > 0) && (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", padding: "0 4px" }}>
                       {uploadedFiles.map(file => (
                         <div key={file.id} style={{
@@ -3842,11 +3842,11 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                         }}>
                         📎
                       </button>
-                      <button type="submit" disabled={(!input.trim() && uploadedFiles.length === 0) || chatLoading}
+                      <button type="submit" disabled={(!input.trim() && (!uploadedFiles || uploadedFiles.length === 0)) || chatLoading}
                         style={{
                           width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, borderRadius: "50%",
-                          border: "none", background: (input.trim() || uploadedFiles.length > 0) ? "#10a37f" : "#5c5c5c",
-                          color: "#fff", fontSize: 14, cursor: (input.trim() || uploadedFiles.length > 0) ? "pointer" : "default",
+                          border: "none", background: (input.trim() || (uploadedFiles && uploadedFiles.length > 0)) ? "#10a37f" : "#5c5c5c",
+                          color: "#fff", fontSize: 14, cursor: (input.trim() || (uploadedFiles && uploadedFiles.length > 0)) ? "pointer" : "default",
                           display: "flex", alignItems: "center", justifyContent: "center",
                           flexShrink: 0,
                         }}>
@@ -3865,7 +3865,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 </form>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, flexWrap: "wrap", gap: 4 }}>
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {messages.length > 0 && (
+                    {(messages && messages.length > 0) && (
                       <>
                         <button onClick={shareChat} disabled={shareLoading}
                           style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>
@@ -3896,7 +3896,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                       </>
                     )}
                   </div>
-                  {messages.length > 0 && (
+                  {(messages && messages.length > 0) && (
                     <div style={{ position: "relative" }}>
                       <button onClick={() => {
                         const title = messages[0]?.content?.slice(0, 50) || "Saved Chat";
@@ -3909,11 +3909,11 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                       </button>
                     </div>
                   )}
-                  {savedChats.length > 0 && (
+                  {(savedChats && savedChats.length > 0) && (
                     <div style={{ position: "relative" }}>
                       <button onClick={() => setShowSavedChats(!showSavedChats)}
                         style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>
-                        📂 Saved ({savedChats.length})
+                        📂 Saved ({(savedChats || []).length})
                       </button>
                       {showSavedChats && (
                         <div style={{ position: "absolute", bottom: "calc(100% + 4px)", left: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, padding: 4, minWidth: 220, zIndex: 100, maxHeight: 300, overflowY: "auto" }}>
@@ -4130,9 +4130,9 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
               <>
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
                   {[
-                    { label: "Users", value: adminUsers.length, icon: "👥" },
-                    { label: "Messages", value: adminUsers.reduce((a, u) => a + (parseInt(u.total_messages) || 0), 0), icon: "💬" },
-                    { label: "Shared", value: adminUsers.reduce((a, u) => a + (parseInt(u.total_shared_chats) || 0), 0), icon: "🔗" },
+                    { label: "Users", value: (adminUsers || []).length, icon: "👥" },
+                    { label: "Messages", value: (adminUsers || []).reduce((a, u) => a + (parseInt(u.total_messages) || 0), 0), icon: "💬" },
+                    { label: "Shared", value: (adminUsers || []).reduce((a, u) => a + (parseInt(u.total_shared_chats) || 0), 0), icon: "🔗" },
                   ].map(stat => (
                     <div key={stat.label} style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 12, padding: 16, textAlign: "center" }}>
                       <div style={{ fontSize: 24, marginBottom: 8 }}>{stat.icon}</div>
@@ -4161,7 +4161,7 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
                   </div>
                 </div>
                 <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 12, padding: 16 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#f59e0b", marginBottom: 12 }}>👥 Users ({adminUsers.length})</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#f59e0b", marginBottom: 12 }}>👥 Users ({(adminUsers || []).length})</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 400, overflowY: "auto" }}>
                     {adminUsers.map(user => (
                       <div key={user.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #2d2d2d" }}>
