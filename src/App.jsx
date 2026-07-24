@@ -339,10 +339,12 @@ function useUsageTracking(userId, planId) {
   };
 
   const canSendMessage = () => {
+    if (plan.features.messagesPerDay === Infinity) return true;
     return usage.messagesToday < plan.features.messagesPerDay;
   };
 
   const canGenerateImage = () => {
+    if (plan.features.imagesPerDay === Infinity) return true;
     return usage.imagesToday < plan.features.imagesPerDay;
   };
 
@@ -1516,6 +1518,7 @@ function PricingPage({ t, th, uiLang, currentPlan, onSelectPlan, onBack, isMobil
 function UsageBar({ t, th, usageTracking, isMobile }) {
   const remaining = usageTracking.getRemaining();
   const isRTL = t.title === "ShardeumAI" && (t.landingTitle && t.landingTitle.includes("آینده"));
+  const isUnlimited = usageTracking.plan.features.messagesPerDay === Infinity;
 
   return (
     <div style={{
@@ -1541,16 +1544,18 @@ function UsageBar({ t, th, usageTracking, isMobile }) {
           flex: 1, height: 6, borderRadius: 3,
           background: th.border, overflow: "hidden",
         }}>
-          <div style={{
-            width: `${remaining.messagesPercent}%`,
-            height: "100%",
-            background: remaining.messagesPercent > 80 ? "#ef4444" : remaining.messagesPercent > 50 ? "#f59e0b" : "#10a37f",
-            borderRadius: 3,
-            transition: "width 0.3s ease",
-          }} />
+          {!isUnlimited && (
+            <div style={{
+              width: `${remaining.messagesPercent}%`,
+              height: "100%",
+              background: remaining.messagesPercent > 80 ? "#ef4444" : remaining.messagesPercent > 50 ? "#f59e0b" : "#10a37f",
+              borderRadius: 3,
+              transition: "width 0.3s ease",
+            }} />
+          )}
         </div>
         <span style={{ fontSize: 10, color: th.textMuted, whiteSpace: "nowrap" }}>
-          {remaining.messages} {t.usageRemaining}
+          {isUnlimited ? "∞" : `${remaining.messages} ${t.usageRemaining}`}
         </span>
       </div>
 
@@ -1563,16 +1568,18 @@ function UsageBar({ t, th, usageTracking, isMobile }) {
           flex: 1, height: 6, borderRadius: 3,
           background: th.border, overflow: "hidden",
         }}>
-          <div style={{
-            width: `${remaining.imagesPercent}%`,
-            height: "100%",
-            background: remaining.imagesPercent > 80 ? "#ef4444" : remaining.imagesPercent > 50 ? "#f59e0b" : "#10a37f",
-            borderRadius: 3,
-            transition: "width 0.3s ease",
-          }} />
+          {!isUnlimited && (
+            <div style={{
+              width: `${remaining.imagesPercent}%`,
+              height: "100%",
+              background: remaining.imagesPercent > 80 ? "#ef4444" : remaining.imagesPercent > 50 ? "#f59e0b" : "#10a37f",
+              borderRadius: 3,
+              transition: "width 0.3s ease",
+            }} />
+          )}
         </div>
         <span style={{ fontSize: 10, color: th.textMuted, whiteSpace: "nowrap" }}>
-          {remaining.images} {t.usageRemaining}
+          {isUnlimited ? "∞" : `${remaining.images} ${t.usageRemaining}`}
         </span>
       </div>
     </div>
@@ -2277,6 +2284,12 @@ function App() {
   // Load user-specific plan when session changes
   useEffect(() => {
     if (session?.user?.id && typeof window !== "undefined") {
+      // Admin gets automatic Enterprise access
+      if (session.user.email === ADMIN_EMAIL) {
+        setCurrentPlan("enterprise");
+        localStorage.setItem(`shardeumai-plan-${session.user.id}`, "enterprise");
+        return;
+      }
       const savedPlan = localStorage.getItem(`shardeumai-plan-${session.user.id}`);
       if (savedPlan && SUBSCRIPTION_PLANS[savedPlan]) {
         setCurrentPlan(savedPlan);
@@ -3461,7 +3474,8 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
             <div style={{ position: "relative" }}>
               <button onClick={() => {
                 const plan = SUBSCRIPTION_PLANS[currentPlan];
-                if (!plan.features.webSearch) {
+                const isAdmin = session?.user?.email === ADMIN_EMAIL;
+                if (!isAdmin && !plan.features.webSearch) {
                   alert("Web search is not available on your plan. Please upgrade.");
                   setShowPricing(true);
                   return;
