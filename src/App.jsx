@@ -171,6 +171,135 @@ const ADMIN_EMAIL = "farhad1984crypto@gmail.com";
 const SUPABASE_KEY = "sb_publishable_mxVEWWeumrPEedmA4yD0cg_ZMPgwWYU";
 const EDGE_FUNCTION_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co/functions/v1/chat";
 
+// ═══════════════════════════════════════════════════════════════
+// ═══ MULTI-TOKEN PAYMENT CONFIG ═══
+// ═══════════════════════════════════════════════════════════════
+
+// ⚠️ REPLACE WITH YOUR ACTUAL VALUES ⚠️
+const ADMIN_WALLET_ADDRESS = "0x0000000000000000000000000000000000000000"; // ← Your wallet that receives payments
+
+// Supported tokens for payment
+const SUPPORTED_TOKENS = [
+  {
+    id: "eth",
+    name: "ETH",
+    symbol: "ETH",
+    icon: "⟠",
+    isNative: true,
+    chainId: "0x1", // Ethereum Mainnet
+    chainName: "Ethereum Mainnet",
+    rpcUrls: ["https://eth.llamarpc.com"],
+    blockExplorer: "https://etherscan.io",
+    decimals: 18,
+    address: null, // Native token has no contract address
+  },
+  {
+    id: "bnb",
+    name: "BNB",
+    symbol: "BNB",
+    icon: "🔶",
+    isNative: true,
+    chainId: "0x38", // BNB Chain
+    chainName: "BNB Chain Mainnet",
+    rpcUrls: ["https://bsc-dataseed.binance.org/"],
+    blockExplorer: "https://bscscan.com",
+    decimals: 18,
+    address: null,
+  },
+  {
+    id: "sdai",
+    name: "ShardeumAI",
+    symbol: "SDAI",
+    icon: "💎",
+    isNative: false,
+    chainId: "0x38", // BNB Chain (change if different)
+    chainName: "BNB Chain Mainnet",
+    rpcUrls: ["https://bsc-dataseed.binance.org/"],
+    blockExplorer: "https://bscscan.com",
+    decimals: 18,
+    address: "0xc817A625F48Cc38ea210E0E3562ba6ac25f8f32F", // SDAI on BNB Chain (BEP20)
+  },
+  {
+    id: "usdt",
+    name: "Tether USDT",
+    symbol: "USDT",
+    icon: "💵",
+    isNative: false,
+    chainId: "0x38", // BNB Chain
+    chainName: "BNB Chain Mainnet",
+    rpcUrls: ["https://bsc-dataseed.binance.org/"],
+    blockExplorer: "https://bscscan.com",
+    decimals: 18,
+    address: "0x55d398326f99059fF775485246999027B3197955", // USDT on BSC
+  },
+  {
+    id: "usdc",
+    name: "USD Coin",
+    symbol: "USDC",
+    icon: "💲",
+    isNative: false,
+    chainId: "0x38", // BNB Chain
+    chainName: "BNB Chain Mainnet",
+    rpcUrls: ["https://bsc-dataseed.binance.org/"],
+    blockExplorer: "https://bscscan.com",
+    decimals: 18,
+    address: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", // USDC on BSC
+  },
+];
+
+// Prices in USD
+const PLAN_PRICES = {
+  pro: { monthly: 9.99, yearly: 99.99 },
+  enterprise: { monthly: 49.99, yearly: 499.99 },
+};
+
+// Token amounts (raw) - Admin should update based on current prices
+// These are examples. In production, fetch price from an oracle/API
+const TOKEN_AMOUNTS = {
+  eth: {
+    pro: { monthly: "3000000000000000", yearly: "30000000000000000" }, // ~$10 / ~$100
+    enterprise: { monthly: "15000000000000000", yearly: "150000000000000000" }, // ~$50 / ~$500
+  },
+  bnb: {
+    pro: { monthly: "20000000000000000", yearly: "200000000000000000" },
+    enterprise: { monthly: "100000000000000000", yearly: "1000000000000000000" },
+  },
+  sdai: {
+    pro: { monthly: "100000000000000000000000", yearly: "1000000000000000000000000" },
+    enterprise: { monthly: "500000000000000000000000", yearly: "5000000000000000000000000" },
+  },
+  usdt: {
+    pro: { monthly: "9990000000000000000", yearly: "99990000000000000000" },
+    enterprise: { monthly: "49990000000000000000", yearly: "499990000000000000000" },
+  },
+  usdc: {
+    pro: { monthly: "9990000000000000000", yearly: "99990000000000000000" },
+    enterprise: { monthly: "49990000000000000000", yearly: "499990000000000000000" },
+  },
+};
+
+// ERC20 transfer(address,uint256) signature
+const TRANSFER_SIG = "0xa9059cbb";
+
+function encodeTransferData(to, amount) {
+  const cleanTo = to.toLowerCase().replace("0x", "").padStart(64, "0");
+  const cleanAmount = BigInt(amount).toString(16).padStart(64, "0");
+  return TRANSFER_SIG + cleanTo + cleanAmount;
+}
+
+function formatTokenAmount(rawAmount, decimals = 18) {
+  const amt = BigInt(rawAmount);
+  const divisor = BigInt(10) ** BigInt(decimals);
+  const integer = (amt / divisor).toString();
+  const fraction = (amt % divisor).toString().padStart(decimals, "0").slice(0, 4);
+  return `${integer}.${fraction}`;
+}
+
+function getTokenById(id) {
+  return SUPPORTED_TOKENS.find(t => t.id === id);
+}
+
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const UI_LANGUAGES = [
@@ -1326,7 +1455,7 @@ function ImageGenerator({ t, isRTL, usageTracking }) {
 // ═══ PRICING PAGE COMPONENT ═══
 // ═══════════════════════════════════════════════════════════════
 
-function PricingPage({ t, th, uiLang, currentPlan, onSelectPlan, onBack, isMobile }) {
+function PricingPage({ t, th, uiLang, currentPlan, onSelectPlan, onBack, isMobile, walletAddress, isPayingToken, tokenPayError, tokenPaySuccess, lastTxHash, onPayWithToken, tokenBalances, session, selectedPaymentToken, onSelectPaymentToken, billingCycle }) {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const isRTL = uiLang === "fa" || uiLang === "ar";
 
@@ -1498,10 +1627,83 @@ function PricingPage({ t, th, uiLang, currentPlan, onSelectPlan, onBack, isMobil
                     color: isCurrent ? th.textMuted : "#fff",
                     fontSize: 15, fontWeight: 700, cursor: isCurrent ? "default" : "pointer",
                     transition: "all 0.2s",
+                    marginBottom: 10,
                   }}
                 >
                   {isCurrent ? t.pricingCurrent : t.pricingUpgrade}
                 </button>
+
+                {/* Token Payment Option */}
+                {plan.id !== "free" && walletAddress && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {/* Token Selector */}
+                    <select
+                      value={selectedPaymentToken}
+                      onChange={(e) => onSelectPaymentToken(e.target.value)}
+                      style={{
+                        width: "100%", padding: "8px 12px", borderRadius: 8,
+                        border: `1px solid ${th.border}`,
+                        background: th.inputBg,
+                        color: th.text,
+                        fontSize: 13, outline: "none", cursor: "pointer",
+                      }}
+                    >
+                      {SUPPORTED_TOKENS.map(token => (
+                        <option key={token.id} value={token.id}>
+                          {token.icon} {token.name} ({token.symbol}) — Balance: {formatTokenAmount(tokenBalances[token.id] || "0", token.decimals)} {token.symbol}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      onClick={() => onPayWithToken(plan.id, billingCycle, selectedPaymentToken)}
+                      disabled={isCurrent || isPayingToken}
+                      style={{
+                        width: "100%", padding: "10px 0", borderRadius: 12,
+                        border: `1px solid ${plan.color}`,
+                        background: "transparent",
+                        color: plan.color,
+                        fontSize: 13, fontWeight: 600,
+                        cursor: isCurrent || isPayingToken ? "default" : "pointer",
+                        transition: "all 0.2s",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                      }}
+                    >
+                      {isPayingToken ? (
+                        <>
+                          <span style={{ display: "inline-block", width: 14, height: 14, border: `2px solid ${plan.color}`, borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                          Processing...
+                        </>
+                      ) : (
+                        <>💎 Pay with {getTokenById(selectedPaymentToken)?.symbol || "Token"}</>
+                      )}
+                    </button>
+                  </div>
+                )}
+
+                {plan.id !== "free" && !walletAddress && session && (
+                  <div style={{
+                    width: "100%", padding: "10px 0", borderRadius: 12,
+                    border: `1px solid ${th.border}`,
+                    background: th.bgTertiary,
+                    color: th.textMuted,
+                    fontSize: 12, textAlign: "center",
+                  }}>
+                    🔗 Connect MetaMask to pay with crypto
+                  </div>
+                )}
+
+                {tokenPayError && (
+                  <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "#ef444422", color: "#ef4444", fontSize: 12, textAlign: "center" }}>
+                    ⚠️ {tokenPayError}
+                  </div>
+                )}
+
+                {tokenPaySuccess && lastTxHash && (
+                  <div style={{ marginTop: 8, padding: "8px 12px", borderRadius: 8, background: "#22c55e22", color: "#22c55e", fontSize: 12, textAlign: "center" }}>
+                    ✅ Payment sent! <a href={`https://bscscan.com/tx/${lastTxHash}`} target="_blank" rel="noopener noreferrer" style={{ color: "#22c55e", textDecoration: "underline" }}>View on Explorer</a>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -2313,6 +2515,14 @@ function App() {
   const [editText, setEditText] = useState("");
   const [replyingTo, setReplyingTo] = useState(null);
 
+  // ── Token Payment States ──
+  const [selectedPaymentToken, setSelectedPaymentToken] = useState("eth");
+  const [tokenBalances, setTokenBalances] = useState({});
+  const [isPayingToken, setIsPayingToken] = useState(false);
+  const [tokenPayError, setTokenPayError] = useState("");
+  const [tokenPaySuccess, setTokenPaySuccess] = useState(false);
+  const [lastTxHash, setLastTxHash] = useState("");
+
   const fileInputRef = useRef(null);
   const chatRef = useRef(null);
   const inputRef = useRef(null);
@@ -2403,6 +2613,33 @@ function App() {
       });
     } catch (e) {
       console.log("Add network error:", e);
+    }
+  }
+
+  async function addSDAIToMetaMask() {
+    if (!window.ethereum) {
+      alert("MetaMask not detected!");
+      return;
+    }
+    try {
+      const wasAdded = await window.ethereum.request({
+        method: "wallet_watchAsset",
+        params: {
+          type: "ERC20",
+          options: {
+            address: "0xc817A625F48Cc38ea210E0E3562ba6ac25f8f32F",
+            symbol: "SDAI",
+            decimals: 18,
+            image: "https://shardeumai.com/logo.png", // ← Replace with your token logo URL
+          },
+        },
+      });
+      if (wasAdded) {
+        alert("SDAI token added to MetaMask successfully!");
+      }
+    } catch (e) {
+      console.log("Add token error:", e);
+      alert("Failed to add SDAI: " + (e.message || "User rejected"));
     }
   }
 
@@ -2606,6 +2843,171 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
   }
 
 
+
+// ── Token Payment Functions ──
+  async function switchToChain(chainId, chainConfig) {
+    if (!window.ethereum) return false;
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId }],
+      });
+      return true;
+    } catch (switchError) {
+      if (switchError.code === 4902) {
+        try {
+          await window.ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: [{
+              chainId,
+              chainName: chainConfig.chainName,
+              nativeCurrency: { name: chainConfig.symbol, symbol: chainConfig.symbol, decimals: chainConfig.decimals },
+              rpcUrls: chainConfig.rpcUrls,
+              blockExplorerUrls: [chainConfig.blockExplorer],
+            }],
+          });
+          return true;
+        } catch { return false; }
+      }
+      return false;
+    }
+  }
+
+  async function fetchTokenBalance(tokenId) {
+    if (!walletAddress || !window.ethereum) return "0";
+    const token = getTokenById(tokenId);
+    if (!token) return "0";
+
+    try {
+      if (token.isNative) {
+        const balance = await window.ethereum.request({
+          method: "eth_getBalance",
+          params: [walletAddress, "latest"],
+        });
+        return parseInt(balance, 16).toString();
+      } else {
+        if (token.address === "0x0000000000000000000000000000000000000000") return "0";
+        const encoded = "0x70a08231" + walletAddress.toLowerCase().replace("0x", "").padStart(64, "0");
+        const result = await window.ethereum.request({
+          method: "eth_call",
+          params: [{ to: token.address, data: encoded }, "latest"],
+        });
+        return parseInt(result, 16).toString();
+      }
+    } catch (e) {
+      console.log("Token balance error:", e);
+      return "0";
+    }
+  }
+
+  async function fetchAllBalances() {
+    if (!walletAddress || !window.ethereum) return;
+    const balances = {};
+    for (const token of SUPPORTED_TOKENS) {
+      balances[token.id] = await fetchTokenBalance(token.id);
+    }
+    setTokenBalances(balances);
+  }
+
+  async function payWithToken(planId, billingCycle, tokenId) {
+    if (!walletAddress || !window.ethereum) {
+      alert("Please connect MetaMask first!");
+      return;
+    }
+
+    const token = getTokenById(tokenId);
+    if (!token) {
+      alert("Invalid token selected.");
+      return;
+    }
+
+    setIsPayingToken(true);
+    setTokenPayError("");
+    setTokenPaySuccess(false);
+    setLastTxHash("");
+
+    try {
+      // Switch to correct chain
+      const switched = await switchToChain(token.chainId, token);
+      if (!switched) throw new Error(`Failed to switch to ${token.chainName}. Please switch manually.`);
+
+      const currentChainId = await window.ethereum.request({ method: "eth_chainId" });
+      if (currentChainId !== token.chainId) {
+        throw new Error(`Please switch MetaMask to ${token.chainName}.`);
+      }
+
+      // Get amount for this token
+      const amount = TOKEN_AMOUNTS[tokenId]?.[planId]?.[billingCycle];
+      if (!amount) throw new Error("Payment amount not configured for this token.");
+
+      // Check balance
+      const balance = await fetchTokenBalance(tokenId);
+      if (BigInt(balance) < BigInt(amount)) {
+        throw new Error(`Insufficient ${token.symbol} balance. You need ${formatTokenAmount(amount, token.decimals)} ${token.symbol}.`);
+      }
+
+      let txHash;
+
+      if (token.isNative) {
+        // Native token transfer (ETH, BNB)
+        txHash = await window.ethereum.request({
+          method: "eth_sendTransaction",
+          params: [{
+            from: walletAddress,
+            to: ADMIN_WALLET_ADDRESS,
+            value: "0x" + BigInt(amount).toString(16),
+            gas: "0x249f0",
+          }],
+        });
+      } else {
+        // ERC20 token transfer
+        const data = encodeTransferData(ADMIN_WALLET_ADDRESS, amount);
+        txHash = await window.ethereum.request({
+          method: "eth_sendTransaction",
+          params: [{
+            from: walletAddress,
+            to: token.address,
+            data: data,
+            gas: "0x249f0",
+          }],
+        });
+      }
+
+      setLastTxHash(txHash);
+      setTokenPaySuccess(true);
+
+      // Upgrade plan
+      handleSelectPlan(planId);
+
+      // Save payment record
+      if (typeof window !== "undefined") {
+        const payments = JSON.parse(localStorage.getItem("shardeumai-payments") || "[]");
+        payments.unshift({
+          txHash,
+          planId,
+          billingCycle,
+          tokenId,
+          tokenSymbol: token.symbol,
+          amount,
+          wallet: walletAddress,
+          timestamp: Date.now(),
+        });
+        localStorage.setItem("shardeumai-payments", JSON.stringify(payments.slice(0, 50)));
+      }
+
+    } catch (err) {
+      setTokenPayError(err.message || "Payment failed. Please try again.");
+    } finally {
+      setIsPayingToken(false);
+    }
+  }
+
+  // Fetch all balances when wallet connects or switches
+  useEffect(() => {
+    if (walletAddress) {
+      fetchAllBalances();
+    }
+  }, [walletAddress, walletChainId]);
 
 // ── Plan Management ──
   function handleSelectPlan(planId) {
@@ -3179,6 +3581,17 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
         onSelectPlan={handleSelectPlan}
         onBack={() => setShowPricing(false)}
         isMobile={isMobile}
+        walletAddress={walletAddress}
+        isPayingToken={isPayingToken}
+        tokenPayError={tokenPayError}
+        tokenPaySuccess={tokenPaySuccess}
+        lastTxHash={lastTxHash}
+        onPayWithToken={payWithToken}
+        tokenBalances={tokenBalances}
+        session={session}
+        selectedPaymentToken={selectedPaymentToken}
+        onSelectPaymentToken={setSelectedPaymentToken}
+        billingCycle={billingCycle}
       />
     );
   }
@@ -4135,6 +4548,10 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                         <button onClick={addShardeumNetwork}
                           style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#10a37f", color: "#fff", fontSize: 11, cursor: "pointer" }}>
                           Add Shardeum Network
+                        </button>
+                        <button onClick={addSDAIToMetaMask}
+                          style={{ marginTop: 8, padding: "6px 12px", borderRadius: 6, border: "none", background: "#f6851b", color: "#fff", fontSize: 11, cursor: "pointer", marginLeft: 8 }}>
+                          ➕ Add SDAI Token
                         </button>
                       )}
                     </div>
