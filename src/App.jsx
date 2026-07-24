@@ -3633,7 +3633,6 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
         session={session}
         selectedPaymentToken={selectedPaymentToken}
         onSelectPaymentToken={setSelectedPaymentToken}
-        billingCycle={billingCycle}
       />
     );
   }
@@ -3949,7 +3948,18 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
               {webSearch && showSearchProvider && (
                 <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, padding: 4, zIndex: 100, minWidth: 100 }}>
                   {["tavily", "exa", "firecrawl"].map(p => (
-                    <button key={p} onClick={() => { setSearchProvider(p); setShowSearchProvider(false); }}
+                    <button key={p} onClick={() => {
+                      const plan = SUBSCRIPTION_PLANS[currentPlan];
+                      const isAdmin = session?.user?.email === ADMIN_EMAIL;
+                      if (!isAdmin && !plan.features.webSearch) {
+                        setShowSearchProvider(false);
+                        setWebSearch(false);
+                        setShowPricing(true);
+                        return;
+                      }
+                      setSearchProvider(p);
+                      setShowSearchProvider(false);
+                    }}
                       style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "none", background: searchProvider === p ? "#404040" : "transparent", color: searchProvider === p ? "#10a37f" : "#ececec", fontSize: 12, cursor: "pointer", textAlign: "left" }}>
                       {p.charAt(0).toUpperCase() + p.slice(1)}
                     </button>
