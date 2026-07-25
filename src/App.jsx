@@ -349,6 +349,7 @@ const SUBSCRIPTION_PLANS = {
     features: {
       messagesPerDay: 20,
       imagesPerDay: 3,
+      documentsPerDay: 3,
       models: ["llama-3.1-8b-instant"],
       webSearch: false,
       fileUpload: true,
@@ -369,6 +370,7 @@ const SUBSCRIPTION_PLANS = {
     features: {
       messagesPerDay: 200,
       imagesPerDay: 50,
+      documentsPerDay: 30,
       models: ["llama-3.1-8b-instant", "llama-3.3-70b", "qwen-32b"],
       webSearch: true,
       fileUpload: true,
@@ -390,6 +392,7 @@ const SUBSCRIPTION_PLANS = {
     features: {
       messagesPerDay: Infinity,
       imagesPerDay: Infinity,
+      documentsPerDay: Infinity,
       models: ["llama-3.1-8b-instant", "llama-3.3-70b", "qwen-32b"],
       webSearch: true,
       fileUpload: true,
@@ -419,9 +422,11 @@ function useUsageTracking(userId, planId) {
     return {
       messagesToday: 0,
       imagesToday: 0,
+      documentsToday: 0,
       lastResetDate: new Date().toDateString(),
       totalMessages: 0,
       totalImages: 0,
+      totalDocuments: 0,
       streakDays: 0,
       lastActiveDate: null,
     };
@@ -443,9 +448,11 @@ function useUsageTracking(userId, planId) {
       const resetUsage = {
         messagesToday: 0,
         imagesToday: 0,
+        documentsToday: 0,
         lastResetDate: today,
         totalMessages: usage.totalMessages,
         totalImages: usage.totalImages,
+        totalDocuments: usage.totalDocuments,
         streakDays: newStreak,
         lastActiveDate: today,
       };
@@ -457,9 +464,10 @@ function useUsageTracking(userId, planId) {
   const incrementUsage = (type) => {
     const newUsage = {
       ...usage,
-      [type === "message" ? "messagesToday" : "imagesToday"]: usage[type === "message" ? "messagesToday" : "imagesToday"] + 1,
+      [type === "message" ? "messagesToday" : type === "image" ? "imagesToday" : "documentsToday"]: usage[type === "message" ? "messagesToday" : type === "image" ? "imagesToday" : "documentsToday"] + 1,
       totalMessages: type === "message" ? usage.totalMessages + 1 : usage.totalMessages,
       totalImages: type === "image" ? usage.totalImages + 1 : usage.totalImages,
+      totalDocuments: type === "document" ? usage.totalDocuments + 1 : usage.totalDocuments,
       lastActiveDate: new Date().toDateString(),
     };
     setUsage(newUsage);
@@ -477,14 +485,21 @@ function useUsageTracking(userId, planId) {
     return usage.imagesToday < plan.features.imagesPerDay;
   };
 
+  const canUploadDocument = () => {
+    if (plan.features.documentsPerDay === Infinity) return true;
+    return usage.documentsToday < plan.features.documentsPerDay;
+  };
+
   const getRemaining = () => ({
     messages: Math.max(0, plan.features.messagesPerDay - usage.messagesToday),
     images: Math.max(0, plan.features.imagesPerDay - usage.imagesToday),
+    documents: Math.max(0, plan.features.documentsPerDay - usage.documentsToday),
     messagesPercent: Math.min(100, (usage.messagesToday / plan.features.messagesPerDay) * 100),
     imagesPercent: Math.min(100, (usage.imagesToday / plan.features.imagesPerDay) * 100),
+    documentsPercent: Math.min(100, (usage.documentsToday / plan.features.documentsPerDay) * 100),
   });
 
-  return { usage, incrementUsage, canSendMessage, canGenerateImage, getRemaining, plan };
+  return { usage, incrementUsage, canSendMessage, canGenerateImage, canUploadDocument, getRemaining, plan };
 }
 
 const translations = {
@@ -1784,6 +1799,30 @@ function UsageBar({ t, th, usageTracking, isMobile }) {
           {isUnlimited ? "∞" : `${remaining.images} ${t.usageRemaining}`}
         </span>
       </div>
+
+      {/* Documents Progress */}
+      <div style={{ flex: 1, minWidth: 120, display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 10, color: th.textMuted, whiteSpace: "nowrap" }}>
+          📄
+        </span>
+        <div style={{
+          flex: 1, height: 6, borderRadius: 3,
+          background: th.border, overflow: "hidden",
+        }}>
+          {!isUnlimited && (
+            <div style={{
+              width: `${remaining.documentsPercent}%`,
+              height: "100%",
+              background: remaining.documentsPercent > 80 ? "#ef4444" : remaining.documentsPercent > 50 ? "#f59e0b" : "#10a37f",
+              borderRadius: 3,
+              transition: "width 0.3s ease",
+            }} />
+          )}
+        </div>
+        <span style={{ fontSize: 10, color: th.textMuted, whiteSpace: "nowrap" }}>
+          {isUnlimited ? "∞" : `${remaining.documents} ${t.usageRemaining}`}
+        </span>
+      </div>
     </div>
   );
 }
@@ -2482,6 +2521,7 @@ function App() {
 
   // ── NEW: Subscription & Usage States ──
   const [currentPlan, setCurrentPlan] = useState("free");
+  const [showAPIKeys, setShowAPIKeys] = useState(false);
 
   // Load user-specific plan when session changes
   useEffect(() => {
@@ -3344,6 +3384,42 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
   }
 
   // ── File Upload ──
+  async function uploadDocumentForRAG(file, content) {
+    if (!session || !activeConvoId) return false;
+    if (!usageTracking.canUploadDocument()) {
+      alert("Document upload limit reached. Upgrade your plan.");
+      setShowPricing(true);
+      return false;
+    }
+
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=upload-document`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          conversation_id: activeConvoId,
+          file_name: file.name,
+          content: content,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        usageTracking.incrementUsage("document");
+        return true;
+      } else {
+        alert(data.error || "Upload failed");
+        return false;
+      }
+    } catch (e) {
+      console.error("RAG upload error:", e);
+      return false;
+    }
+  }
+
   function handleFileSelect(e) {
     const files = Array.from(e.target.files);
     const plan = SUBSCRIPTION_PLANS[currentPlan];
@@ -3354,14 +3430,26 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
         return;
       }
       const reader = new FileReader();
-      reader.onload = (event) => {
-        setUploadedFiles(prev => [...prev, {
+      reader.onload = async (event) => {
+        const fileData = {
           name: file.name,
           type: file.type,
           size: file.size,
           content: event.target.result,
           id: Date.now().toString() + Math.random().toString(36).slice(2),
-        }]);
+        };
+
+        // For text documents, also upload to RAG
+        const isTextDoc = file.type.includes("text") || file.name.endsWith(".md") || file.name.endsWith(".txt") || file.name.endsWith(".js") || file.name.endsWith(".py") || file.name.endsWith(".json") || file.name.endsWith(".csv") || file.name.endsWith(".html") || file.name.endsWith(".css");
+
+        if (isTextDoc && activeConvoId) {
+          const uploaded = await uploadDocumentForRAG(file, event.target.result);
+          if (uploaded) {
+            fileData.ragUploaded = true;
+          }
+        }
+
+        setUploadedFiles(prev => [...prev, fileData]);
       };
       if (file.type.startsWith("image/")) {
         reader.readAsDataURL(file);
@@ -3475,6 +3563,13 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
       });
 
       console.log("Response received:", response.status, response.statusText);
+
+      if (response.status === 429) {
+        const data = await response.json();
+        alert(`${t.usageLimitReached}\n${t.usageUpgradePrompt}`);
+        setShowPricing(true);
+        return;
+      }
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -3967,10 +4062,10 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 </div>
               )}
             </div>
-            {!isMobile && ["chat", "image", "profile", "api"].map(tab => (
+            {!isMobile && ["chat", "image", "profile", "api", "api-keys"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : "🔌"}
+                {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : tab === "api-keys" ? "🔑" : "🔌"}
               </button>
             ))}
             {!isMobile && session?.user?.email === ADMIN_EMAIL && (
@@ -3987,10 +4082,10 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
         {isMobile && (
           <div style={{ flexShrink: 0, borderBottom: "1px solid #2d2d2d" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", overflowX: "auto" }}>
-              {["chat", "image", "profile", "api"].map(tab => (
+              {["chat", "image", "profile", "api", "api-keys"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-                  {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : "🔌 API"}
+                  {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : tab === "api-keys" ? "🔑 API Keys" : "🔌 API"}
                 </button>
               ))}
               {session?.user?.email === ADMIN_EMAIL && (
@@ -4367,7 +4462,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                           background: "#404040", border: "1px solid #3d3d3d",
                           fontSize: 12, color: "#ececec",
                         }}>
-                          <span>{file.type.startsWith("image/") ? "🖼️" : "📄"}</span>
+                          <span>{file.type.startsWith("image/") ? "🖼️" : file.ragUploaded ? "📚" : "📄"}</span>
                           <span style={{ maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</span>
                           <span style={{ color: "#8e8ea0", fontSize: 10 }}>({formatFileSize(file.size)})</span>
                           <button type="button" onClick={() => removeUploadedFile(file.id)}
@@ -4756,6 +4851,8 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
 }`}</pre>
             </div>
           </div>
+        ) : activeTab === "api-keys" ? (
+          <APIKeyManager t={t} th={th} session={session} currentPlan={currentPlan} isMobile={isMobile} />
         ) : activeTab === "admin" && session?.user?.email === ADMIN_EMAIL ? (
           <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
             <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 700, color: "#f59e0b" }}>⚙️ Admin Dashboard</h2>
@@ -4833,6 +4930,422 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
     </div>
   );
 }
+
+function APIKeyManager({ t, th, session, currentPlan, isMobile }) {
+  const [keys, setKeys] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [showNewKey, setShowNewKey] = useState(null); // stores the newly created key (shown once)
+  const [usageData, setUsageData] = useState([]);
+  const [activeTab, setActiveTab] = useState("keys"); // keys | usage
+
+  const API_KEYS_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co/functions/v1/api-keys";
+
+  async function fetchKeys() {
+    if (!session) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_KEYS_URL}?action=list`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (data.keys) setKeys(data.keys);
+    } catch (e) {
+      console.error("Fetch keys error:", e);
+    }
+    setLoading(false);
+  }
+
+  async function fetchUsage() {
+    if (!session) return;
+    try {
+      const res = await fetch(`${API_KEYS_URL}?action=usage`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (data.usage) setUsageData(data.usage);
+    } catch (e) {
+      console.error("Fetch usage error:", e);
+    }
+  }
+
+  useEffect(() => {
+    fetchKeys();
+    fetchUsage();
+  }, [session]);
+
+  async function createKey() {
+    if (!newKeyName.trim()) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_KEYS_URL}?action=create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          name: newKeyName,
+          permissions: ["chat", "image"],
+          expires_in_days: 365,
+        }),
+      });
+      const data = await res.json();
+      if (data.key) {
+        setShowNewKey(data.key);
+        setNewKeyName("");
+        fetchKeys();
+      } else if (data.error) {
+        alert(data.error);
+      }
+    } catch (e) {
+      alert("Failed to create API key");
+    }
+    setLoading(false);
+  }
+
+  async function revokeKey(keyId) {
+    if (!confirm("Are you sure you want to revoke this API key? This action cannot be undone.")) return;
+    try {
+      const res = await fetch(`${API_KEYS_URL}?action=revoke`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ key_id: keyId }),
+      });
+      if (res.ok) fetchKeys();
+    } catch (e) {
+      console.error("Revoke error:", e);
+    }
+  }
+
+  function copyToClipboard(text) {
+    navigator.clipboard?.writeText(text);
+    alert("API Key copied to clipboard!");
+  }
+
+  const isRTL = t.landingTitle && t.landingTitle.includes("آینده");
+  const canCreateKey = currentPlan !== "free";
+
+  return (
+    <div style={{
+      padding: isMobile ? "16px" : "24px",
+      maxWidth: 720,
+      margin: "0 auto",
+      direction: isRTL ? "rtl" : "ltr",
+    }}>
+      <h2 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 700, color: th.text }}>
+        🔌 API Keys
+      </h2>
+
+      {/* Tabs */}
+      <div style={{
+        display: "flex",
+        gap: 4,
+        background: th.bgSecondary,
+        borderRadius: 10,
+        padding: 4,
+        marginBottom: 20,
+      }}>
+        {[
+          { id: "keys", label: "API Keys", icon: "🔑" },
+          { id: "usage", label: "Usage", icon: "📊" },
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              flex: 1,
+              padding: "8px 16px",
+              borderRadius: 8,
+              border: "none",
+              background: activeTab === tab.id ? th.primary : "transparent",
+              color: activeTab === tab.id ? "#fff" : th.textSecondary,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            {tab.icon} {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "keys" && (
+        <>
+          {/* New Key Form */}
+          {canCreateKey ? (
+            <div style={{
+              background: th.bgSecondary,
+              border: `1px solid ${th.border}`,
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 20,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: th.text, marginBottom: 10 }}>
+                Create New API Key
+              </div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  value={newKeyName}
+                  onChange={e => setNewKeyName(e.target.value)}
+                  placeholder="Key name (e.g., Production, Development)"
+                  style={{
+                    flex: 1,
+                    padding: "10px 12px",
+                    borderRadius: 8,
+                    border: `1px solid ${th.border}`,
+                    background: th.inputBg,
+                    color: th.text,
+                    fontSize: 13,
+                    outline: "none",
+                  }}
+                />
+                <button
+                  onClick={createKey}
+                  disabled={!newKeyName.trim() || loading}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: 8,
+                    border: "none",
+                    background: th.primary,
+                    color: "#fff",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: newKeyName.trim() && !loading ? "pointer" : "default",
+                    opacity: newKeyName.trim() && !loading ? 1 : 0.5,
+                  }}
+                >
+                  {loading ? "..." : "Create"}
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: th.textMuted, marginTop: 8 }}>
+                💡 Pro: 3 keys | Enterprise: 10 keys
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              background: th.bgSecondary,
+              border: `1px solid ${th.border}`,
+              borderRadius: 12,
+              padding: 20,
+              marginBottom: 20,
+              textAlign: "center",
+            }}>
+              <div style={{ fontSize: 32, marginBottom: 8 }}>🔒</div>
+              <div style={{ fontSize: 14, color: th.text, fontWeight: 600, marginBottom: 4 }}>
+                API Keys require Pro plan
+              </div>
+              <div style={{ fontSize: 12, color: th.textSecondary, marginBottom: 12 }}>
+                Upgrade to generate API keys for external integrations
+              </div>
+              <button
+                onClick={() => { /* setShowPricing(true) */ }}
+                style={{
+                  padding: "8px 20px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: "#3b82f6",
+                  color: "#fff",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Upgrade to Pro
+              </button>
+            </div>
+          )}
+
+          {/* Show New Key (once) */}
+          {showNewKey && (
+            <div style={{
+              background: "#10a37f11",
+              border: "1px solid #10a37f44",
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 20,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#10a37f", marginBottom: 8 }}>
+                ✅ API Key Created — Copy it now!
+              </div>
+              <div style={{
+                background: "#0d0d0d",
+                borderRadius: 8,
+                padding: "10px 12px",
+                fontFamily: "monospace",
+                fontSize: 12,
+                color: th.text,
+                wordBreak: "break-all",
+                marginBottom: 10,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 8,
+              }}>
+                <span>{showNewKey.key}</span>
+                <button
+                  onClick={() => copyToClipboard(showNewKey.key)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    border: "1px solid #10a37f44",
+                    background: "transparent",
+                    color: "#10a37f",
+                    fontSize: 11,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Copy
+                </button>
+              </div>
+              <div style={{ fontSize: 11, color: "#f59e0b" }}>
+                ⚠️ This key will only be shown once. Store it securely.
+              </div>
+              <button
+                onClick={() => setShowNewKey(null)}
+                style={{
+                  marginTop: 10,
+                  padding: "6px 14px",
+                  borderRadius: 6,
+                  border: "1px solid #10a37f44",
+                  background: "transparent",
+                  color: "#10a37f",
+                  fontSize: 12,
+                  cursor: "pointer",
+                }}
+              >
+                I've copied it
+              </button>
+            </div>
+          )}
+
+          {/* Keys List */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {keys.length === 0 && !loading && (
+              <div style={{ textAlign: "center", padding: 30, color: th.textMuted, fontSize: 13 }}>
+                No API keys yet
+              </div>
+            )}
+            {keys.map(key => (
+              <div
+                key={key.id}
+                style={{
+                  background: th.bgSecondary,
+                  border: `1px solid ${th.border}`,
+                  borderRadius: 12,
+                  padding: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: "50%",
+                  background: key.is_active ? "#10a37f22" : "#ef444422",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 16,
+                  flexShrink: 0,
+                }}>
+                  {key.is_active ? "🔑" : "🚫"}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: th.text }}>
+                    {key.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: th.textMuted, marginTop: 2 }}>
+                    {key.key_prefix}•••••••• | Used: {key.used_this_month}/{key.monthly_quota} this month
+                  </div>
+                  <div style={{ fontSize: 11, color: th.textMuted, marginTop: 2 }}>
+                    {key.permissions.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(", ")}
+                    {key.expires_at && ` | Expires: ${new Date(key.expires_at).toLocaleDateString()}`}
+                  </div>
+                </div>
+                <button
+                  onClick={() => revokeKey(key.id)}
+                  disabled={!key.is_active}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    border: "1px solid #ef444444",
+                    background: "transparent",
+                    color: "#ef4444",
+                    fontSize: 12,
+                    cursor: key.is_active ? "pointer" : "default",
+                    opacity: key.is_active ? 1 : 0.5,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Revoke
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {activeTab === "usage" && (
+        <div style={{
+          background: th.bgSecondary,
+          border: `1px solid ${th.border}`,
+          borderRadius: 12,
+          padding: 16,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: th.text, marginBottom: 12 }}>
+            Recent Usage (Last 30 Days)
+          </div>
+          {usageData.length === 0 ? (
+            <div style={{ textAlign: "center", padding: 20, color: th.textMuted, fontSize: 13 }}>
+              No usage data yet
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {usageData.slice(0, 50).map((log, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "8px 10px",
+                    background: th.bgTertiary,
+                    borderRadius: 6,
+                    fontSize: 12,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: log.success !== false ? "#10a37f" : "#ef4444",
+                      display: "inline-block",
+                    }} />
+                    <span style={{ color: th.text }}>{log.action}</span>
+                    {log.model && <span style={{ color: th.textMuted }}>({log.model})</span>}
+                  </div>
+                  <div style={{ color: th.textMuted, fontSize: 11 }}>
+                    {new Date(log.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 
 const inputStyle = { padding: "11px 14px", borderRadius: 10, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 14, outline: "none" };
 const oauthBtnStyle = { padding: "10px 0", borderRadius: 10, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 };
