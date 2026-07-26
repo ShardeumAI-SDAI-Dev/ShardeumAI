@@ -365,7 +365,7 @@ function moderateContent(text, userLang = "en") {
   Object.entries(MODERATION_PATTERNS).forEach(([lang, words]) => {
     words.forEach(word => {
       // Whole word matching with word boundaries
-      const regex = new RegExp("(?:^|[^\w])" + word.replace(/[.*+?^${}()|[\]\]/g, "\$&") + "(?:[^\w]|$)", "i");
+      const regex = new RegExp("(?:^|[^\w])" + word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:[^\w]|$)", "i");
       if (regex.test(lowerText)) {
         violations.push({ word, lang, severity: word.length <= 3 ? MODERATION_LEVELS.MILD : MODERATION_LEVELS.SEVERE });
         maxLevel = Math.max(maxLevel, word.length <= 3 ? MODERATION_LEVELS.MILD : MODERATION_LEVELS.SEVERE);
