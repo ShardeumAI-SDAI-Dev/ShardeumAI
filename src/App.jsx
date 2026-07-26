@@ -299,6 +299,148 @@ function getTokenById(id) {
   return SUPPORTED_TOKENS.find(t => t.id === id);
 }
 
+// ═══════════════════════════════════════════════════════════════
+// ═══ CONTENT MODERATION SYSTEM ═══
+// ═══════════════════════════════════════════════════════════════
+
+// Simple client-side pattern detection (first line of defense)
+// Server-side moderation runs in Edge Function (second line)
+const MODERATION_PATTERNS = {
+  // Persian blocked words/phrases
+  fa: [
+    "کیر", "کون", "جنده", "حروم", "حرومزاده", "مادرجنده", "پدرسوخته",
+    "لعنت", "ننت", "ننه", "ممه", "سکس", "ساک", "آلت", "تجاوز",
+    "فحش", "کص", "کس", "کوس", "کون", "جق", "دودول", "سکسی",
+  ],
+  // English blocked words/phrases
+  en: [
+    "fuck", "shit", "bitch", "asshole", "bastard", "damn", "cunt",
+    "dick", "pussy", "cock", "whore", "slut", "rape", "kill yourself",
+    "suicide", "self-harm", "cutting", "die", "kys", "nigger", "nigga",
+    "faggot", "retard", "chink", "spic", "wetback", "coon", "tranny",
+  ],
+  // Arabic blocked words
+  ar: [
+    "زب", "طيز", "كس", "قحبة", "شرموطة", "خول", "لوطي", "منيك",
+    "نيك", "سكس", "عاهرة", "جماع", "لواط", "سحاق", "عري",
+  ],
+  // Russian blocked words
+  ru: [
+    "блядь", "сука", "хуй", "пизда", "ебать", "нахуй", "пидор",
+    "мудак", "гандон", "шлюха", "тварь", "ублюдок", "долбоеб",
+  ],
+  // Spanish blocked words
+  es: [
+    "puta", "mierda", "joder", "coño", "polla", "cabron", "maricon",
+    "gilipollas", "chingar", "pendejo", "verga", "nalgas", "tetas",
+  ],
+  // French blocked words
+  fr: [
+    "putain", "merde", "connard", "salope", "enculé", "bite", "couille",
+    "niquer", "baiser", "pédé", "tarlouze", "con", "conne", "foutre",
+  ],
+  // German blocked words
+  de: [
+    "scheiße", "ficken", "hure", "schlampe", "arsch", "schwuchtel",
+    "wichser", "verdammt", "kotzen", "pimmel", "titten", "muschi",
+  ],
+};
+
+// Severity levels
+const MODERATION_LEVELS = {
+  CLEAN: 0,
+  MILD: 1,      // Warning, log it
+  SEVERE: 2,    // Block message, log + notify admin
+  CRITICAL: 3,  // Block + temp ban consideration
+};
+
+function moderateContent(text, userLang = "en") {
+  if (!text || typeof text !== "string") return { clean: true, level: MODERATION_LEVELS.CLEAN, violations: [] };
+
+  const lowerText = text.toLowerCase();
+  const violations = [];
+  let maxLevel = MODERATION_LEVELS.CLEAN;
+
+  // Check all language patterns (multilingual detection)
+  Object.entries(MODERATION_PATTERNS).forEach(([lang, words]) => {
+    words.forEach(word => {
+      // Whole word matching with word boundaries
+      const regex = new RegExp("(?:^|[^\w])" + word.replace(/[.*+?^${}()|[\]\]/g, "\$&") + "(?:[^\w]|$)", "i");
+      if (regex.test(lowerText)) {
+        violations.push({ word, lang, severity: word.length <= 3 ? MODERATION_LEVELS.MILD : MODERATION_LEVELS.SEVERE });
+        maxLevel = Math.max(maxLevel, word.length <= 3 ? MODERATION_LEVELS.MILD : MODERATION_LEVELS.SEVERE);
+      }
+    });
+  });
+
+  // Check for prompt injection patterns
+  const injectionPatterns = [
+    /ignore previous instructions/i,
+    /disregard (all )?prior (instructions|prompts)/i,
+    /you are now .* instead/i,
+    /system prompt leak/i,
+    /reveal your (system|initial) prompt/i,
+    /show me your instructions/i,
+    /bypass (filter|restriction|safety)/i,
+    /jailbreak/i,
+    /DAN (mode|do anything now)/i,
+    /ignore (safety|content|moderation)/i,
+    /فراموش کن|نادیده بگیر|رد کن|لغو کن/i,
+    /olvidar|ignorar|desactivar/i,
+    /ignorer|oublier|désactiver/i,
+    /vergessen|ignorieren|deaktivieren/i,
+    /забыть|игнорировать|отключить/i,
+    /نسيت|تجاهل|إلغاء/i,
+  ];
+
+  injectionPatterns.forEach(pattern => {
+    if (pattern.test(text)) {
+      violations.push({ word: "PROMPT_INJECTION", lang: "system", severity: MODERATION_LEVELS.SEVERE });
+      maxLevel = Math.max(maxLevel, MODERATION_LEVELS.SEVERE);
+    }
+  });
+
+  // Check for excessive repetition (spam)
+  const repeatedChars = /(.){15,}/;
+  if (repeatedChars.test(text)) {
+    violations.push({ word: "SPAM_REPETITION", lang: "system", severity: MODERATION_LEVELS.MILD });
+    maxLevel = Math.max(maxLevel, MODERATION_LEVELS.MILD);
+  }
+
+  // Check for ALL CAPS shouting
+  const capsRatio = (text.match(/[A-Z]/g) || []).length / (text.match(/[A-Za-z]/g) || []).length;
+  if (capsRatio > 0.8 && text.length > 20) {
+    violations.push({ word: "EXCESSIVE_CAPS", lang: "system", severity: MODERATION_LEVELS.MILD });
+    maxLevel = Math.max(maxLevel, MODERATION_LEVELS.MILD);
+  }
+
+  return {
+    clean: violations.length === 0,
+    level: maxLevel,
+    violations,
+    score: violations.length,
+  };
+}
+
+async function serverModerationCheck(text, sessionToken) {
+  try {
+    const res = await fetch(`${EDGE_FUNCTION_URL}?action=moderate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${sessionToken}`,
+      },
+      body: JSON.stringify({ text }),
+    });
+    if (!res.ok) return { clean: true, serverError: true };
+    return await res.json();
+  } catch (e) {
+    return { clean: true, serverError: true };
+  }
+}
+
+
+
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -1218,6 +1360,16 @@ const translations = {
   },
 };
 
+// ── Moderation UI Strings ──
+const MODERATION_STRINGS = {
+  fa: { blocked: "پیام شما به دلیل محتوای نامناسب مسدود شد", warning: "پیام شما حاوی محتوای نامناسب است", confirm: "آیا مطمئنید؟", injection: "تلاش برای تزریق دستور", spam: "اسپم شناسایی شد" },
+  en: { blocked: "Your message was blocked due to inappropriate content", warning: "Your message contains inappropriate content", confirm: "Are you sure?", injection: "Prompt injection detected", spam: "Spam detected" },
+  es: { blocked: "Mensaje bloqueado por contenido inapropiado", warning: "Contenido inapropiado detectado", confirm: "¿Está seguro?", injection: "Inyección detectada", spam: "Spam detectado" },
+  fr: { blocked: "Message bloqué pour contenu inapproprié", warning: "Contenu inapproprié détecté", confirm: "Êtes-vous sûr?", injection: "Injection détectée", spam: "Spam détecté" },
+  de: { blocked: "Nachricht blockiert", warning: "Unangemessener Inhalt", confirm: "Sind Sie sicher?", injection: "Injection erkannt", spam: "Spam erkannt" },
+  ru: { blocked: "Сообщение заблокировано", warning: "Неприемлемый контент", confirm: "Вы уверены?", injection: "Инъекция обнаружена", spam: "Спам обнаружен" },
+  ar: { blocked: "تم حظر الرسالة", warning: "محتوى غير لائق", confirm: "هل أنت متأكد؟", injection: "حقن الأوامر", spam: "رسائل مزعجة" },
+};
 
 // ── Syntax Highlighting ──
 const KC = { kw:"#c678dd", str:"#98c379", cmt:"#5c6370", num:"#d19a66", tag:"#e06c75", attr:"#d19a66" };
@@ -2504,6 +2656,8 @@ function App() {
   const [adminUsers, setAdminUsers] = useState([]);
   const [adminSettings, setAdminSettings] = useState({});
   const [adminLoading, setAdminLoading] = useState(false);
+  const [moderationLogs, setModerationLogs] = useState([]);
+  const [showModerationLogs, setShowModerationLogs] = useState(false);
   const [pushEnabled, setPushEnabled] = useState(false);
   const [isOffline, setIsOffline] = useState(typeof navigator !== "undefined" ? !navigator.onLine : false);
   const [isListening, setIsListening] = useState(false);
@@ -3184,6 +3338,23 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     });
   }
 
+  async function fetchModerationLogs() {
+    if (!session?.access_token || !isAdmin) return;
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=admin-moderation-logs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) setModerationLogs(data.logs || []);
+    } catch (e) {
+      console.error("Moderation logs error:", e);
+    }
+  }
+
   async function loadAdminData() {
     // Server-side admin verification via Edge Function
     if (!session?.access_token) return;
@@ -3533,6 +3704,44 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     if (e && e.preventDefault) e.preventDefault();
     if (!input.trim() && (!uploadedFiles || uploadedFiles.length === 0) && !isRegenerate) return;
     if (!session) { alert("Please login first."); return; }
+
+    // ── Content Moderation (Client-side first pass) ──
+    if (!isRegenerate && input.trim()) {
+      const modResult = moderateContent(input.trim(), uiLang);
+      if (!modResult.clean) {
+        const isSevere = modResult.level >= MODERATION_LEVELS.SEVERE;
+        const violationWords = modResult.violations.map(v => v.word).join(", ");
+
+        // Log moderation event (async, don't block)
+        if (session?.access_token) {
+          fetch(`${EDGE_FUNCTION_URL}?action=moderation-log`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              text_preview: input.trim().slice(0, 100),
+              violations: modResult.violations,
+              level: modResult.level,
+              client_timestamp: Date.now(),
+            }),
+          }).catch(() => {});
+        }
+
+        if (isSevere) {
+          const modStrings = MODERATION_STRINGS[uiLang] || MODERATION_STRINGS.en;
+          alert(`⚠️ ${modStrings.blocked}. ${isRTL ? "لطفاً قوانین استفاده را رعایت کنید." : "Please follow our usage guidelines."}`);
+          setInput("");
+          return;
+        } else {
+          // Mild warning - allow but warn
+          const modStrings2 = MODERATION_STRINGS[uiLang] || MODERATION_STRINGS.en;
+          const proceed = window.confirm(`⚠️ ${modStrings2.warning} (${violationWords}). ${modStrings2.confirm}`);
+          if (!proceed) return;
+        }
+      }
+    }
 
     // Check usage limit
     if (!usageTracking.canSendMessage() && !isRegenerate) {
@@ -4911,6 +5120,18 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
               <div style={{ color: "#8e8ea0", textAlign: "center", padding: 40 }}>Loading...</div>
             ) : (
               <>
+                <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+                  <button onClick={() => { setShowModerationLogs(false); }}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: !showModerationLogs ? "#f59e0b" : "#2d2d2d", color: "#fff", fontSize: 12, cursor: "pointer" }}>
+                    📊 Dashboard
+                  </button>
+                  <button onClick={() => { setShowModerationLogs(true); fetchModerationLogs(); }}
+                    style={{ padding: "8px 16px", borderRadius: 8, border: "none", background: showModerationLogs ? "#ef4444" : "#2d2d2d", color: "#fff", fontSize: 12, cursor: "pointer" }}>
+                    🛡️ Moderation Logs ({moderationLogs.length})
+                  </button>
+                </div>
+
+                {!showModerationLogs && (
                 <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
                   {[
                     { label: "Users", value: (adminUsers || []).length, icon: "👥" },
@@ -4924,6 +5145,41 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
                     </div>
                   ))}
                 </div>
+                )}
+
+                {showModerationLogs && (
+                  <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 12, padding: 16, marginBottom: 20 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#ef4444", marginBottom: 12 }}>
+                      🛡️ Content Moderation Logs
+                    </div>
+                    {moderationLogs.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: 30, color: "#8e8ea0", fontSize: 13 }}>
+                        No moderation events recorded yet
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 400, overflowY: "auto" }}>
+                        {moderationLogs.map((log, i) => (
+                          <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #2d2d2d" }}>
+                            <div style={{ width: 32, height: 32, borderRadius: "50%", background: log.level >= 2 ? "#ef444422" : "#f59e0b22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>
+                              {log.level >= 2 ? "🚫" : "⚠️"}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 12, color: "#ececec" }}>{log.text_preview}</div>
+                              <div style={{ fontSize: 10, color: "#5c5c5c", marginTop: 2 }}>
+                                {log.violations?.map(v => v.word).join(", ")} | {new Date(log.created_at).toLocaleString()}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 11, color: log.level >= 2 ? "#ef4444" : "#f59e0b", fontWeight: 600 }}>
+                              {log.level >= 2 ? "BLOCKED" : "WARNING"}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!showModerationLogs && (
                 <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 12, padding: 16, marginBottom: 20 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#f59e0b", marginBottom: 12 }}>🔧 System Settings</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -4966,6 +5222,7 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
                     ))}
                   </div>
                 </div>
+                )}
               </>
             )}
           </div>
