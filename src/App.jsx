@@ -1362,14 +1362,222 @@ const translations = {
 
 // ── Moderation UI Strings ──
 const MODERATION_STRINGS = {
-  fa: { blocked: "پیام شما به دلیل محتوای نامناسب مسدود شد", warning: "پیام شما حاوی محتوای نامناسب است", confirm: "آیا مطمئنید؟", injection: "تلاش برای تزریق دستور", spam: "اسپم شناسایی شد" },
-  en: { blocked: "Your message was blocked due to inappropriate content", warning: "Your message contains inappropriate content", confirm: "Are you sure?", injection: "Prompt injection detected", spam: "Spam detected" },
+  fa: { blocked: "پیام شما به دلیل محتوای نامناسب مسدود شد", warning: "پیام شما حاوی محتوای نامناسب است", confirm: "آیا مطمئنید؟", injection: "تلاش برای تزریق دستور شناسایی شد", spam: "اسپم شناسایی شد" },
+  en: { blocked: "Your message was blocked due to inappropriate content", warning: "Your message contains inappropriate content", confirm: "Are you sure?", injection: "Prompt injection attempt detected", spam: "Spam detected" },
   es: { blocked: "Mensaje bloqueado por contenido inapropiado", warning: "Contenido inapropiado detectado", confirm: "¿Está seguro?", injection: "Inyección detectada", spam: "Spam detectado" },
   fr: { blocked: "Message bloqué pour contenu inapproprié", warning: "Contenu inapproprié détecté", confirm: "Êtes-vous sûr?", injection: "Injection détectée", spam: "Spam détecté" },
   de: { blocked: "Nachricht blockiert", warning: "Unangemessener Inhalt", confirm: "Sind Sie sicher?", injection: "Injection erkannt", spam: "Spam erkannt" },
   ru: { blocked: "Сообщение заблокировано", warning: "Неприемлемый контент", confirm: "Вы уверены?", injection: "Инъекция обнаружена", spam: "Спам обнаружен" },
   ar: { blocked: "تم حظر الرسالة", warning: "محتوى غير لائق", confirm: "هل أنت متأكد؟", injection: "حقن الأوامر", spam: "رسائل مزعجة" },
 };
+
+// ── GDPR UI Strings ──
+const GDPR_STRINGS = {
+  fa: { deleteTitle: "حذف حساب", deleteWarning: "این عمل غیرقابل بازگشت است. تمام داده‌های شما حذف خواهد شد.", deleteConfirm: "DELETE را تایپ کنید", deleteBtn: "حذف دائمی", exportTitle: "خروجی داده‌ها", exportDesc: "تمام داده‌های شما را دریافت کنید", exportBtn: "دریافت خروجی", privacyTitle: "حریم خصوصی", privacyDesc: "داده‌های شما رمزنگاری شده و فقط شما به آن دسترسی دارید." },
+  en: { deleteTitle: "Delete Account", deleteWarning: "This action is irreversible. All your data will be permanently deleted.", deleteConfirm: "Type DELETE to confirm", deleteBtn: "Permanently Delete", exportTitle: "Export Data", exportDesc: "Download all your data", exportBtn: "Export My Data", privacyTitle: "Privacy", privacyDesc: "Your data is encrypted and only accessible by you." },
+  es: { deleteTitle: "Eliminar Cuenta", deleteWarning: "Esta acción es irreversible.", deleteConfirm: "Escribe DELETE", deleteBtn: "Eliminar Permanentemente", exportTitle: "Exportar Datos", exportDesc: "Descargar todos tus datos", exportBtn: "Exportar", privacyTitle: "Privacidad", privacyDesc: "Tus datos están encriptados." },
+  fr: { deleteTitle: "Supprimer le Compte", deleteWarning: "Cette action est irréversible.", deleteConfirm: "Tapez DELETE", deleteBtn: "Supprimer Définitivement", exportTitle: "Exporter les Données", exportDesc: "Télécharger toutes vos données", exportBtn: "Exporter", privacyTitle: "Confidentialité", privacyDesc: "Vos données sont cryptées." },
+  de: { deleteTitle: "Konto Löschen", deleteWarning: "Diese Aktion ist unwiderruflich.", deleteConfirm: "DELETE eingeben", deleteBtn: "Dauerhaft Löschen", exportTitle: "Daten Exportieren", exportDesc: "Alle Daten herunterladen", exportBtn: "Exportieren", privacyTitle: "Datenschutz", privacyDesc: "Ihre Daten sind verschlüsselt." },
+  ru: { deleteTitle: "Удалить Аккаунт", deleteWarning: "Это действие необратимо.", deleteConfirm: "Введите DELETE", deleteBtn: "Удалить Навсегда", exportTitle: "Экспорт Данных", exportDesc: "Скачать все данные", exportBtn: "Экспорт", privacyTitle: "Конфиденциальность", privacyDesc: "Ваши данные зашифрованы." },
+  ar: { deleteTitle: "حذف الحساب", deleteWarning: "هذا الإجراء لا رجعة فيه.", deleteConfirm: "اكتب DELETE", deleteBtn: "حذف نهائي", exportTitle: "تصدير البيانات", exportDesc: "تحميل جميع بياناتك", exportBtn: "تصدير", privacyTitle: "الخصوصية", privacyDesc: "بياناتك مشفرة." },
+};
+};
+// ═══════════════════════════════════════════════════════════════
+// ═══ INPUT SANITIZATION & XSS PROTECTION ═══
+// ═══════════════════════════════════════════════════════════════
+
+// Simple but effective HTML sanitizer (no external dependency)
+function sanitizeHTML(html) {
+  if (!html || typeof html !== "string") return "";
+
+  const allowedTags = new Set([
+    "p", "br", "hr", "div", "span", "h1", "h2", "h3", "h4", "h5", "h6",
+    "strong", "b", "em", "i", "u", "s", "strike", "del", "ins",
+    "a", "img", "ul", "ol", "li", "blockquote", "code", "pre",
+    "table", "thead", "tbody", "tr", "th", "td", "sup", "sub",
+  ]);
+
+  const allowedAttrs = new Set([
+    "href", "src", "alt", "title", "class", "id", "target", "rel",
+    "width", "height", "align", "colspan", "rowspan",
+  ]);
+
+  // Block dangerous URL schemes
+  const dangerousSchemes = /^(javascript|data|vbscript|file):/i;
+
+  // Parse and clean
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+
+  function cleanNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return document.createTextNode(node.textContent);
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return document.createTextNode("");
+    }
+
+    const tag = node.tagName.toLowerCase();
+    if (!allowedTags.has(tag)) {
+      // Replace disallowed tag with its text content
+      const fragment = document.createDocumentFragment();
+      node.childNodes.forEach(child => {
+        fragment.appendChild(cleanNode(child));
+      });
+      return fragment;
+    }
+
+    const clean = document.createElement(tag);
+
+    // Copy allowed attributes
+    Array.from(node.attributes).forEach(attr => {
+      const name = attr.name.toLowerCase();
+      let value = attr.value;
+
+      if (!allowedAttrs.has(name)) return;
+
+      // Sanitize URLs
+      if (name === "href" || name === "src") {
+        value = value.trim();
+        if (dangerousSchemes.test(value)) {
+          value = "#blocked";
+        }
+        // Force target="_blank" and rel="noopener noreferrer" for links
+        if (tag === "a") {
+          clean.setAttribute("target", "_blank");
+          clean.setAttribute("rel", "noopener noreferrer");
+        }
+      }
+
+      // Block event handlers
+      if (name.startsWith("on")) return;
+
+      clean.setAttribute(name, value);
+    });
+
+    // Recursively clean children
+    Array.from(node.childNodes).forEach(child => {
+      clean.appendChild(cleanNode(child));
+    });
+
+    return clean;
+  }
+
+  const fragment = document.createDocumentFragment();
+  Array.from(doc.body.childNodes).forEach(node => {
+    fragment.appendChild(cleanNode(node));
+  });
+
+  const container = document.createElement("div");
+  container.appendChild(fragment);
+  return container.innerHTML;
+}
+
+// Sanitize markdown content before rendering
+function sanitizeMarkdown(content) {
+  if (!content || typeof content !== "string") return "";
+
+  let sanitized = content;
+
+  // Block javascript: URLs in markdown links
+  sanitized = sanitized.replace(
+    /\[([^\]]*)\]\((javascript|data|vbscript|file):[^)]*\)/gi,
+    "[$1](#blocked)"
+  );
+
+  // Block HTML event handlers
+  sanitized = sanitized.replace(
+    /on\w+\s*=\s*["'][^"']*["']/gi,
+    ""
+  );
+
+  // Block iframe, object, embed tags
+  sanitized = sanitized.replace(
+    /<(iframe|object|embed|form|input|textarea|script|style)[^>]*>.*?<\/>/gis,
+    ""
+  );
+
+  // Block self-closing dangerous tags
+  sanitized = sanitized.replace(
+    /<(iframe|object|embed|form|input|textarea|script|style)[^>]*\/?>/gi,
+    ""
+  );
+
+  return sanitized;
+}
+
+// Advanced Prompt Injection Detection (beyond moderation)
+function detectPromptInjection(text) {
+  if (!text || typeof text !== "string") return { detected: false, score: 0 };
+
+  const patterns = [
+    // Direct instruction overrides
+    { regex: /ignore\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|commands?)/i, weight: 10 },
+    { regex: /disregard\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|commands?)/i, weight: 10 },
+    { regex: /forget\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|commands?)/i, weight: 10 },
+    { regex: /override\s+(all\s+)?(previous|prior|above)\s+(instructions?|prompts?|commands?)/i, weight: 10 },
+
+    // Role switching
+    { regex: /you\s+are\s+now\s+(a\s+)?(?!ShardeumAI|SDAI|helpful)/i, weight: 8 },
+    { regex: /from\s+now\s+on\s+you\s+are/i, weight: 8 },
+    { regex: /act\s+as\s+(a\s+)?(?!helpful|friendly)/i, weight: 6 },
+    { regex: /pretend\s+to\s+be/i, weight: 6 },
+
+    // System prompt extraction
+    { regex: /reveal\s+your\s+(system|initial|original|hidden)\s+(prompt|instructions?)/i, weight: 9 },
+    { regex: /show\s+me\s+your\s+(system|initial|original|hidden)\s+(prompt|instructions?)/i, weight: 9 },
+    { regex: /what\s+are\s+your\s+(instructions?|prompts?|system\s+prompt)/i, weight: 7 },
+    { regex: /repeat\s+(after\s+me|the\s+following|your\s+instructions?)/i, weight: 7 },
+    { regex: /print\s+your\s+(system|initial|original)\s+(prompt|instructions?)/i, weight: 9 },
+
+    // Jailbreak patterns
+    { regex: /DAN\s+(mode|do\s+anything\s+now)/i, weight: 10 },
+    { regex: /jailbreak/i, weight: 9 },
+    { regex: /bypass\s+(filter|restriction|safety|moderation)/i, weight: 9 },
+    { regex: /disable\s+(filter|restriction|safety|moderation)/i, weight: 9 },
+    { regex: /turn\s+off\s+(filter|restriction|safety|moderation)/i, weight: 9 },
+
+    // Delimiter tricks
+    { regex: /```\s*system/i, weight: 8 },
+    { regex: /<system>/i, weight: 8 },
+    { regex: /\[SYSTEM\]/i, weight: 8 },
+    { regex: /\{\{system\}\}/i, weight: 8 },
+
+    // Multi-language patterns
+    { regex: /فراموش\s+کن|نادیده\s+بگیر|رد\s+کن|لغو\s+کن/i, weight: 8 },
+    { regex: /olvidar|ignorar|desactivar\s+filtr/i, weight: 8 },
+    { regex: /ignorer|oublier|désactiver\s+filtre/i, weight: 8 },
+    { regex: /vergessen|ignorieren|deaktivieren\s+filter/i, weight: 8 },
+    { regex: /забыть|игнорировать|отключить\s+фильтр/i, weight: 8 },
+    { regex: /نسيت|تجاهل|إلغاء\s+فلتر/i, weight: 8 },
+  ];
+
+  let score = 0;
+  const matches = [];
+
+  patterns.forEach(({ regex, weight }) => {
+    if (regex.test(text)) {
+      score += weight;
+      matches.push(regex.source.slice(0, 30));
+    }
+  });
+
+  // Check for repeated delimiter patterns (common injection technique)
+  const delimiterCount = (text.match(/```/g) || []).length;
+  if (delimiterCount >= 4) {
+    score += 5;
+    matches.push("excessive_delimiters");
+  }
+
+  return {
+    detected: score >= 10,
+    score,
+    matches,
+    risk: score >= 20 ? "CRITICAL" : score >= 10 ? "HIGH" : score >= 5 ? "MEDIUM" : "LOW",
+  };
+}
+
+
 
 // ── Syntax Highlighting ──
 const KC = { kw:"#c678dd", str:"#98c379", cmt:"#5c6370", num:"#d19a66", tag:"#e06c75", attr:"#d19a66" };
@@ -2677,6 +2885,18 @@ function App() {
   const [currentPlan, setCurrentPlan] = useState("free");
   const [showAPIKeys, setShowAPIKeys] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDataExport, setShowDataExport] = useState(false);
+  const [exportData, setExportData] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [totpEnabled, setTotpEnabled] = useState(false);
+  const [totpSetup, setTotpSetup] = useState(null);
+  const [totpCode, setTotpCode] = useState("");
+  const [showTOTPSetup, setShowTOTPSetup] = useState(false);
+  const [showTOTPVerify, setShowTOTPVerify] = useState(false);
+  const [isTOTPLoading, setIsTOTPLoading] = useState(false);
 
   // ── Secure Admin Verification ──
   // NEVER trust client-side email for admin checks.
@@ -3447,6 +3667,182 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     setActiveConvoId(null);
   }
 
+  // ── GDPR: Delete Account ──
+  async function handleDeleteAccount() {
+    if (!session?.access_token) return;
+    if (deleteConfirmText !== "DELETE") {
+      alert(isRTL ? "لطفاً DELETE را دقیقاً تایپ کنید." : "Please type DELETE exactly to confirm.");
+      return;
+    }
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=delete-account`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Clear all local data
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(`shardeumai-usage-${session.user.id}`);
+          localStorage.removeItem(`shardeumai-plan-${session.user.id}`);
+          localStorage.removeItem(`shardeumai-referrals-${session.user.id}`);
+          localStorage.removeItem(`shardeumai-custom-instructions`);
+          localStorage.removeItem("shardeumai-wallets");
+          localStorage.removeItem("shardeumai-wallet-auth");
+          localStorage.removeItem("shardeumai-payments");
+        }
+        await supabase.auth.signOut();
+        setSession(null);
+        setMessages([]);
+        setConversations([]);
+        setActiveConvoId(null);
+        alert(isRTL ? "حساب شما با موفقیت حذف شد." : "Your account has been successfully deleted.");
+      } else {
+        alert(data.error || (isRTL ? "خطا در حذف حساب." : "Error deleting account."));
+      }
+    } catch (e) {
+      alert(isRTL ? "خطا در حذف حساب." : "Error deleting account.");
+    }
+    setIsDeleting(false);
+    setShowDeleteConfirm(false);
+    setDeleteConfirmText("");
+  }
+
+  // ── GDPR: Export Data ──
+  async function handleExportData() {
+    if (!session?.access_token) return;
+    setIsExporting(true);
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=export-data`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setExportData(data);
+        setShowDataExport(true);
+      } else {
+        alert(data.error || (isRTL ? "خطا در خروجی داده." : "Error exporting data."));
+      }
+    } catch (e) {
+      alert(isRTL ? "خطا در خروجی داده." : "Error exporting data.");
+    }
+    setIsExporting(false);
+  }
+
+  function downloadExportJSON() {
+    if (!exportData) return;
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `shardeumai-data-export-${session.user.id.slice(0, 8)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ── 2FA / TOTP ──
+  async function setupTOTP() {
+    if (!session?.access_token) return;
+    setIsTOTPLoading(true);
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=totp-setup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTotpSetup(data);
+        setShowTOTPSetup(true);
+      } else {
+        alert(data.error || "TOTP setup failed");
+      }
+    } catch (e) {
+      alert("TOTP setup error");
+    }
+    setIsTOTPLoading(false);
+  }
+
+  async function verifyAndEnableTOTP() {
+    if (!session?.access_token || !totpCode || totpCode.length !== 6) return;
+    setIsTOTPLoading(true);
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=totp-verify`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ code: totpCode, secret: totpSetup?.secret }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTotpEnabled(true);
+        setShowTOTPSetup(false);
+        setTotpCode("");
+        alert(isRTL ? "احراز هویت دو مرحله‌ای فعال شد." : "Two-factor authentication enabled.");
+      } else {
+        alert(data.error || (isRTL ? "کد نامعتبر." : "Invalid code."));
+      }
+    } catch (e) {
+      alert("Verification error");
+    }
+    setIsTOTPLoading(false);
+  }
+
+  async function disableTOTP() {
+    if (!session?.access_token) return;
+    const confirm = window.confirm(isRTL ? "آیا مطمئنید؟ امنیت حساب کاهش می‌یابد." : "Are you sure? This reduces account security.");
+    if (!confirm) return;
+    setIsTOTPLoading(true);
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=totp-disable`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTotpEnabled(false);
+        alert(isRTL ? "احراز هویت دو مرحله‌ای غیرفعال شد." : "Two-factor authentication disabled.");
+      }
+    } catch (e) {
+      alert("Error disabling TOTP");
+    }
+    setIsTOTPLoading(false);
+  }
+
+  // ── Server-side Rate Limit Check ──
+  async function checkServerRateLimit(type = "message") {
+    if (!session?.access_token) return { allowed: true };
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=rate-limit-check`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ type, plan: currentPlan }),
+      });
+      const data = await res.json();
+      return data;
+    } catch (e) {
+      return { allowed: true, serverError: true };
+    }
+  }
+
   // ── Message Actions ──
   function handleEditMessage(idx) {
     if (messages[idx].role !== "user") return;
@@ -3708,6 +4104,15 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     // ── Content Moderation (Client-side first pass) ──
     if (!isRegenerate && input.trim()) {
       const modResult = moderateContent(input.trim(), uiLang);
+
+      // ── Prompt Injection Detection ──
+      const injectionResult = detectPromptInjection(input.trim());
+      if (injectionResult.detected) {
+        const modStrings = MODERATION_STRINGS[uiLang] || MODERATION_STRINGS.en;
+        alert(`🛡️ ${modStrings.moderationPromptInjection || "Prompt injection detected"}. ${isRTL ? "این پیام به دلیل تلاش برای دستکاری سیستم مسدود شد." : "This message was blocked due to system manipulation attempt."}`);
+        setInput("");
+        return;
+      }
       if (!modResult.clean) {
         const isSevere = modResult.level >= MODERATION_LEVELS.SEVERE;
         const violationWords = modResult.violations.map(v => v.word).join(", ");
@@ -3743,11 +4148,21 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
       }
     }
 
-    // Check usage limit
+    // Check client-side usage limit
     if (!usageTracking.canSendMessage() && !isRegenerate) {
       alert(t.usageLimitReached + "\n" + t.usageUpgradePrompt);
       setShowPricing(true);
       return;
+    }
+
+    // ── Server-side Rate Limit Check ──
+    if (!isRegenerate) {
+      const rateCheck = await checkServerRateLimit("message");
+      if (!rateCheck.allowed) {
+        alert((isRTL ? "محدودیت سرور: " : "Server limit: ") + (rateCheck.message || t.usageLimitReached));
+        if (rateCheck.upgradeRequired) setShowPricing(true);
+        return;
+      }
     }
 
     // Check model availability for plan
@@ -4616,6 +5031,8 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
+                              // Sanitize all text content
+                              text: ({children}) => <>{sanitizeMarkdown(String(children))}</>,
                               p: ({children}) => <p style={{ margin: "0 0 10px", lineHeight: 1.8 }}>{children}</p>,
                               ul: ({children}) => <ul style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ul>,
                               ol: ({children}) => <ol style={{ margin: "8px 0", paddingInlineStart: 20, lineHeight: 1.8 }}>{children}</ol>,
@@ -4627,7 +5044,10 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                                 if (inline) return <code style={{ background: "#2d2d2d", padding: "2px 6px", borderRadius: 4, fontSize: 12, fontFamily: "JetBrains Mono, monospace", color: "#10a37f", direction: "ltr", display: "inline-block" }}>{children}</code>;
                                 return <CodeBlock code={codeStr} lang={lang} />;
                               },
-                              a: ({href, children}) => <a href={href} target="_blank" rel="noopener noreferrer" style={{ color: "#10a37f", textDecoration: "underline" }}>{children}</a>,
+                              a: ({href, children}) => {
+                                const safeHref = href && !/^(javascript|data|vbscript|file):/i.test(href) ? href : "#blocked";
+                                return <a href={safeHref} target="_blank" rel="noopener noreferrer" style={{ color: "#10a37f", textDecoration: "underline" }}>{children}</a>;
+                              },
                               blockquote: ({children}) => <blockquote style={{ borderInlineStart: "3px solid #10a37f", margin: "8px 0", paddingInlineStart: 12, color: "#8e8ea0", fontStyle: "italic" }}>{children}</blockquote>,
                               table: ({children}) => <div style={{ overflowX: "auto", margin: "10px 0" }}><table style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>{children}</table></div>,
                               th: ({children}) => <th style={{ border: "1px solid #3d3d3d", padding: "8px 12px", background: "#2d2d2d", textAlign: "left", color: "#ececec" }}>{children}</th>,
@@ -5038,6 +5458,150 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
             </div>
 
             </div>
+            {/* GDPR: Data Export & Delete Account */}
+            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 12 }}>
+                🔒 {(() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return g.privacyTitle; })()}
+              </div>
+              <div style={{ fontSize: 12, color: "#8e8ea0", marginBottom: 12 }}>
+                {(() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return g.privacyDesc; })()}
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                <button onClick={handleExportData} disabled={isExporting}
+                  style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #10a37f", background: "#10a37f22", color: "#10a37f", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  {isExporting ? "..." : (() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return "📥 " + g.exportBtn; })()}
+                </button>
+                <button onClick={() => setShowDeleteConfirm(true)}
+                  style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #ef4444", background: "#ef444422", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  {(() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return "🗑 " + g.deleteTitle; })()}
+                </button>
+              </div>
+            </div>
+
+            {/* Export Data Modal */}
+            {showDataExport && exportData && (
+              <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+                <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 24, maxWidth: 500, width: "100%", maxHeight: "80vh", overflow: "auto" }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: "#10a37f", marginBottom: 12 }}>
+                    {(() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return g.exportTitle; })()}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8e8ea0", marginBottom: 16 }}>
+                    {(() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return g.exportDesc; })()}
+                  </div>
+                  <pre style={{ background: "#0d0d0d", borderRadius: 8, padding: 12, fontSize: 11, color: "#8e8ea0", overflow: "auto", maxHeight: 300, marginBottom: 16 }}>
+                    {JSON.stringify(exportData, null, 2)}
+                  </pre>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={downloadExportJSON}
+                      style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "none", background: "#10a37f", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                      ⬇ Download JSON
+                    </button>
+                    <button onClick={() => setShowDataExport(false)}
+                      style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 13, cursor: "pointer" }}>
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Delete Account Confirmation Modal */}
+            {showDeleteConfirm && (
+              <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+                <div style={{ background: "#171717", border: "1px solid #ef4444", borderRadius: 16, padding: 24, maxWidth: 420, width: "100%" }}>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: "#ef4444", marginBottom: 8 }}>
+                    {(() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return g.deleteTitle; })()}
+                  </div>
+                  <div style={{ fontSize: 13, color: "#e0746a", marginBottom: 16, lineHeight: 1.6 }}>
+                    {(() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return g.deleteWarning; })()}
+                  </div>
+                  <div style={{ fontSize: 12, color: "#8e8ea0", marginBottom: 8 }}>
+                    {(() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return g.deleteConfirm; })()}
+                  </div>
+                  <input
+                    value={deleteConfirmText}
+                    onChange={e => setDeleteConfirmText(e.target.value)}
+                    placeholder="DELETE"
+                    style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #ef4444", background: "#0d0d0d", color: "#ececec", fontSize: 14, outline: "none", marginBottom: 16, textTransform: "uppercase" }}
+                  />
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={handleDeleteAccount} disabled={isDeleting || deleteConfirmText !== "DELETE"}
+                      style={{ flex: 1, padding: "12px 0", borderRadius: 10, border: "none", background: deleteConfirmText === "DELETE" ? "#ef4444" : "#5c5c5c", color: "#fff", fontSize: 14, fontWeight: 700, cursor: deleteConfirmText === "DELETE" ? "pointer" : "default" }}>
+                      {isDeleting ? "..." : (() => { const g = GDPR_STRINGS[uiLang] || GDPR_STRINGS.en; return g.deleteBtn; })()}
+                    </button>
+                    <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); }}
+                      style={{ padding: "12px 20px", borderRadius: 10, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 14, cursor: "pointer" }}>
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 2FA / TOTP Card */}
+            <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 12 }}>
+                🔐 {isRTL ? "احراز هویت دو مرحله‌ای" : "Two-Factor Authentication"}
+              </div>
+              <div style={{ fontSize: 12, color: "#8e8ea0", marginBottom: 12 }}>
+                {totpEnabled 
+                  ? (isRTL ? "✅ فعال — حساب شما ایمن‌تر است." : "✅ Enabled — Your account is more secure.")
+                  : (isRTL ? "❌ غیرفعال — توصیه می‌شود فعال کنید." : "❌ Disabled — Recommended for security.")
+                }
+              </div>
+              {totpEnabled ? (
+                <button onClick={disableTOTP} disabled={isTOTPLoading}
+                  style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid #ef4444", background: "#ef444422", color: "#ef4444", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  {isTOTPLoading ? "..." : (isRTL ? "غیرفعال کردن 2FA" : "Disable 2FA")}
+                </button>
+              ) : (
+                <button onClick={setupTOTP} disabled={isTOTPLoading}
+                  style={{ padding: "10px 20px", borderRadius: 10, border: "none", background: "#10a37f", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+                  {isTOTPLoading ? "..." : (isRTL ? "فعال‌سازی 2FA" : "Enable 2FA")}
+                </button>
+              )}
+
+              {/* TOTP Setup Modal */}
+              {showTOTPSetup && totpSetup && (
+                <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+                  <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 24, maxWidth: 400, width: "100%", textAlign: "center" }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: "#10a37f", marginBottom: 12 }}>
+                      {isRTL ? "تنظیم احراز هویت دو مرحله‌ای" : "Setup Two-Factor Authentication"}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#8e8ea0", marginBottom: 16 }}>
+                      {isRTL 
+                        ? "این QR Code را با Google Authenticator یا Authy اسکن کنید."
+                        : "Scan this QR Code with Google Authenticator or Authy."
+                      }
+                    </div>
+                    {totpSetup.qrCode && (
+                      <img src={totpSetup.qrCode} alt="TOTP QR" style={{ width: 180, height: 180, borderRadius: 12, marginBottom: 16, background: "#fff", padding: 8 }} />
+                    )}
+                    <div style={{ fontSize: 11, color: "#5c5c5c", marginBottom: 8, fontFamily: "monospace", wordBreak: "break-all" }}>
+                      {totpSetup.secret}
+                    </div>
+                    <input
+                      value={totpCode}
+                      onChange={e => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder={isRTL ? "کد ۶ رقمی" : "6-digit code"}
+                      maxLength={6}
+                      style={{ width: "100%", padding: "12px", borderRadius: 10, border: "1px solid #3d3d3d", background: "#0d0d0d", color: "#ececec", fontSize: 18, textAlign: "center", letterSpacing: 8, outline: "none", marginBottom: 16, fontFamily: "monospace" }}
+                    />
+                    <div style={{ display: "flex", gap: 10 }}>
+                      <button onClick={verifyAndEnableTOTP} disabled={isTOTPLoading || totpCode.length !== 6}
+                        style={{ flex: 1, padding: "12px 0", borderRadius: 10, border: "none", background: totpCode.length === 6 ? "#10a37f" : "#5c5c5c", color: "#fff", fontSize: 14, fontWeight: 700, cursor: totpCode.length === 6 ? "pointer" : "default" }}>
+                        {isTOTPLoading ? "..." : (isRTL ? "تأیید و فعال‌سازی" : "Verify & Enable")}
+                      </button>
+                      <button onClick={() => { setShowTOTPSetup(false); setTotpCode(""); }}
+                        style={{ padding: "12px 20px", borderRadius: 10, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 14, cursor: "pointer" }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Plan Info Card */}
             <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#ececec", marginBottom: 12 }}>
