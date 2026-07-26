@@ -167,7 +167,6 @@ if (typeof document !== "undefined" && !document.getElementById("app-animations"
 }
 
 const SUPABASE_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co";
-const ADMIN_EMAIL = "farhad1984crypto@gmail.com"; // ⚠️ LEGACY: Do NOT use for client-side auth. Use server-side Edge Function checks instead.
 const SUPABASE_KEY = "sb_publishable_mxVEWWeumrPEedmA4yD0cg_ZMPgwWYU";
 const EDGE_FUNCTION_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co/functions/v1/chat";
 
