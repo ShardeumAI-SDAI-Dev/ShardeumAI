@@ -5199,6 +5199,9 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
                     ))}
                   </div>
                 </div>
+                )}
+
+                {!showModerationLogs && (
                 <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 12, padding: 16 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#f59e0b", marginBottom: 12 }}>👥 Users ({(adminUsers || []).length})</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 400, overflowY: "auto" }}>
