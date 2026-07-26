@@ -1381,7 +1381,6 @@ const GDPR_STRINGS = {
   ru: { deleteTitle: "Удалить Аккаунт", deleteWarning: "Это действие необратимо.", deleteConfirm: "Введите DELETE", deleteBtn: "Удалить Навсегда", exportTitle: "Экспорт Данных", exportDesc: "Скачать все данные", exportBtn: "Экспорт", privacyTitle: "Конфиденциальность", privacyDesc: "Ваши данные зашифрованы." },
   ar: { deleteTitle: "حذف الحساب", deleteWarning: "هذا الإجراء لا رجعة فيه.", deleteConfirm: "اكتب DELETE", deleteBtn: "حذف نهائي", exportTitle: "تصدير البيانات", exportDesc: "تحميل جميع بياناتك", exportBtn: "تصدير", privacyTitle: "الخصوصية", privacyDesc: "بياناتك مشفرة." },
 };
-};
 // ═══════════════════════════════════════════════════════════════
 // ═══ INPUT SANITIZATION & XSS PROTECTION ═══
 // ═══════════════════════════════════════════════════════════════
