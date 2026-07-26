@@ -4096,6 +4096,16 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
   // ── Main Send Handler ──
   async function handleSend(e, isRegenerate = false) {
     if (e && e.preventDefault) e.preventDefault();
+
+    // Block web search if not allowed
+    if (webSearch && !isRegenerate && !isAdmin) {
+      const plan = SUBSCRIPTION_PLANS[currentPlan];
+      if (!plan.features.webSearch) {
+        setShowPricing(true);
+        return;
+      }
+    }
+
     if (!input.trim() && (!uploadedFiles || uploadedFiles.length === 0) && !isRegenerate) return;
     if (!session) { alert("Please login first."); return; }
 
@@ -4696,16 +4706,14 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
             <div style={{ position: "relative" }}>
               <button onClick={() => {
                 const plan = SUBSCRIPTION_PLANS[currentPlan];
-                const isAdmin = isAdmin;
                 if (!isAdmin && !plan.features.webSearch) {
-                  alert("Web search is not available on your plan. Please upgrade.");
                   setShowPricing(true);
                   return;
                 }
                 setWebSearch(!webSearch);
               }}
                 style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                🔍
+                🔍 {webSearch ? "ON" : "OFF"}
               </button>
               {webSearch && (
                 <button onClick={() => setShowSearchProvider(!showSearchProvider)}
@@ -4718,7 +4726,6 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                   {["tavily", "exa", "firecrawl"].map(p => (
                     <button key={p} onClick={() => {
                       const plan = SUBSCRIPTION_PLANS[currentPlan];
-                      const isAdmin = isAdmin;
                       if (!isAdmin && !plan.features.webSearch) {
                         setShowSearchProvider(false);
                         setWebSearch(false);
@@ -4773,6 +4780,18 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 title={t.streaming}
                 style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
                 🔄 {t.streaming}
+              </button>
+              <button onClick={() => {
+                  const plan = SUBSCRIPTION_PLANS[currentPlan];
+                  if (!isAdmin && !plan.features.webSearch) {
+                    setShowPricing(true);
+                    return;
+                  }
+                  setWebSearch(!webSearch);
+                }}
+                title={t.webSearch}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                🔍 Web {webSearch ? "ON" : "OFF"}
               </button>
               <button onClick={() => { calculateAnalytics(); setShowAnalytics(!showAnalytics); }}
                 title={t.analytics}
