@@ -167,7 +167,7 @@ if (typeof document !== "undefined" && !document.getElementById("app-animations"
 }
 
 const SUPABASE_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co";
-const ADMIN_EMAIL = "farhad1984crypto@gmail.com";
+const ADMIN_EMAIL = "farhad1984crypto@gmail.com"; // ⚠️ LEGACY: Do NOT use for client-side auth. Use server-side Edge Function checks instead.
 const SUPABASE_KEY = "sb_publishable_mxVEWWeumrPEedmA4yD0cg_ZMPgwWYU";
 const EDGE_FUNCTION_URL = "https://zzolokpbjkrvkyaubcoq.supabase.co/functions/v1/chat";
 
@@ -2522,12 +2522,42 @@ function App() {
   // ── NEW: Subscription & Usage States ──
   const [currentPlan, setCurrentPlan] = useState("free");
   const [showAPIKeys, setShowAPIKeys] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // ── Secure Admin Verification ──
+  // NEVER trust client-side email for admin checks.
+  // Admin status is verified server-side via Edge Function.
+  async function checkAdminStatus() {
+    if (!session?.access_token) {
+      setIsAdmin(false);
+      return;
+    }
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=admin-check`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await res.json();
+      setIsAdmin(!!data.isAdmin);
+    } catch (e) {
+      console.error("Admin check error:", e);
+      setIsAdmin(false);
+    }
+  }
+
+  useEffect(() => {
+    if (session) checkAdminStatus();
+    else setIsAdmin(false);
+  }, [session?.access_token]);
 
   // Load user-specific plan when session changes
   useEffect(() => {
     if (session?.user?.id && typeof window !== "undefined") {
-      // Admin gets automatic Enterprise access
-      if (session.user.email === ADMIN_EMAIL) {
+      // Admin gets automatic Enterprise access (verified server-side)
+      if (isAdmin) {
         setCurrentPlan("enterprise");
         localStorage.setItem(`shardeumai-plan-${session.user.id}`, "enterprise");
         return;
@@ -3155,12 +3185,33 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
   }
 
   async function loadAdminData() {
-    if (session?.user?.email !== ADMIN_EMAIL) return;
+    // Server-side admin verification via Edge Function
+    if (!session?.access_token) return;
     setAdminLoading(true);
-    const { data: users } = await supabase.from("admin_user_stats").select("*").order("created_at", { ascending: false });
-    if (users) setAdminUsers(users);
-    const { data: settings } = await supabase.from("system_settings").select("*");
-    if (settings) { const obj = {}; settings.forEach(s => { obj[s.key] = s.value; }); setAdminSettings(obj); }
+    try {
+      const res = await fetch(`${EDGE_FUNCTION_URL}?action=admin-dashboard`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAdminUsers(data.users || []);
+        const obj = {};
+        (data.settings || []).forEach(s => { obj[s.key] = s.value; });
+        setAdminSettings(obj);
+      } else {
+        setAdminUsers([]);
+        setAdminSettings({});
+        console.warn("Admin access denied:", data.error);
+      }
+    } catch (e) {
+      console.error("Admin data error:", e);
+      setAdminUsers([]);
+      setAdminSettings({});
+    }
     setAdminLoading(false);
   }
 
@@ -4023,7 +4074,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
             <div style={{ position: "relative" }}>
               <button onClick={() => {
                 const plan = SUBSCRIPTION_PLANS[currentPlan];
-                const isAdmin = session?.user?.email === ADMIN_EMAIL;
+                const isAdmin = isAdmin;
                 if (!isAdmin && !plan.features.webSearch) {
                   alert("Web search is not available on your plan. Please upgrade.");
                   setShowPricing(true);
@@ -4045,7 +4096,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                   {["tavily", "exa", "firecrawl"].map(p => (
                     <button key={p} onClick={() => {
                       const plan = SUBSCRIPTION_PLANS[currentPlan];
-                      const isAdmin = session?.user?.email === ADMIN_EMAIL;
+                      const isAdmin = isAdmin;
                       if (!isAdmin && !plan.features.webSearch) {
                         setShowSearchProvider(false);
                         setWebSearch(false);
@@ -4068,7 +4119,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : tab === "api-keys" ? "🔑" : "🔌"}
               </button>
             ))}
-            {!isMobile && session?.user?.email === ADMIN_EMAIL && (
+            {!isMobile && isAdmin && (
               <button onClick={() => { setActiveTab("admin"); loadAdminData(); }}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === "admin" ? "#404040" : "transparent", color: activeTab === "admin" ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
                 ⚙️
@@ -4088,7 +4139,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                   {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : tab === "api-keys" ? "🔑 API Keys" : "🔌 API"}
                 </button>
               ))}
-              {session?.user?.email === ADMIN_EMAIL && (
+              {isAdmin && (
                 <button onClick={() => { setActiveTab("admin"); loadAdminData(); }}
                   style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === "admin" ? "#404040" : "transparent", color: activeTab === "admin" ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
                   ⚙️ Admin
@@ -4853,7 +4904,7 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
           </div>
         ) : activeTab === "api-keys" ? (
           <APIKeyManager t={t} th={th} session={session} currentPlan={currentPlan} isMobile={isMobile} />
-        ) : activeTab === "admin" && session?.user?.email === ADMIN_EMAIL ? (
+        ) : activeTab === "admin" && isAdmin ? (
           <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
             <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 700, color: "#f59e0b" }}>⚙️ Admin Dashboard</h2>
             {adminLoading ? (
@@ -4880,12 +4931,12 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
                       <div key={key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
                         <span style={{ fontSize: 12, color: "#8e8ea0" }}>{key}</span>
                         {value === "true" || value === "false" ? (
-                          <button onClick={() => { const nv = value === "true" ? "false" : "true"; supabase.from("system_settings").upsert({ key, value: nv, updated_at: new Date().toISOString() }); setAdminSettings(prev => ({ ...prev, [key]: nv })); }}
+                          <button onClick={async () => { const nv = value === "true" ? "false" : "true"; try { await fetch(`${EDGE_FUNCTION_URL}?action=admin-update-setting`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` }, body: JSON.stringify({ key, value: nv }) }); } catch(e) { console.error(e); return; } setAdminSettings(prev => ({ ...prev, [key]: nv })); }}
                             style={{ padding: "4px 12px", borderRadius: 999, border: "none", background: value === "true" ? "#10a37f22" : "#2d2d2d", color: value === "true" ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer" }}>
                             {value === "true" ? "ON" : "OFF"}
                           </button>
                         ) : (
-                          <input defaultValue={value} onBlur={e => { supabase.from("system_settings").upsert({ key, value: e.target.value, updated_at: new Date().toISOString() }); setAdminSettings(prev => ({ ...prev, [key]: e.target.value })); }}
+                          <input defaultValue={value} onBlur={async e => { try { await fetch(`${EDGE_FUNCTION_URL}?action=admin-update-setting`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` }, body: JSON.stringify({ key, value: e.target.value }) }); } catch(err) { console.error(err); return; } setAdminSettings(prev => ({ ...prev, [key]: e.target.value })); }}
                             style={{ background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 6, padding: "4px 8px", color: "#ececec", fontSize: 12, width: 120, outline: "none" }} />
                         )}
                       </div>
