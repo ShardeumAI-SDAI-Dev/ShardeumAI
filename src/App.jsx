@@ -643,6 +643,398 @@ function useUsageTracking(userId, planId) {
   return { usage, incrementUsage, canSendMessage, canGenerateImage, canUploadDocument, getRemaining, plan };
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ PHASE 2: REALTIME SYNC SYSTEM ═══
+// ═══════════════════════════════════════════════════════════════
+
+function useRealtimeSync(session, activeConvoId, setMessages, setConversations, setProfile) {
+  const [syncStatus, setSyncStatus] = useState("connected");
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    let chatChannel = null;
+    if (activeConvoId) {
+      chatChannel = supabase
+        .channel(`chat-history:${activeConvoId}`)
+        .on('postgres_changes', {
+          event: 'INSERT', schema: 'public', table: 'chat_history',
+          filter: `conversation_id=eq.${activeConvoId}`
+        }, (payload) => {
+          const newMsg = payload.new;
+          setMessages(prev => {
+            if (prev.find(m => m.id === newMsg.id || (m.role === newMsg.role && m.content === newMsg.content && !m.id))) return prev;
+            return [...prev, { role: newMsg.role, content: newMsg.content, id: newMsg.id, created_at: newMsg.created_at }];
+          });
+          setSyncStatus("syncing");
+          setTimeout(() => setSyncStatus("connected"), 500);
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE', schema: 'public', table: 'chat_history',
+          filter: `conversation_id=eq.${activeConvoId}`
+        }, (payload) => {
+          const updatedMsg = payload.new;
+          setMessages(prev => prev.map(m => (m.id === updatedMsg.id) ? { ...m, content: updatedMsg.content } : m));
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') setSyncStatus("connected");
+          if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setSyncStatus("error");
+        });
+    }
+
+    const convoChannel = supabase
+      .channel(`conversations:${session.user.id}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'conversations',
+        filter: `user_id=eq.${session.user.id}`
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setConversations(prev => { if (prev.find(c => c.id === payload.new.id)) return prev; return [payload.new, ...prev]; });
+        } else if (payload.eventType === 'DELETE') {
+          setConversations(prev => prev.filter(c => c.id !== payload.old.id));
+        } else if (payload.eventType === 'UPDATE') {
+          setConversations(prev => prev.map(c => c.id === payload.new.id ? { ...c, ...payload.new } : c));
+        }
+      })
+      .subscribe();
+
+    const profileChannel = supabase
+      .channel(`profile:${session.user.id}`)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'user_profiles',
+        filter: `id=eq.${session.user.id}`
+      }, (payload) => {
+        setProfile(prev => ({ ...prev, ...payload.new }));
+      })
+      .subscribe();
+
+    return () => {
+      if (chatChannel) supabase.removeChannel(chatChannel);
+      supabase.removeChannel(convoChannel);
+      supabase.removeChannel(profileChannel);
+    };
+  }, [session?.user?.id, activeConvoId]);
+
+  return { syncStatus };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ PHASE 2: DATABASE OPTIMIZATION ═══
+// ═══════════════════════════════════════════════════════════════
+
+function useDBOptimization(session) {
+  const [queryStats, setQueryStats] = useState({ slowQueries: 0, avgTime: 0, cacheHitRate: 0 });
+  const [optimizationTips, setOptimizationTips] = useState([]);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    async function fetchStats() {
+      try {
+        const res = await fetch(`${EDGE_FUNCTION_URL}?action=db-stats`, {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setQueryStats(data.stats || { slowQueries: 0, avgTime: 0, cacheHitRate: 0 });
+          setOptimizationTips(data.tips || []);
+        }
+      } catch (e) { console.log("DB stats error:", e); }
+    }
+    fetchStats();
+    const interval = setInterval(fetchStats, 30000);
+    return () => clearInterval(interval);
+  }, [session]);
+
+  async function fetchConversationsOptimized(userId, page = 0, pageSize = 30) {
+    const start = performance.now();
+    const { data, error } = await supabase
+      .from("conversations")
+      .select("id, title, created_at, updated_at")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+    const duration = performance.now() - start;
+    if (duration > 500) console.warn(`Slow query detected: ${duration.toFixed(0)}ms`);
+    return { data, error, duration };
+  }
+
+  return { queryStats, optimizationTips, fetchConversationsOptimized };
+}
+
+function DBOptimizerPanel({ t, th, session, isAdmin, isMobile }) {
+  const { queryStats, optimizationTips } = useDBOptimization(session);
+  if (!isAdmin) return null;
+  return (
+    <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#f59e0b", marginBottom: 12 }}>🗄️ Database Optimization</div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
+        {[{ label: "Slow Queries", value: queryStats.slowQueries, color: "#ef4444" }, { label: "Avg Query Time", value: `${queryStats.avgTime.toFixed(1)}ms`, color: "#10a37f" }, { label: "Cache Hit Rate", value: `${queryStats.cacheHitRate}%`, color: "#3b82f6" }].map(stat => (
+          <div key={stat.label} style={{ background: "#0d0d0d", borderRadius: 10, padding: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#8e8ea0", marginBottom: 4 }}>{stat.label}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+      {optimizationTips.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 12, color: "#8e8ea0", fontWeight: 600 }}>Recommendations:</div>
+          {optimizationTips.map((tip, i) => (
+            <div key={i} style={{ padding: "8px 12px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #2d2d2d", fontSize: 12, color: "#ececec" }}>
+              <span style={{ color: "#f59e0b", marginRight: 6 }}>💡</span> {tip}
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ marginTop: 12, padding: 10, background: "#0d0d0d", borderRadius: 8, fontSize: 11, color: "#5c5c5c", fontFamily: "monospace" }}>
+        <div>-- Recommended Indexes:</div>
+        <div>CREATE INDEX idx_chat_history_convo ON chat_history(conversation_id, created_at);</div>
+        <div>CREATE INDEX idx_conversations_user ON conversations(user_id, updated_at DESC);</div>
+        <div>CREATE INDEX idx_moderation_user ON moderation_logs(user_id, created_at);</div>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ PHASE 2: WEBHOOK SYSTEM ═══
+// ═══════════════════════════════════════════════════════════════
+
+function useWebhookSystem(session) {
+  const [webhooks, setWebhooks] = useState(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem("shardeumai-webhooks") : null;
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [webhookLogs, setWebhookLogs] = useState([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("shardeumai-webhooks", JSON.stringify(webhooks));
+  }, [webhooks]);
+
+  function addWebhook(name, url, events, provider = "zapier") {
+    const newHook = { id: Date.now().toString(), name, url, events, provider, active: true, createdAt: Date.now(), secret: Math.random().toString(36).substring(2, 15) };
+    setWebhooks(prev => [...prev, newHook]);
+    return newHook;
+  }
+  function removeWebhook(id) { setWebhooks(prev => prev.filter(h => h.id !== id)); }
+  function toggleWebhook(id) { setWebhooks(prev => prev.map(h => h.id === id ? { ...h, active: !h.active } : h)); }
+
+  async function triggerWebhook(event, payload) {
+    const activeHooks = webhooks.filter(h => h.active && h.events.includes(event));
+    for (const hook of activeHooks) {
+      try {
+        const start = performance.now();
+        const res = await fetch(hook.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Webhook-Secret": hook.secret, "X-Webhook-Source": "shardeumai" },
+          body: JSON.stringify({ event, timestamp: new Date().toISOString(), data: payload }),
+        });
+        setWebhookLogs(prev => [{ id: Date.now().toString() + Math.random(), hookId: hook.id, hookName: hook.name, event, status: res.ok ? "success" : "failed", statusCode: res.status, duration: Math.round(performance.now() - start), timestamp: Date.now() }, ...prev].slice(0, 100));
+      } catch (e) {
+        setWebhookLogs(prev => [{ id: Date.now().toString() + Math.random(), hookId: hook.id, hookName: hook.name, event, status: "error", error: e.message, timestamp: Date.now() }, ...prev].slice(0, 100));
+      }
+    }
+  }
+  return { webhooks, webhookLogs, addWebhook, removeWebhook, toggleWebhook, triggerWebhook };
+}
+
+function WebhookPanel({ t, th, session, isMobile }) {
+  const { webhooks, webhookLogs, addWebhook, removeWebhook, toggleWebhook } = useWebhookSystem(session);
+  const [newHook, setNewHook] = useState({ name: "", url: "", events: [], provider: "zapier" });
+  const [showLogs, setShowLogs] = useState(false);
+  const isRTL = t.landingTitle && t.landingTitle.includes("آینده");
+  const EVENT_OPTIONS = [{ id: "new_message", label: "New Message" }, { id: "new_image", label: "New Image Generated" }, { id: "new_user", label: "New User Signup" }, { id: "payment", label: "Payment Received" }, { id: "moderation", label: "Moderation Triggered" }];
+  const PROVIDER_OPTIONS = [{ id: "zapier", label: "Zapier", icon: "⚡" }, { id: "make", label: "Make.com", icon: "🔧" }, { id: "custom", label: "Custom", icon: "🔌" }];
+
+  return (
+    <div style={{ padding: isMobile ? "16px" : "24px", maxWidth: 720, margin: "0 auto", direction: isRTL ? "rtl" : "ltr" }}>
+      <h2 style={{ margin: "0 0 20px", fontSize: 20, fontWeight: 700, color: th.text }}>🔗 Webhook Integrations</h2>
+      <div style={{ background: th.bgSecondary, border: `1px solid ${th.border}`, borderRadius: 12, padding: 16, marginBottom: 20 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: th.text, marginBottom: 12 }}>Add New Webhook</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input value={newHook.name} onChange={e => setNewHook(p => ({ ...p, name: e.target.value }))} placeholder="Webhook name (e.g., Zapier Chat Log)" style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${th.border}`, background: th.inputBg, color: th.text, fontSize: 13, outline: "none" }} />
+          <input value={newHook.url} onChange={e => setNewHook(p => ({ ...p, url: e.target.value }))} placeholder="https://hooks.zapier.com/hooks/catch/... OR https://hook.make.com/..." style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${th.border}`, background: th.inputBg, color: th.text, fontSize: 13, outline: "none", direction: "ltr" }} />
+          <select value={newHook.provider} onChange={e => setNewHook(p => ({ ...p, provider: e.target.value }))} style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${th.border}`, background: th.inputBg, color: th.text, fontSize: 13, outline: "none", cursor: "pointer" }}>
+            {PROVIDER_OPTIONS.map(p => <option key={p.id} value={p.id}>{p.icon} {p.label}</option>)}
+          </select>
+          <div style={{ fontSize: 12, color: th.textSecondary, marginBottom: 4 }}>Trigger Events:</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {EVENT_OPTIONS.map(evt => (
+              <button key={evt.id} onClick={() => setNewHook(p => ({ ...p, events: p.events.includes(evt.id) ? p.events.filter(e => e !== evt.id) : [...p.events, evt.id] }))} style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${newHook.events.includes(evt.id) ? th.primary : th.border}`, background: newHook.events.includes(evt.id) ? th.primaryLight : "transparent", color: newHook.events.includes(evt.id) ? th.primary : th.textSecondary, fontSize: 12, cursor: "pointer" }}>
+                {newHook.events.includes(evt.id) ? "✓ " : ""}{evt.label}
+              </button>
+            ))}
+          </div>
+          <button onClick={() => { if (!newHook.name || !newHook.url || newHook.events.length === 0) return; addWebhook(newHook.name, newHook.url, newHook.events, newHook.provider); setNewHook({ name: "", url: "", events: [], provider: "zapier" }); }} disabled={!newHook.name || !newHook.url || newHook.events.length === 0} style={{ padding: "10px 0", borderRadius: 8, border: "none", background: th.primary, color: "#fff", fontSize: 13, fontWeight: 600, cursor: (!newHook.name || !newHook.url || newHook.events.length === 0) ? "default" : "pointer", opacity: (!newHook.name || !newHook.url || newHook.events.length === 0) ? 0.5 : 1 }}>Add Webhook</button>
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+        {webhooks.length === 0 && <div style={{ textAlign: "center", padding: 30, color: th.textMuted, fontSize: 13 }}>No webhooks configured yet</div>}
+        {webhooks.map(hook => (
+          <div key={hook.id} style={{ background: th.bgSecondary, border: `1px solid ${th.border}`, borderRadius: 12, padding: 14 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>{hook.provider === "zapier" ? "⚡" : hook.provider === "make" ? "🔧" : "🔌"}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: th.text }}>{hook.name}</span>
+                <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 999, background: hook.active ? "#10a37f22" : "#ef444422", color: hook.active ? "#10a37f" : "#ef4444" }}>{hook.active ? "Active" : "Inactive"}</span>
+              </div>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={() => toggleWebhook(hook.id)} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: th.textSecondary, fontSize: 11, cursor: "pointer" }}>{hook.active ? "Disable" : "Enable"}</button>
+                <button onClick={() => removeWebhook(hook.id)} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #ef444444", background: "transparent", color: "#ef4444", fontSize: 11, cursor: "pointer" }}>Remove</button>
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: th.textMuted, wordBreak: "break-all", marginBottom: 6, direction: "ltr" }}>{hook.url}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {hook.events.map(e => { const evt = EVENT_OPTIONS.find(o => o.id === e); return <span key={e} style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: th.bgTertiary, color: th.textSecondary }}>{evt?.label || e}</span>; })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <button onClick={() => setShowLogs(!showLogs)} style={{ padding: "8px 16px", borderRadius: 8, border: `1px solid ${th.border}`, background: "transparent", color: th.textSecondary, fontSize: 12, cursor: "pointer", marginBottom: 10 }}>{showLogs ? "Hide" : "Show"} Delivery Logs ({webhookLogs.length})</button>
+      {showLogs && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 300, overflowY: "auto" }}>
+          {webhookLogs.length === 0 && <div style={{ color: th.textMuted, fontSize: 12, textAlign: "center", padding: 20 }}>No logs yet</div>}
+          {webhookLogs.map(log => (
+            <div key={log.id} style={{ padding: "8px 12px", background: th.bgTertiary, borderRadius: 8, fontSize: 11, display: "flex", justifyContent: "space-between" }}>
+              <div><span style={{ color: log.status === "success" ? "#10a37f" : log.status === "failed" ? "#f59e0b" : "#ef4444" }}>●</span><span style={{ color: th.text, marginLeft: 6 }}>{log.hookName} — {log.event}</span></div>
+              <div style={{ color: th.textMuted }}>{log.statusCode && `${log.statusCode} • `}{log.duration && `${log.duration}ms • `}{new Date(log.timestamp).toLocaleTimeString()}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ PHASE 2: QUEUE SYSTEM (Redis/Bull) ═══
+// ═══════════════════════════════════════════════════════════════
+
+function useQueueSystem(session) {
+  const [jobs, setJobs] = useState([]);
+  const [queueStats, setQueueStats] = useState({ pending: 0, processing: 0, completed: 0, failed: 0 });
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    async function fetchQueueStats() {
+      try {
+        const res = await fetch(`${EDGE_FUNCTION_URL}?action=queue-stats`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          setQueueStats(data.stats || { pending: 0, processing: 0, completed: 0, failed: 0 });
+          setJobs(data.jobs || []);
+        }
+      } catch (e) { console.log("Queue stats error:", e); }
+    }
+    fetchQueueStats();
+    const interval = setInterval(fetchQueueStats, 5000);
+    return () => clearInterval(interval);
+  }, [session]);
+
+  async function retryJob(jobId) {
+    try {
+      await fetch(`${EDGE_FUNCTION_URL}?action=queue-retry`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ jobId }),
+      });
+    } catch (e) { console.error("Retry error:", e); }
+  }
+  return { jobs, queueStats, retryJob };
+}
+
+function QueueStatus({ t, th, session, isAdmin, isMobile }) {
+  const { jobs, queueStats, retryJob } = useQueueSystem(session);
+  if (!isAdmin) return null;
+  return (
+    <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#a855f7", marginBottom: 12 }}>📬 Queue System (Redis/Bull)</div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 10, marginBottom: 16 }}>
+        {[{ label: "Pending", value: queueStats.pending, color: "#f59e0b" }, { label: "Processing", value: queueStats.processing, color: "#3b82f6" }, { label: "Completed", value: queueStats.completed, color: "#10a37f" }, { label: "Failed", value: queueStats.failed, color: "#ef4444" }].map(stat => (
+          <div key={stat.label} style={{ background: "#0d0d0d", borderRadius: 10, padding: 12, textAlign: "center" }}>
+            <div style={{ fontSize: 11, color: "#8e8ea0", marginBottom: 4 }}>{stat.label}</div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: stat.color }}>{stat.value}</div>
+          </div>
+        ))}
+      </div>
+      {jobs.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 250, overflowY: "auto" }}>
+          <div style={{ fontSize: 12, color: "#8e8ea0", fontWeight: 600 }}>Recent Jobs:</div>
+          {jobs.slice(0, 20).map(job => (
+            <div key={job.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#0d0d0d", borderRadius: 8, border: "1px solid #2d2d2d" }}>
+              <span style={{ fontSize: 14 }}>{job.type === "image" ? "🎨" : "💬"}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: "#ececec" }}>{job.name || job.type}</div>
+                <div style={{ fontSize: 10, color: "#5c5c5c" }}>ID: {job.id.slice(0, 8)}</div>
+              </div>
+              <span style={{ fontSize: 11, color: job.status === "completed" ? "#10a37f" : job.status === "failed" ? "#ef4444" : job.status === "processing" ? "#3b82f6" : "#f59e0b", fontWeight: 600 }}>{job.status}</span>
+              {job.status === "failed" && <button onClick={() => retryJob(job.id)} style={{ padding: "4px 10px", borderRadius: 6, border: "1px solid #10a37f44", background: "transparent", color: "#10a37f", fontSize: 11, cursor: "pointer" }}>Retry</button>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ═══ PHASE 2: CDN + EDGE CACHING ═══
+// ═══════════════════════════════════════════════════════════════
+
+const CDN_CONFIG = {
+  enabled: true,
+  baseUrl: "https://cdn.shardeumai.com",
+  cloudflare: { zoneId: null, apiToken: null },
+  cacheHeaders: { images: "public, max-age=86400, immutable", static: "public, max-age=31536000, immutable", api: "private, no-cache" }
+};
+
+function getCDNUrl(path, type = "static") {
+  if (!CDN_CONFIG.enabled) return path;
+  if (path.startsWith("http")) return path;
+  return `${CDN_CONFIG.baseUrl}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
+function useCDNAssets() {
+  const [assetCache, setAssetCache] = useState(new Map());
+  function preloadAsset(url, type = "image") {
+    if (assetCache.has(url)) return;
+    if (type === "image") {
+      const img = new Image();
+      img.onload = () => setAssetCache(prev => new Map(prev).set(url, "loaded"));
+      img.onerror = () => setAssetCache(prev => new Map(prev).set(url, "error"));
+      img.src = getCDNUrl(url);
+    }
+  }
+  return { getCDNUrl, preloadAsset, assetCache };
+}
+
+function CDNConfigPanel({ t, th, isAdmin, isMobile }) {
+  if (!isAdmin) return null;
+  return (
+    <div style={{ background: "#171717", border: "1px solid #2d2d2d", borderRadius: 16, padding: 16, marginTop: 16 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#3b82f6", marginBottom: 12 }}>🌐 CDN & Edge Caching</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#0d0d0d", borderRadius: 8 }}>
+          <span style={{ fontSize: 12, color: "#ececec" }}>CDN Status</span>
+          <span style={{ fontSize: 12, color: CDN_CONFIG.enabled ? "#10a37f" : "#ef4444", fontWeight: 600 }}>{CDN_CONFIG.enabled ? "✅ Enabled" : "❌ Disabled"}</span>
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: "#0d0d0d", borderRadius: 8 }}>
+          <span style={{ fontSize: 12, color: "#ececec" }}>Base URL</span>
+          <span style={{ fontSize: 11, color: "#8e8ea0", fontFamily: "monospace" }}>{CDN_CONFIG.baseUrl}</span>
+        </div>
+        <div style={{ fontSize: 11, color: "#5c5c5c", fontFamily: "monospace", padding: 10, background: "#0d0d0d", borderRadius: 8 }}>
+          <div>// Cache-Control Headers:</div>
+          <div>Images: {CDN_CONFIG.cacheHeaders.images}</div>
+          <div>Static: {CDN_CONFIG.cacheHeaders.static}</div>
+          <div>API: {CDN_CONFIG.cacheHeaders.api}</div>
+        </div>
+        <div style={{ fontSize: 12, color: "#8e8ea0" }}>💡 Configure via Edge Function admin panel or environment variables</div>
+      </div>
+    </div>
+  );
+}
+
+
 const translations = {
   fa: {
     title: "ShardeumAI", subtitle: "دستیار هوشمند چندزبانه",
@@ -2973,6 +3365,11 @@ function App() {
 
   // ── Usage Tracking ──
   const usageTracking = useUsageTracking(session?.user?.id, currentPlan);
+  // ── Phase 2: Realtime Sync, Webhooks, CDN ──
+  const { syncStatus } = useRealtimeSync(session, activeConvoId, setMessages, setConversations, setProfile);
+  const { triggerWebhook } = useWebhookSystem(session);
+  const { getCDNUrl } = useCDNAssets();
+
 
   // ── Smart Notification States ──
   const [showSmartNotification, setShowSmartNotification] = useState(false);
@@ -4742,10 +5139,10 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 </div>
               )}
             </div>
-            {!isMobile && ["chat", "image", "profile", "api", "api-keys"].map(tab => (
+            {!isMobile && ["chat", "image", "profile", "api", "api-keys", "webhook"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : tab === "api-keys" ? "🔑" : "🔌"}
+                {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : tab === "api-keys" ? "🔑" : tab === "webhook" ? "🔗" : "🔌"}
               </button>
             ))}
             {!isMobile && isAdmin && (
@@ -4762,10 +5159,10 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
         {isMobile && (
           <div style={{ flexShrink: 0, borderBottom: "1px solid #2d2d2d" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", overflowX: "auto" }}>
-              {["chat", "image", "profile", "api", "api-keys"].map(tab => (
+              {["chat", "image", "profile", "api", "api-keys", "webhook"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-                  {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : tab === "api-keys" ? "🔑 API Keys" : "🔌 API"}
+                  {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : tab === "api-keys" ? "🔑 API Keys" : tab === "webhook" ? "🔗 Webhook" : "🔌 API"}
                 </button>
               ))}
               {isAdmin && (
@@ -5809,6 +6206,11 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
                 )}
               </>
             )}
+
+                <DBOptimizerPanel t={t} th={th} session={session} isAdmin={isAdmin} isMobile={isMobile} />
+                <QueueStatus t={t} th={th} session={session} isAdmin={isAdmin} isMobile={isMobile} />
+                <CDNConfigPanel t={t} th={th} isAdmin={isAdmin} isMobile={isMobile} />
+
           </div>
         ) : null}
       </div>
