@@ -4355,7 +4355,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
   // ── Voice Input ──
   function toggleVoiceInput() {
     if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
-      alert("Voice input not supported in your browser. Please use Chrome or Safari.");
+      alert(isRTL ? "مرورگر شما از ورودی صوتی پشتیبانی نمی‌کند. لطفاً از Chrome یا Safari استفاده کنید." : "Voice input not supported in your browser. Please use Chrome or Safari.");
       return;
     }
 
@@ -4372,11 +4372,30 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = true;
-    recognition.lang = uiLang === "fa" ? "fa-IR" : uiLang === "ar" ? "ar-SA" : uiLang === "ru" ? "ru-RU" : uiLang === "de" ? "de-DE" : uiLang === "fr" ? "fr-FR" : uiLang === "es" ? "es-ES" : "en-US";
+    recognition.maxAlternatives = 1;
 
+    // ⚠️ FIXED: Use simplified codes — "fa" works better than "fa-IR" in Chrome
+    const langMap = {
+      fa: "fa",        // Persian/Farsi
+      ar: "ar-SA",     // Arabic
+      ru: "ru-RU",     // Russian
+      de: "de-DE",     // German
+      fr: "fr-FR",     // French
+      es: "es-ES",     // Spanish
+      en: "en-US"      // English
+    };
+    recognition.lang = langMap[uiLang] || "en-US";
+
+    console.log("[Voice] Lang:", recognition.lang, "| UI:", uiLang);
+
+    // ⚠️ FIXED: Only append final results to prevent finglish/interim garbage
     recognition.onresult = (e) => {
-      const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
-      setInput(prev => prev ? prev + " " + transcript : transcript);
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          const transcript = e.results[i][0].transcript;
+          setInput(prev => prev ? prev + " " + transcript : transcript);
+        }
+      }
     };
 
     recognition.onend = () => {
@@ -4385,18 +4404,28 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     };
 
     recognition.onerror = (e) => {
-      console.log("Voice error:", e.error);
+      console.error("[Voice] Error:", e.error);
       setIsListening(false);
       recognitionRef.current = null;
+
+      const errorMessages = {
+        "no-speech": isRTL ? "صدایی شنیده نشد. لطفاً دوباره تلاش کنید." : "No speech detected. Please try again.",
+        "audio-capture": isRTL ? "میکروفون پیدا نشد." : "No microphone found.",
+        "not-allowed": isRTL ? "دسترسی به میکروفون داده نشد." : "Microphone permission denied.",
+        "network": isRTL ? "خطای شبکه. اتصال اینترنت را بررسی کنید." : "Network error. Check your connection.",
+        "language-not-supported": isRTL ? "این زبان در مرورگر شما پشتیبانی نمی‌شود." : "This language is not supported in your browser.",
+        "service-not-allowed": isRTL ? "سرویس تشخیص صدا غیرفعال است." : "Speech recognition service is not allowed."
+      };
+
+      const msg = errorMessages[e.error] || (isRTL ? "خطای ناشناخته در تشخیص صدا." : "Unknown speech recognition error.");
+      if (e.error !== "aborted") alert(msg);
     };
 
     recognitionRef.current = recognition;
     setInput("");
     recognition.start();
     setIsListening(true);
-  }
-
-  // ── File Upload ──
+  }  // ── File Upload ──
   async function uploadDocumentForRAG(file, content) {
     if (!session || !activeConvoId) return false;
     if (!usageTracking.canUploadDocument()) {
@@ -5139,12 +5168,18 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 </div>
               )}
             </div>
-            {!isMobile && ["chat", "image", "profile", "api", "api-keys", "webhook"].map(tab => (
+            {!isMobile && ["chat", "image", "profile", "api", "api-keys"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : tab === "api-keys" ? "🔑" : tab === "webhook" ? "🔗" : "🔌"}
+                {tab === "chat" ? "💬" : tab === "image" ? "🎨" : tab === "profile" ? "👤" : tab === "api-keys" ? "🔑" : "🔌"}
               </button>
             ))}
+            {!isMobile && isAdmin && (
+              <button onClick={() => setActiveTab("webhook")}
+                style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === "webhook" ? "#404040" : "transparent", color: activeTab === "webhook" ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                🔗
+              </button>
+            )}
             {!isMobile && isAdmin && (
               <button onClick={() => { setActiveTab("admin"); loadAdminData(); }}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === "admin" ? "#404040" : "transparent", color: activeTab === "admin" ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
@@ -5159,12 +5194,18 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
         {isMobile && (
           <div style={{ flexShrink: 0, borderBottom: "1px solid #2d2d2d" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 8px", overflowX: "auto" }}>
-              {["chat", "image", "profile", "api", "api-keys", "webhook"].map(tab => (
+              {["chat", "image", "profile", "api", "api-keys"].map(tab => (
                 <button key={tab} onClick={() => setActiveTab(tab)}
                   style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
-                  {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : tab === "api-keys" ? "🔑 API Keys" : tab === "webhook" ? "🔗 Webhook" : "🔌 API"}
+                  {tab === "chat" ? "💬 Chat" : tab === "image" ? "🎨 Image" : tab === "profile" ? "👤 Profile" : tab === "api-keys" ? "🔑 API Keys" : "🔌 API"}
                 </button>
               ))}
+              {isAdmin && (
+                <button onClick={() => setActiveTab("webhook")}
+                  style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === "webhook" ? "#404040" : "transparent", color: activeTab === "webhook" ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  🔗 Webhook
+                </button>
+              )}
               {isAdmin && (
                 <button onClick={() => { setActiveTab("admin"); loadAdminData(); }}
                   style={{ padding: "6px 12px", borderRadius: 8, border: "none", background: activeTab === "admin" ? "#404040" : "transparent", color: activeTab === "admin" ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
