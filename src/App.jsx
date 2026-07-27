@@ -5129,45 +5129,47 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 </div>
               </>
             )}
-            <div style={{ position: "relative" }}>
-              <button onClick={() => {
-                const plan = SUBSCRIPTION_PLANS[currentPlan];
-                if (!isAdmin && !plan.features.webSearch) {
-                  setShowPricing(true);
-                  return;
-                }
-                setWebSearch(!webSearch);
-              }}
-                style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
-                🔍 {webSearch ? "ON" : "OFF"}
-              </button>
-              {webSearch && (
-                <button onClick={() => setShowSearchProvider(!showSearchProvider)}
-                  style={{ padding: "4px 6px", borderRadius: 8, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#8e8ea0", fontSize: 10, cursor: "pointer", marginLeft: 4 }}>
-                  ▼
+            {!isMobile && (
+              <div style={{ position: "relative" }}>
+                <button onClick={() => {
+                  const plan = SUBSCRIPTION_PLANS[currentPlan];
+                  if (!isAdmin && !plan.features.webSearch) {
+                    setShowPricing(true);
+                    return;
+                  }
+                  setWebSearch(!webSearch);
+                }}
+                  style={{ padding: "4px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  🔍 {webSearch ? "ON" : "OFF"}
                 </button>
-              )}
-              {webSearch && showSearchProvider && (
-                <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, padding: 4, zIndex: 100, minWidth: 100 }}>
-                  {["tavily", "exa", "firecrawl"].map(p => (
-                    <button key={p} onClick={() => {
-                      const plan = SUBSCRIPTION_PLANS[currentPlan];
-                      if (!isAdmin && !plan.features.webSearch) {
+                {webSearch && (
+                  <button onClick={() => setShowSearchProvider(!showSearchProvider)}
+                    style={{ padding: "4px 6px", borderRadius: 8, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#8e8ea0", fontSize: 10, cursor: "pointer", marginLeft: 4 }}>
+                    ▼
+                  </button>
+                )}
+                {webSearch && showSearchProvider && (
+                  <div style={{ position: "absolute", top: "calc(100% + 4px)", right: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, padding: 4, zIndex: 100, minWidth: 100 }}>
+                    {["tavily", "exa", "firecrawl"].map(p => (
+                      <button key={p} onClick={() => {
+                        const plan = SUBSCRIPTION_PLANS[currentPlan];
+                        if (!isAdmin && !plan.features.webSearch) {
+                          setShowSearchProvider(false);
+                          setWebSearch(false);
+                          setShowPricing(true);
+                          return;
+                        }
+                        setSearchProvider(p);
                         setShowSearchProvider(false);
-                        setWebSearch(false);
-                        setShowPricing(true);
-                        return;
-                      }
-                      setSearchProvider(p);
-                      setShowSearchProvider(false);
-                    }}
-                      style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "none", background: searchProvider === p ? "#404040" : "transparent", color: searchProvider === p ? "#10a37f" : "#ececec", fontSize: 12, cursor: "pointer", textAlign: "left" }}>
-                      {p.charAt(0).toUpperCase() + p.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+                      }}
+                        style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "none", background: searchProvider === p ? "#404040" : "transparent", color: searchProvider === p ? "#10a37f" : "#ececec", fontSize: 12, cursor: "pointer", textAlign: "left" }}>
+                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             {!isMobile && ["chat", "image", "profile", "api", "api-keys"].map(tab => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 style={{ padding: "4px 10px", borderRadius: 8, border: "none", background: activeTab === tab ? "#404040" : "transparent", color: activeTab === tab ? (tab === "api" ? "#a855f7" : "#ececec") : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
