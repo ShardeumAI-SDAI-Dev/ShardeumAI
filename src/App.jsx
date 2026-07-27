@@ -3213,38 +3213,6 @@ function WelcomePage({ t, th, theme, setTheme, uiLang, setUiLang, onStart, isMob
 }
 
 
-// ── Finglish to Persian Converter (Voice Input Fallback) ──
-function convertFinglishToPersian(text) {
-  if (!text || typeof text !== "string") return text;
-  // Already Persian? Skip conversion
-  if (/[\u0600-\u06FF]/.test(text)) return text;
-
-  let result = text.toLowerCase().trim();
-
-  // Multi-character combinations (longest first)
-  const multiMap = [
-    ['kh', 'خ'], ['gh', 'غ'], ['ch', 'چ'], ['sh', 'ش'], ['zh', 'ژ'],
-    ['ph', 'ف'], ['th', 'ث'], ['ck', 'ک'], ['ee', 'ی'], ['oo', 'و'],
-    ['ei', 'ی'], ['ou', 'و'], ['ay', 'ی'], ['ey', 'ی'], ['aa', 'آ'],
-    ['oo', 'و'], ['ou', 'و'],
-  ];
-
-  for (const [from, to] of multiMap) {
-    result = result.split(from).join(to);
-  }
-
-  // Single character mapping
-  const singleMap = {
-    'a': 'ا', 'b': 'ب', 'c': 'ک', 'd': 'د', 'e': '', 'f': 'ف',
-    'g': 'گ', 'h': 'ه', 'i': 'ی', 'j': 'ج', 'k': 'ک', 'l': 'ل',
-    'm': 'م', 'n': 'ن', 'o': 'و', 'p': 'پ', 'q': 'ق', 'r': 'ر',
-    's': 'س', 't': 'ت', 'u': 'و', 'v': 'و', 'w': 'و', 'x': 'خ',
-    'y': 'ی', 'z': 'ز', ' ': ' ', '-': ' ', '_': ' ',
-  };
-
-  return result.split('').map(c => singleMap[c] !== undefined ? singleMap[c] : c).join('');
-}
-
 // ═══════════════════════════════════════════════════════════════
 // ═══ MAIN APP COMPONENT ═══
 // ═══════════════════════════════════════════════════════════════
@@ -4407,11 +4375,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
     recognition.lang = uiLang === "fa" ? "fa-IR" : uiLang === "ar" ? "ar-SA" : uiLang === "ru" ? "ru-RU" : uiLang === "de" ? "de-DE" : uiLang === "fr" ? "fr-FR" : uiLang === "es" ? "es-ES" : "en-US";
 
     recognition.onresult = (e) => {
-      let transcript = Array.from(e.results).map(r => r[0].transcript).join("");
-      // Auto-convert Finglish to Persian for voice input
-      if (uiLang === "fa") {
-        transcript = convertFinglishToPersian(transcript);
-      }
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join("");
       setInput(prev => prev ? prev + " " + transcript : transcript);
     };
 
@@ -6127,6 +6091,10 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
           </div>
         ) : activeTab === "api-keys" ? (
           <APIKeyManager t={t} th={th} session={session} currentPlan={currentPlan} isMobile={isMobile} />
+        ) : activeTab === "webhook" ? (
+          <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
+            <WebhookPanel t={t} th={th} session={session} isMobile={isMobile} />
+          </div>
         ) : activeTab === "admin" && isAdmin ? (
           <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
             <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 700, color: "#f59e0b" }}>⚙️ Admin Dashboard</h2>
