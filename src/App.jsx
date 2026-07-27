@@ -5052,7 +5052,8 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, overflowX: "auto", maxWidth: "100%", flexShrink: 1, scrollbarWidth: "none" }}>
+            <style>{`div::-webkit-scrollbar { display: none; }`}</style>
             <select value={aiMode} onChange={e => setAiMode(e.target.value)}
               style={{ background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, color: "#ececec", fontSize: 12, padding: "4px 8px", outline: "none", cursor: "pointer" }}>
               {AI_MODES.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
