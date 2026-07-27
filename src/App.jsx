@@ -5221,18 +5221,51 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${streamingEnabled ? "#10a37f" : "#3d3d3d"}`, background: streamingEnabled ? "#10a37f22" : "transparent", color: streamingEnabled ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
                 🔄 {t.streaming}
               </button>
-              <button onClick={() => {
+              <div style={{ position: "relative", display: "inline-block" }}>
+                <button onClick={() => {
                   const plan = SUBSCRIPTION_PLANS[currentPlan];
                   if (!isAdmin && !plan.features.webSearch) {
                     setShowPricing(true);
                     return;
                   }
                   setWebSearch(!webSearch);
+                  if (webSearch) setShowSearchProvider(false);
                 }}
-                title={t.webSearch}
-                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
-                🔍 Web {webSearch ? "ON" : "OFF"}
-              </button>
+                  title={t.webSearch}
+                  style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${webSearch ? "#10a37f" : "#3d3d3d"}`, background: webSearch ? "#10a37f22" : "transparent", color: webSearch ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                  🔍 Web {webSearch ? "ON" : "OFF"}
+                </button>
+                <button onClick={() => {
+                  const plan = SUBSCRIPTION_PLANS[currentPlan];
+                  if (!isAdmin && !plan.features.webSearch) {
+                    setShowPricing(true);
+                    return;
+                  }
+                  if (!webSearch) return;
+                  setShowSearchProvider(v => !v);
+                }}
+                  style={{ padding: "5px 6px", borderRadius: 8, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#8e8ea0", fontSize: 10, cursor: webSearch ? "pointer" : "default", marginLeft: 2, opacity: webSearch ? 1 : 0.3, whiteSpace: "nowrap" }}>
+                  ▼
+                </button>
+                <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 8, padding: 4, zIndex: 999, minWidth: 100, display: webSearch && showSearchProvider ? "block" : "none" }}>
+                  {["tavily", "exa", "firecrawl"].map(p => (
+                    <button key={p} onClick={() => {
+                      const plan = SUBSCRIPTION_PLANS[currentPlan];
+                      if (!isAdmin && !plan.features.webSearch) {
+                        setShowSearchProvider(false);
+                        setWebSearch(false);
+                        setShowPricing(true);
+                        return;
+                      }
+                      setSearchProvider(p);
+                      setShowSearchProvider(false);
+                    }}
+                      style={{ width: "100%", padding: "6px 10px", borderRadius: 6, border: "none", background: searchProvider === p ? "#404040" : "transparent", color: searchProvider === p ? "#10a37f" : "#ececec", fontSize: 12, cursor: "pointer", textAlign: "left", whiteSpace: "nowrap" }}>
+                      {p.charAt(0).toUpperCase() + p.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button onClick={() => { calculateAnalytics(); setShowAnalytics(!showAnalytics); }}
                 title={t.analytics}
                 style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: showAnalytics ? "#404040" : "transparent", color: showAnalytics ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
