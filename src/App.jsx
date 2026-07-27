@@ -6091,6 +6091,10 @@ Authorization: Bearer YOUR_SUPABASE_KEY`}</pre>
           </div>
         ) : activeTab === "api-keys" ? (
           <APIKeyManager t={t} th={th} session={session} currentPlan={currentPlan} isMobile={isMobile} />
+        ) : activeTab === "webhook" ? (
+          <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
+            <WebhookPanel t={t} th={th} session={session} isMobile={isMobile} />
+          </div>
         ) : activeTab === "admin" && isAdmin ? (
           <div style={{ flex: 1, overflow: "auto", padding: "16px", maxWidth: 900, margin: "0 auto", width: "100%" }}>
             <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 700, color: "#f59e0b" }}>⚙️ Admin Dashboard</h2>
