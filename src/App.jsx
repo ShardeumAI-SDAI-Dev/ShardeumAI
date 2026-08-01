@@ -3272,8 +3272,6 @@ function App() {
   const [compareMessages, setCompareMessages] = useState([]);
   const [compareLoading, setCompareLoading] = useState(false);
   const [branchingEnabled, setBranchingEnabled] = useState(false);
-  const [editingMessageIdx, setEditingMessageIdx] = useState(null);
-  const [editingText, setEditingText] = useState("");
   // Memory & RAG
   const [userMemories, setUserMemories] = useState([]);
   const [showMemoryPanel, setShowMemoryPanel] = useState(false);
@@ -5316,6 +5314,8 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                   style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${showRagPanel || ragDocuments.length > 0 ? "#f97316" : "#3d3d3d"}`, background: ragDocuments.length > 0 ? "#f9731622" : "transparent", color: ragDocuments.length > 0 ? "#f97316" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
                   📄{ragDocuments.length > 0 ? ` ${ragDocuments.length}` : ""}
                 </button>
+                <div style={{ position: "relative" }}>
+                  <button title={t.customTheme}
                     style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                     <span style={{ width: 12, height: 12, borderRadius: "50%", background: customAccentColor, display: "inline-block" }}></span>
                     🎨
