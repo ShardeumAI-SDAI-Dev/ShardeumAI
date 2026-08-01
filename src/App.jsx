@@ -3263,6 +3263,25 @@ function App() {
   const [showSavedChats, setShowSavedChats] = useState(false);
   const [savedChats, setSavedChats] = useState([]);
   const [streamingEnabled, setStreamingEnabled] = useState(() => typeof window !== "undefined" ? localStorage.getItem("shardeumai-streaming") !== "false" : true);
+  // Temperature & Compare & Branching
+  const [temperature, setTemperature] = useState(() => parseFloat(typeof window !== "undefined" ? localStorage.getItem("shardeumai-temp") || "0.7" : "0.7"));
+  const [topP, setTopP] = useState(() => parseFloat(typeof window !== "undefined" ? localStorage.getItem("shardeumai-topp") || "0.9" : "0.9"));
+  const [showTempControl, setShowTempControl] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareModel, setCompareModel] = useState("llama-3.3-70b-versatile");
+  const [compareMessages, setCompareMessages] = useState([]);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [branchingEnabled, setBranchingEnabled] = useState(false);
+  const [editingMessageIdx, setEditingMessageIdx] = useState(null);
+  const [editingText, setEditingText] = useState("");
+  // Memory & RAG
+  const [userMemories, setUserMemories] = useState([]);
+  const [showMemoryPanel, setShowMemoryPanel] = useState(false);
+  const [newMemoryText, setNewMemoryText] = useState("");
+  const [ragDocuments, setRagDocuments] = useState([]);
+  const [showRagPanel, setShowRagPanel] = useState(false);
+  const [ragLoading, setRagLoading] = useState(false);
+  const [ragContext, setRagContext] = useState("");
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analyticsData, setAnalyticsData] = useState({ totalMessages: 0, totalChats: 0, avgResponseTime: 0, charactersTyped: 0, messagesToday: 0, messagesThisWeek: 0, messagesThisMonth: 0 });
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -3615,7 +3634,9 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
       if (data.session) { 
         setSession(data.session); 
         loadHistory(data.session.user.id); 
-        loadProfile(data.session.user.id); 
+        loadProfile(data.session.user.id);
+        loadMemories(data.session.user.id);
+        loadRagDocuments(data.session.user.id); 
       }
     });
   }, []);
@@ -3932,6 +3953,99 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
   async function loadProfile(userId) {
     const { data } = await supabase.from("user_profiles").select("display_name, bio, avatar_color").eq("id", userId).single();
     if (data) setProfile({ display_name: data.display_name || "", bio: data.bio || "", avatar_color: data.avatar_color || "#10a37f" });
+  }
+
+  // ── Memory Functions ──
+  async function loadMemories(userId) {
+    const { data } = await supabase.from("user_memory").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(20);
+    if (data) setUserMemories(data);
+  }
+
+  async function addMemory() {
+    if (!newMemoryText.trim() || !session) return;
+    const { data } = await supabase.from("user_memory").insert({ user_id: session.user.id, memory_text: newMemoryText.trim() }).select().single();
+    if (data) { setUserMemories(prev => [data, ...prev]); setNewMemoryText(""); }
+  }
+
+  async function deleteMemory(id) {
+    await supabase.from("user_memory").delete().eq("id", id);
+    setUserMemories(prev => prev.filter(m => m.id !== id));
+  }
+
+  async function autoSaveMemory(reply) {
+    if (!session || !reply) return;
+    const keywords = ["اسمم", "my name is", "i am", "i work", "i like", "i hate", "من هستم", "کار می‌کنم"];
+    const lastUserMsg = messages[messages.length - 1]?.content || "";
+    if (keywords.some(k => lastUserMsg.toLowerCase().includes(k))) {
+      const memText = lastUserMsg.slice(0, 200);
+      await supabase.from("user_memory").insert({ user_id: session.user.id, memory_text: memText });
+      setUserMemories(prev => [{ memory_text: memText, created_at: new Date().toISOString() }, ...prev]);
+    }
+  }
+
+  // ── RAG Functions ──
+  async function loadRagDocuments(userId) {
+    const { data } = await supabase.from("rag_documents").select("id, filename, created_at").eq("user_id", userId).order("created_at", { ascending: false });
+    if (data) setRagDocuments(data);
+  }
+
+  async function handleRagUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !session) return;
+    setRagLoading(true);
+    try {
+      const text = await readFileAsText(file);
+      const chunkSize = 1000;
+      const chunks = [];
+      for (let i = 0; i < text.length; i += chunkSize) {
+        chunks.push(text.slice(i, i + chunkSize));
+      }
+      for (let i = 0; i < chunks.length; i++) {
+        await supabase.from("rag_documents").insert({ user_id: session.user.id, filename: file.name, content: chunks[i], chunk_index: i });
+      }
+      await loadRagDocuments(session.user.id);
+    } catch (err) { console.error("RAG upload error:", err); }
+    setRagLoading(false);
+  }
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => resolve(e.target?.result || "");
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  }
+
+  async function searchRagContext(query) {
+    if (!session || ragDocuments.length === 0) return "";
+    const { data } = await supabase.from("rag_documents").select("content, filename").eq("user_id", session.user.id).limit(5);
+    if (!data) return "";
+    const q = query.toLowerCase();
+    const relevant = data.filter(d => d.content.toLowerCase().includes(q.split(" ")[0]) || d.content.toLowerCase().includes(q.split(" ").pop()));
+    return relevant.slice(0, 3).map(d => "[" + d.filename + "]: " + d.content).join("\n\n");
+  }
+
+  async function deleteRagDocument(filename) {
+    await supabase.from("rag_documents").delete().eq("user_id", session.user.id).eq("filename", filename);
+    setRagDocuments(prev => prev.filter(d => d.filename !== filename));
+    setRagContext("");
+  }
+
+  // ── Branching Functions ──
+  function startEditMessage(idx) {
+    if (!branchingEnabled) return;
+    setEditingMessageIdx(idx);
+    setEditingText(messages[idx].content);
+  }
+
+  async function submitEditMessage() {
+    if (editingMessageIdx === null) return;
+    const newMsgs = messages.slice(0, editingMessageIdx);
+    setMessages(newMsgs);
+    setEditingMessageIdx(null);
+    setInput(editingText);
+    setEditingText("");
   }
 
   async function rateMessage(idx, rating) {
@@ -4646,6 +4760,11 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
 
     try {
       const currentMode = AI_MODES.find(m => m.id === aiMode);
+      // Auto-search RAG context
+      if (ragDocuments.length > 0) {
+        const ctx = await searchRagContext(text);
+        setRagContext(ctx);
+      }
 
       console.log("Sending request to edge function...", {
         url: EDGE_FUNCTION_URL,
@@ -4668,10 +4787,27 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
           search_provider: searchProvider, 
           model: selectedModel,
           stream: streamingEnabled,
+          temperature,
+          top_p: topP,
+          memory_context: userMemories.slice(-10).map(m => m.memory_text).join("\n"),
+          rag_context: ragContext,
         }),
       });
 
       console.log("Response received:", response.status, response.statusText);
+      // Compare Mode
+      if (compareMode) {
+        setCompareLoading(true);
+        setCompareMessages(prev => [...prev, { role: "user", content: text }]);
+        fetch(EDGE_FUNCTION_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + session.access_token },
+          body: JSON.stringify({ messages: newMessages, language: modelLang, model: compareModel, temperature, top_p: topP }),
+        }).then(r => r.json()).then(d => {
+          setCompareMessages(prev => [...prev, { role: "assistant", content: d.reply || "No response." }]);
+          setCompareLoading(false);
+        }).catch(() => setCompareLoading(false));
+      }
 
       if (response.status === 429) {
         const data = await response.json();
@@ -4764,6 +4900,7 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
       if (convoId) {
         await saveMessage(session.user.id, "user", userMsg.content, convoId);
         await saveMessage(session.user.id, "assistant", reply, convoId);
+      autoSaveMemory(reply);
       }
 
       // Increment usage
@@ -5115,8 +5252,70 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                   style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${showReferral ? "#10a37f" : "#3d3d3d"}`, background: showReferral ? "#10a37f22" : "transparent", color: showReferral ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
                   🎁
                 </button>
+                {/* Temperature Control */}
                 <div style={{ position: "relative" }}>
-                  <button title={t.customTheme}
+                  <button onClick={() => setShowTempControl(!showTempControl)}
+                    title="Temperature & Top-P"
+                    style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${showTempControl ? "#f59e0b" : "#3d3d3d"}`, background: showTempControl ? "#f59e0b22" : "transparent", color: showTempControl ? "#f59e0b" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                    🌡️{temperature.toFixed(1)}
+                  </button>
+                  {showTempControl && (
+                    <div style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 12, padding: 16, minWidth: 240, zIndex: 200, boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}>
+                      <div style={{ marginBottom: 14 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: "#ececec", fontWeight: 500 }}>🌡️ Temperature</span>
+                          <span style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>{temperature.toFixed(2)}</span>
+                        </div>
+                        <input type="range" min="0" max="2" step="0.05" value={temperature}
+                          onChange={e => { const v = parseFloat(e.target.value); setTemperature(v); localStorage.setItem("shardeumai-temp", v); }}
+                          style={{ width: "100%", accentColor: "#f59e0b" }} />
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#5c5c5c", marginTop: 2 }}>
+                          <span>Precise</span><span>Balanced</span><span>Creative</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: "#ececec", fontWeight: 500 }}>🎯 Top-P</span>
+                          <span style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700 }}>{topP.toFixed(2)}</span>
+                        </div>
+                        <input type="range" min="0" max="1" step="0.05" value={topP}
+                          onChange={e => { const v = parseFloat(e.target.value); setTopP(v); localStorage.setItem("shardeumai-topp", v); }}
+                          style={{ width: "100%", accentColor: "#f59e0b" }} />
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#5c5c5c", marginTop: 2 }}>
+                          <span>Focused</span><span>Diverse</span>
+                        </div>
+                      </div>
+                      <button onClick={() => { setTemperature(0.7); setTopP(0.9); localStorage.setItem("shardeumai-temp","0.7"); localStorage.setItem("shardeumai-topp","0.9"); }}
+                        style={{ marginTop: 10, width: "100%", padding: "6px 0", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer" }}>
+                        Reset defaults
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {/* Compare Mode */}
+                <button onClick={() => { setCompareMode(!compareMode); if (compareMode) setCompareMessages([]); }}
+                  title="Compare two models side by side"
+                  style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${compareMode ? "#a855f7" : "#3d3d3d"}`, background: compareMode ? "#a855f722" : "transparent", color: compareMode ? "#a855f7" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  ⚖️
+                </button>
+                {/* Branching */}
+                <button onClick={() => setBranchingEnabled(!branchingEnabled)}
+                  title="Edit messages to branch conversation"
+                  style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${branchingEnabled ? "#06b6d4" : "#3d3d3d"}`, background: branchingEnabled ? "#06b6d422" : "transparent", color: branchingEnabled ? "#06b6d4" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  🌿
+                </button>
+                {/* Memory */}
+                <button onClick={() => setShowMemoryPanel(!showMemoryPanel)}
+                  title="Long-term Memory"
+                  style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${showMemoryPanel ? "#10a37f" : "#3d3d3d"}`, background: showMemoryPanel ? "#10a37f22" : "transparent", color: showMemoryPanel ? "#10a37f" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  🧠{userMemories.length > 0 ? ` ${userMemories.length}` : ""}
+                </button>
+                {/* RAG */}
+                <button onClick={() => setShowRagPanel(!showRagPanel)}
+                  title="Upload documents (RAG)"
+                  style={{ padding: "4px 8px", borderRadius: 6, border: `1px solid ${showRagPanel || ragDocuments.length > 0 ? "#f97316" : "#3d3d3d"}`, background: ragDocuments.length > 0 ? "#f9731622" : "transparent", color: ragDocuments.length > 0 ? "#f97316" : "#8e8ea0", fontSize: 12, cursor: "pointer" }}>
+                  📄{ragDocuments.length > 0 ? ` ${ragDocuments.length}` : ""}
+                </button>
                     style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
                     <span style={{ width: 12, height: 12, borderRadius: "50%", background: customAccentColor, display: "inline-block" }}></span>
                     🎨
@@ -5388,6 +5587,60 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                       {/* Referral Panel */}
                       {showReferral && activeTab === "chat" && (
                         <ReferralPanel t={t} th={th} session={session} isMobile={isMobile} />
+                      )}
+
+                      {/* Memory Panel */}
+                      {showMemoryPanel && (
+                        <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
+                          <div style={{ maxWidth: 768, margin: "0 auto" }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "#10a37f", marginBottom: 10 }}>🧠 Long-term Memory ({userMemories.length})</div>
+                            <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                              <input value={newMemoryText} onChange={e => setNewMemoryText(e.target.value)}
+                                placeholder="Add a memory (e.g. My name is Farhad, I work in crypto)"
+                                onKeyDown={e => e.key === "Enter" && addMemory()}
+                                style={{ flex: 1, padding: "7px 12px", borderRadius: 8, border: "1px solid #3d3d3d", background: "#2d2d2d", color: "#ececec", fontSize: 12, outline: "none" }} />
+                              <button onClick={addMemory} style={{ padding: "7px 14px", borderRadius: 8, border: "none", background: "#10a37f", color: "#fff", fontSize: 12, cursor: "pointer" }}>+ Add</button>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 160, overflowY: "auto" }}>
+                              {userMemories.length === 0 ? (
+                                <div style={{ fontSize: 12, color: "#5c5c5c", textAlign: "center", padding: 16 }}>No memories yet. AI will auto-save important info from conversations.</div>
+                              ) : userMemories.map(m => (
+                                <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: "#2d2d2d", borderRadius: 8, border: "1px solid #3d3d3d" }}>
+                                  <span style={{ flex: 1, fontSize: 12, color: "#ececec" }}>{m.memory_text}</span>
+                                  <button onClick={() => deleteMemory(m.id)} style={{ background: "none", border: "none", color: "#5c5c5c", cursor: "pointer", fontSize: 14, padding: "0 4px" }}>✕</button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* RAG Panel */}
+                      {showRagPanel && (
+                        <div style={{ padding: "12px 16px", borderBottom: "1px solid #2d2d2d", background: "#171717" }}>
+                          <div style={{ maxWidth: 768, margin: "0 auto" }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "#f97316", marginBottom: 10 }}>📄 Document RAG ({ragDocuments.length} docs)</div>
+                            <label style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 8, border: "1px solid #f97316", color: "#f97316", fontSize: 12, cursor: "pointer", background: "transparent" }}>
+                              {ragLoading ? "⏳ Uploading..." : "📤 Upload PDF/TXT/MD"}
+                              <input type="file" accept=".txt,.md,.pdf,.csv" onChange={handleRagUpload} style={{ display: "none" }} disabled={ragLoading} />
+                            </label>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+                              {ragDocuments.length === 0 ? (
+                                <div style={{ fontSize: 12, color: "#5c5c5c" }}>No documents uploaded. Upload files to ask questions about them.</div>
+                              ) : ragDocuments.map((d, i) => (
+                                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 10px", background: "#2d2d2d", borderRadius: 8, border: "1px solid #f97316" }}>
+                                  <span style={{ fontSize: 11, color: "#f97316" }}>📄 {d.filename}</span>
+                                  <button onClick={() => deleteRagDocument(d.filename)} style={{ background: "none", border: "none", color: "#5c5c5c", cursor: "pointer", fontSize: 12 }}>✕</button>
+                                </div>
+                              ))}
+                            </div>
+                            {ragContext && (
+                              <div style={{ marginTop: 8, padding: "6px 10px", background: "#f9731622", borderRadius: 8, border: "1px solid #f97316", fontSize: 11, color: "#f97316" }}>
+                                ✓ RAG context loaded for this query
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       )}
 
                       {/* Analytics Panel */}
