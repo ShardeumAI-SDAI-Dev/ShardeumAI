@@ -5491,6 +5491,57 @@ Nonce: ${Math.random().toString(36).substring(2, 15)}`;
                 style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${showReferral ? "#10a37f" : "#3d3d3d"}`, background: showReferral ? "#10a37f22" : "transparent", color: showReferral ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
                 🎁 {t.referralTitle}
               </button>
+              {/* Temperature */}
+              <button onClick={() => setShowTempControl(!showTempControl)}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${showTempControl ? "#f59e0b" : "#3d3d3d"}`, background: showTempControl ? "#f59e0b22" : "transparent", color: showTempControl ? "#f59e0b" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                🌡️ {temperature.toFixed(1)}
+              </button>
+              {showTempControl && (
+                <div style={{ position: "fixed", bottom: 80, left: 8, right: 8, background: "#2d2d2d", border: "1px solid #3d3d3d", borderRadius: 12, padding: 16, zIndex: 300, boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <span style={{ fontSize: 13, color: "#ececec", fontWeight: 500 }}>🌡️ Temperature</span>
+                      <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>{temperature.toFixed(2)}</span>
+                    </div>
+                    <input type="range" min="0" max="2" step="0.05" value={temperature}
+                      onChange={e => { const v = parseFloat(e.target.value); setTemperature(v); localStorage.setItem("shardeumai-temp", v); }}
+                      style={{ width: "100%", accentColor: "#f59e0b" }} />
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <span style={{ fontSize: 13, color: "#ececec", fontWeight: 500 }}>🎯 Top-P</span>
+                      <span style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>{topP.toFixed(2)}</span>
+                    </div>
+                    <input type="range" min="0" max="1" step="0.05" value={topP}
+                      onChange={e => { const v = parseFloat(e.target.value); setTopP(v); localStorage.setItem("shardeumai-topp", v); }}
+                      style={{ width: "100%", accentColor: "#f59e0b" }} />
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => { setTemperature(0.7); setTopP(0.9); }} style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 12, cursor: "pointer" }}>Reset</button>
+                    <button onClick={() => setShowTempControl(false)} style={{ flex: 1, padding: "8px 0", borderRadius: 8, border: "none", background: "#f59e0b", color: "#000", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Done</button>
+                  </div>
+                </div>
+              )}
+              {/* Compare Mode */}
+              <button onClick={() => { setCompareMode(!compareMode); if (compareMode) setCompareMessages([]); }}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${compareMode ? "#a855f7" : "#3d3d3d"}`, background: compareMode ? "#a855f722" : "transparent", color: compareMode ? "#a855f7" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                ⚖️ Compare
+              </button>
+              {/* Branching */}
+              <button onClick={() => setBranchingEnabled(!branchingEnabled)}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${branchingEnabled ? "#06b6d4" : "#3d3d3d"}`, background: branchingEnabled ? "#06b6d422" : "transparent", color: branchingEnabled ? "#06b6d4" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                🌿 Branch
+              </button>
+              {/* Memory */}
+              <button onClick={() => setShowMemoryPanel(!showMemoryPanel)}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${showMemoryPanel ? "#10a37f" : "#3d3d3d"}`, background: showMemoryPanel ? "#10a37f22" : "transparent", color: showMemoryPanel ? "#10a37f" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                🧠 Memory{userMemories.length > 0 ? ` (${userMemories.length})` : ""}
+              </button>
+              {/* RAG */}
+              <button onClick={() => setShowRagPanel(!showRagPanel)}
+                style={{ padding: "5px 10px", borderRadius: 8, border: `1px solid ${showRagPanel || ragDocuments.length > 0 ? "#f97316" : "#3d3d3d"}`, background: ragDocuments.length > 0 ? "#f9731622" : "transparent", color: ragDocuments.length > 0 ? "#f97316" : "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap" }}>
+                📄 RAG{ragDocuments.length > 0 ? ` (${ragDocuments.length})` : ""}
+              </button>
               <div style={{ position: "relative", display: "inline-block" }}>
                 <button title={t.customTheme}
                   style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid #3d3d3d", background: "transparent", color: "#8e8ea0", fontSize: 11, cursor: "pointer", whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }}>
